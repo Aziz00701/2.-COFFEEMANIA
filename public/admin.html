@@ -943,38 +943,18 @@
         // QR сканирование
         document.getElementById('startScan').addEventListener('click', async function() {
             try {
-                console.log('Попытка запуска QR сканера...');
-                
                 const videoElement = document.getElementById('qr-video');
                 scanner = new QrScanner(videoElement, result => {
-                    console.log('QR код отсканирован:', result.data);
                     handleQRResult(result.data);
                 });
                 
                 await scanner.start();
-                console.log('QR сканер запущен успешно');
                 
                 document.getElementById('startScan').style.display = 'none';
                 document.getElementById('stopScan').style.display = 'block';
                 
             } catch (error) {
-                console.error('Ошибка запуска сканера:', error);
-                
-                let errorMessage = 'Ошибка доступа к камере: ';
-                
-                if (error.name === 'NotAllowedError') {
-                    errorMessage += 'Разрешите доступ к камере в настройках браузера';
-                } else if (error.name === 'NotFoundError') {
-                    errorMessage += 'Камера не найдена на устройстве';
-                } else if (error.name === 'NotSupportedError') {
-                    errorMessage += 'Камера не поддерживается';
-                } else if (error.name === 'NotReadableError') {
-                    errorMessage += 'Камера используется другим приложением';
-                } else {
-                    errorMessage += error.message;
-                }
-                
-                alert(errorMessage);
+                alert('Ошибка камеры');
             }
         });
 
@@ -982,7 +962,6 @@
             if (scanner) {
                 scanner.stop();
                 scanner = null;
-                console.log('QR сканер остановлен');
             }
             document.getElementById('startScan').style.display = 'block';
             document.getElementById('stopScan').style.display = 'none';
@@ -990,8 +969,6 @@
 
         async function handleQRResult(qrData) {
             try {
-                console.log('Обработка QR данных:', qrData);
-                
                 // Останавливаем сканер
                 if (scanner) {
                     scanner.stop();
@@ -1000,17 +977,11 @@
                     document.getElementById('stopScan').style.display = 'none';
                 }
                 
-                // Извлекаем ID клиента из URL
-                let customerId;
-                if (qrData.includes('/card.html?id=')) {
-                    customerId = qrData.split('/card.html?id=')[1];
-                } else if (qrData.includes('id=')) {
+                // Извлекаем ID
+                let customerId = qrData;
+                if (qrData.includes('id=')) {
                     customerId = qrData.split('id=')[1];
-                } else {
-                    customerId = qrData.split('/').pop();
                 }
-                
-                console.log('Извлеченный ID клиента:', customerId);
                 
                 const response = await fetch(`/api/purchase/${customerId}`, {
                     method: 'POST'
@@ -1032,8 +1003,7 @@
                     alert('Ошибка: ' + result.error);
                 }
             } catch (error) {
-                console.error('Ошибка обработки QR:', error);
-                alert('Ошибка обработки QR кода: ' + error.message);
+                alert('Ошибка QR');
             }
         }
 
