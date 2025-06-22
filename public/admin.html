@@ -445,20 +445,25 @@
             
             const name = document.getElementById('customerName').value;
             const phone = document.getElementById('customerPhone').value;
-            
+
             try {
                 const response = await fetch('/api/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, phone })
                 });
-                
+
                 const result = await response.json();
-                
+
                 if (response.ok) {
                     showNotification(`Клиент ${name} зарегистрирован!`);
                     document.getElementById('registerForm').reset();
                     loadAllCustomers();
+                    
+                    // Сразу предлагаем отправить клиенту его данные
+                    setTimeout(() => {
+                        shareWithCustomer(result.customerId);
+                    }, 500);
                 } else {
                     alert('Ошибка: ' + result.error);
                 }
