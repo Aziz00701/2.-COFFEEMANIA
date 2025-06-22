@@ -1,5 +1,5 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 const { nanoid } = require('nanoid');
 const QRCode = require('qrcode');
 const cors = require('cors');
@@ -7,7 +7,14 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DB_PATH = './coffeemania.db';
+
+// Подключение к PostgreSQL (замените на вашу ссылку из Render)
+const connectionString = process.env.DATABASE_URL || 'postgresql://coffeemania_db_user:H9eKkNMYufnRZsMlfmc4NokQhMcGCE3K@dpg-d1c2soer433s7381rgfg-a.frankfurt-postgres.render.com/coffeemania_db';
+
+const pool = new Pool({
+    connectionString: connectionString,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : { rejectUnauthorized: false }
+});
 
 // --- Логирование ---
 const log = {
@@ -18,98 +25,47 @@ const log = {
 };
 
 // --- Database Setup ---
-const db = new sqlite3.Database(DB_PATH, (err) => {
-    if (err) {
-        log.error("Ошибка подключения к базе данных:", err.message);
-        process.exit(1);
-    } else {
-        log.success("Успешное подключение к базе данных SQLite");
-        initializeDatabase();
-    }
-});
+async function initializeDatabase() {
+    try {
+        log.info('Подключение к PostgreSQL...');
+        
+        // Проверяем подключение
+        const client = await pool.connect();
+        log.success('Успешное подключение к PostgreSQL');
+        client.release();
 
-function initializeDatabase() {
-    db.serialize(() => {
         // Создание таблицы клиентов
-        db.run(`CREATE TABLE IF NOT EXISTS customers (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            phone TEXT NOT NULL UNIQUE,
-            purchases INTEGER DEFAULT 0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`, (err) => {
-            if (err) {
-                log.error("Ошибка создания таблицы customers:", err);
-            } else {
-                log.info("Таблица customers готова");
-                
-                // Проверяем и добавляем недостающие колонки (миграция)
-                db.all("PRAGMA table_info(customers)", [], (err, columns) => {
-                    if (!err && columns) {
-                        const columnNames = columns.map(col => col.name);
-                        
-                        if (!columnNames.includes('created_at')) {
-                            db.run(`ALTER TABLE customers ADD COLUMN created_at DATETIME`, (err) => {
-                                if (err) {
-                                    log.error("Ошибка добавления колонки created_at:", err);
-                                } else {
-                                    log.success("Добавлена колонка created_at");
-                                    // Заполняем существующие записи текущей датой
-                                    db.run(`UPDATE customers SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL`, (updateErr) => {
-                                        if (updateErr) {
-                                            log.error("Ошибка обновления created_at:", updateErr);
-                                        } else {
-                                            log.success("Обновлены даты создания для существующих клиентов");
-                                        }
-                                    });
-                                }
-                            });
-                        }
-                        
-                        if (!columnNames.includes('updated_at')) {
-                            db.run(`ALTER TABLE customers ADD COLUMN updated_at DATETIME`, (err) => {
-                                if (err) {
-                                    log.error("Ошибка добавления колонки updated_at:", err);
-                                } else {
-                                    log.success("Добавлена колонка updated_at");
-                                    // Заполняем существующие записи текущей датой
-                                    db.run(`UPDATE customers SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL`, (updateErr) => {
-                                        if (updateErr) {
-                                            log.error("Ошибка обновления updated_at:", updateErr);
-                                        } else {
-                                            log.success("Обновлены даты обновления для существующих клиентов");
-                                        }
-                                    });
-                                }
-                            });
-                        }
-                    }
-                });
-            }
-        });
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS customers (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                phone TEXT NOT NULL UNIQUE,
+                purchases INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        log.info('Таблица customers готова');
 
         // Создание таблицы истории покупок
-        db.run(`CREATE TABLE IF NOT EXISTS purchase_history (
-            purchase_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            customer_id TEXT NOT NULL,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (customer_id) REFERENCES customers(id)
-        )`, (err) => {
-            if (err) {
-                log.error("Ошибка создания таблицы purchase_history:", err);
-            } else {
-                log.info("Таблица purchase_history готова");
-            }
-        });
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS purchase_history (
+                purchase_id SERIAL PRIMARY KEY,
+                customer_id TEXT NOT NULL,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+            )
+        `);
+        log.info('Таблица purchase_history готова');
 
         // Получение статистики
-        db.get("SELECT COUNT(*) as count FROM customers", (err, row) => {
-            if (!err && row) {
-                log.info(`В базе зарегистрировано клиентов: ${row.count}`);
-            }
-        });
-    });
+        const result = await pool.query('SELECT COUNT(*) as count FROM customers');
+        log.info(`В базе зарегистрировано клиентов: ${result.rows[0].count}`);
+
+    } catch (error) {
+        log.error('Ошибка инициализации базы данных:', error.message);
+        process.exit(1);
+    }
 }
 
 // --- Middleware ---
@@ -129,427 +85,377 @@ app.use((req, res, next) => {
 
 // 1. Регистрация нового клиента
 app.post('/api/register', async (req, res) => {
-    const { name, phone } = req.body;
-    
-    // Валидация данных
-    if (!name || !phone) {
-        return res.status(400).json({ error: 'Имя и телефон обязательны для заполнения.' });
-    }
-
-    if (name.length < 2 || name.length > 50) {
-        return res.status(400).json({ error: 'Имя должно содержать от 2 до 50 символов.' });
-    }
-
-    if (!/^\+7 \(\d{3}\) \d{3} \d{2} \d{2}$/.test(phone)) {
-        return res.status(400).json({ error: 'Неверный формат номера телефона.' });
-    }
-
-    const id = nanoid(10);
-    const sql = `INSERT INTO customers (id, name, phone, purchases) VALUES (?, ?, ?, 0)`;
-
-    db.run(sql, [id, name, phone], async function(err) {
-        if (err) {
-            if (err.message.includes('UNIQUE constraint failed')) {
-                log.warn(`Попытка регистрации существующего номера: ${phone}`);
-                return res.status(409).json({ error: 'Клиент с таким номером телефона уже зарегистрирован.' });
-            }
-            log.error("Ошибка регистрации клиента:", err.message);
-            return res.status(500).json({ error: 'Не удалось зарегистрировать клиента.' });
+    const client = await pool.connect();
+    try {
+        const { name, phone } = req.body;
+        
+        // Валидация данных
+        if (!name || !phone) {
+            return res.status(400).json({ error: 'Имя и телефон обязательны для заполнения.' });
         }
+
+        if (name.length < 2 || name.length > 50) {
+            return res.status(400).json({ error: 'Имя должно содержать от 2 до 50 символов.' });
+        }
+
+        if (!/^\+7 \(\d{3}\) \d{3} \d{2} \d{2}$/.test(phone)) {
+            return res.status(400).json({ error: 'Неверный формат номера телефона.' });
+        }
+
+        const id = nanoid(10);
+        
+        await client.query('BEGIN');
+        
+        const result = await client.query(
+            'INSERT INTO customers (id, name, phone, purchases) VALUES ($1, $2, $3, 0) RETURNING id',
+            [id, name, phone]
+        );
+        
+        await client.query('COMMIT');
         
         const customerUrl = `${req.protocol}://${req.get('host')}/card.html?id=${id}`;
         
-        try {
-            const qrCode = await QRCode.toDataURL(customerUrl, {
-                type: 'image/png',
-                quality: 0.92,
-                margin: 1,
-                color: {
-                    dark: '#000000',
-                    light: '#FFFFFF'
-                },
-                width: 256
-            });
+        const qrCode = await QRCode.toDataURL(customerUrl, {
+            type: 'image/png',
+            quality: 0.92,
+            margin: 1,
+            color: {
+                dark: '#000000',
+                light: '#FFFFFF'
+            },
+            width: 256
+        });
 
-            log.success(`Новый клиент зарегистрирован: ${name} (${phone})`);
-            
-            res.status(201).json({ 
-                message: 'Клиент успешно зарегистрирован!',
-                customerId: id,
-                customerUrl,
-                qrCode 
-            });
-        } catch (qrErr) {
-            log.error("Ошибка генерации QR-кода:", qrErr);
-            res.status(500).json({ error: 'Не удалось сгенерировать QR-код.' });
+        log.success(`Новый клиент зарегистрирован: ${name} (${phone})`);
+        
+        res.status(201).json({ 
+            message: 'Клиент успешно зарегистрирован!',
+            customerId: id,
+            customerUrl,
+            qrCode 
+        });
+        
+    } catch (error) {
+        await client.query('ROLLBACK');
+        if (error.constraint === 'customers_phone_key') {
+            log.warn(`Попытка регистрации существующего номера: ${req.body.phone}`);
+            return res.status(409).json({ error: 'Клиент с таким номером телефона уже зарегистрирован.' });
         }
-    });
+        log.error("Ошибка регистрации клиента:", error.message);
+        res.status(500).json({ error: 'Не удалось зарегистрировать клиента.' });
+    } finally {
+        client.release();
+    }
 });
 
 // 2. Поиск клиента
-app.get('/api/search', (req, res) => {
-    const { term } = req.query;
-    
-    if (!term || term.length < 2) {
-        return res.status(400).json({ error: 'Поисковый запрос должен содержать минимум 2 символа.' });
-    }
-
-    const sql = `SELECT id, name, phone, purchases FROM customers 
-                 WHERE name LIKE ? OR phone LIKE ? 
-                 ORDER BY name ASC LIMIT 20`;
-    const searchTerm = `%${term}%`;
-
-    db.all(sql, [searchTerm, searchTerm], (err, rows) => {
-        if (err) {
-            log.error("Ошибка поиска клиентов:", err.message);
-            return res.status(500).json({ error: 'Ошибка поиска клиентов.' });
-        }
+app.get('/api/search', async (req, res) => {
+    try {
+        const { term } = req.query;
         
-        log.info(`Поиск "${term}" - найдено результатов: ${rows.length}`);
-        res.json(rows);
-    });
+        if (!term || term.length < 2) {
+            return res.status(400).json({ error: 'Поисковый запрос должен содержать минимум 2 символа.' });
+        }
+
+        const result = await pool.query(
+            'SELECT id, name, phone, purchases FROM customers WHERE name ILIKE $1 OR phone LIKE $2 ORDER BY name ASC LIMIT 20',
+            [`%${term}%`, `%${term}%`]
+        );
+        
+        log.info(`Поиск "${term}" - найдено результатов: ${result.rows.length}`);
+        res.json(result.rows);
+        
+    } catch (error) {
+        log.error("Ошибка поиска клиентов:", error.message);
+        res.status(500).json({ error: 'Ошибка поиска клиентов.' });
+    }
 });
 
 // 3. Засчитывание покупки
-app.post('/api/purchase', (req, res) => {
-    const { customerId } = req.body;
-    
-    if (!customerId) {
-        return res.status(400).json({ error: 'ID клиента обязателен.' });
-    }
+app.post('/api/purchase', async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const { customerId } = req.body;
+        
+        if (!customerId) {
+            return res.status(400).json({ error: 'ID клиента обязателен.' });
+        }
 
-    // Начинаем транзакцию
-    db.serialize(() => {
-        db.run("BEGIN TRANSACTION");
+        await client.query('BEGIN');
 
-        const findSql = `SELECT id, name, purchases FROM customers WHERE id = ?`;
-        db.get(findSql, [customerId], (err, customer) => {
-            if (err) {
-                db.run("ROLLBACK");
-                log.error("Ошибка поиска клиента:", err.message);
-                return res.status(500).json({ error: 'Ошибка базы данных при поиске клиента.' });
-            }
+        const customerResult = await client.query(
+            'SELECT id, name, purchases FROM customers WHERE id = $1',
+            [customerId]
+        );
 
-            if (!customer) {
-                db.run("ROLLBACK");
-                return res.status(404).json({ error: 'Клиент не найден.' });
-            }
+        if (customerResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Клиент не найден.' });
+        }
 
-            let currentPurchases = customer.purchases;
-            let newPurchases;
-            let message;
-            let isFreeCoffee = false;
+        const customer = customerResult.rows[0];
+        let currentPurchases = customer.purchases;
+        let newPurchases;
+        let message;
+        let isFreeCoffee = false;
 
-            if (currentPurchases >= 6) {
-                newPurchases = 0; // Сброс после бесплатного кофе
-                message = 'Клиент получил бесплатный кофе! Счетчик обнулен.';
-                isFreeCoffee = true;
+        if (currentPurchases >= 6) {
+            newPurchases = 0; // Сброс после бесплатного кофе
+            message = 'Клиент получил бесплатный кофе! Счетчик обнулен.';
+            isFreeCoffee = true;
+        } else {
+            newPurchases = currentPurchases + 1;
+            if (newPurchases === 6) {
+                message = `Покупка засчитана. Следующий кофе бесплатно!`;
             } else {
-                newPurchases = currentPurchases + 1;
-                if (newPurchases === 6) {
-                    message = `Покупка засчитана. Следующий кофе бесплатно!`;
-                } else {
-                    message = `Покупка засчитана. Прогресс: ${newPurchases}/6.`;
-                }
+                message = `Покупка засчитана. Прогресс: ${newPurchases}/6.`;
             }
-            
-            const updateSql = `UPDATE customers SET purchases = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`;
-            db.run(updateSql, [newPurchases, customerId], function(updateErr) {
-                if (updateErr) {
-                    db.run("ROLLBACK");
-                    log.error("Ошибка обновления покупок:", updateErr.message);
-                    return res.status(500).json({ error: 'Не удалось обновить количество покупок.' });
-                }
-                
-                // Логируем покупку только если это не получение бесплатного кофе
-                if (!isFreeCoffee) {
-                    const historySql = `INSERT INTO purchase_history (customer_id) VALUES (?)`;
-                    db.run(historySql, [customerId], (historyErr) => {
-                        if (historyErr) {
-                            log.error("Ошибка записи истории покупок:", historyErr.message);
-                            // Не возвращаем ошибку клиенту, так как основная операция успешна
-                        }
-                        
-                        db.run("COMMIT");
-                        log.success(`Покупка засчитана: ${customer.name} (${currentPurchases} → ${newPurchases})`);
-                        res.json({ message, purchases: newPurchases });
-                    });
-                } else {
-                    db.run("COMMIT");
-                    log.success(`Бесплатный кофе выдан: ${customer.name} (сброс с ${currentPurchases} на 0)`);
-                    res.json({ message, purchases: newPurchases });
-                }
-            });
-        });
-    });
+        }
+        
+        await client.query(
+            'UPDATE customers SET purchases = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+            [newPurchases, customerId]
+        );
+        
+        // Логируем покупку только если это не получение бесплатного кофе
+        if (!isFreeCoffee) {
+            await client.query(
+                'INSERT INTO purchase_history (customer_id) VALUES ($1)',
+                [customerId]
+            );
+        }
+        
+        await client.query('COMMIT');
+        log.success(`Покупка засчитана: ${customer.name} (${currentPurchases} → ${newPurchases})`);
+        res.json({ message, purchases: newPurchases });
+        
+    } catch (error) {
+        await client.query('ROLLBACK');
+        log.error("Ошибка обновления покупок:", error.message);
+        res.status(500).json({ error: 'Не удалось обновить количество покупок.' });
+    } finally {
+        client.release();
+    }
 });
 
 // 4. Получение истории покупок
-app.get('/api/history/:id', (req, res) => {
-    const { id } = req.params;
-    
-    const sql = `SELECT timestamp FROM purchase_history 
-                 WHERE customer_id = ? 
-                 ORDER BY timestamp DESC 
-                 LIMIT 50`;
-                 
-    db.all(sql, [id], (err, rows) => {
-        if (err) {
-            log.error("Ошибка получения истории:", err.message);
-            return res.status(500).json({ error: 'Не удалось получить историю покупок.' });
-        }
-        res.json(rows);
-    });
+app.get('/api/history/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const result = await pool.query(
+            'SELECT timestamp FROM purchase_history WHERE customer_id = $1 ORDER BY timestamp DESC LIMIT 50',
+            [id]
+        );
+        
+        res.json(result.rows);
+        
+    } catch (error) {
+        log.error("Ошибка получения истории:", error.message);
+        res.status(500).json({ error: 'Не удалось получить историю покупок.' });
+    }
 });
 
 // 5. Получение данных клиента для карты
-app.get('/api/customer/:id', (req, res) => {
-    const { id } = req.params;
-    
-    const sql = `SELECT id, name, purchases FROM customers WHERE id = ?`;
-    db.get(sql, [id], (err, row) => {
-        if (err) {
-            log.error("Ошибка получения данных клиента:", err.message);
-            return res.status(500).json({ error: 'Не удалось получить данные клиента.' });
-        }
+app.get('/api/customer/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
         
-        if (!row) {
+        const result = await pool.query(
+            'SELECT id, name, purchases FROM customers WHERE id = $1',
+            [id]
+        );
+        
+        if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Клиент не найден.' });
         }
         
-        res.json(row);
-    });
+        res.json(result.rows[0]);
+        
+    } catch (error) {
+        log.error("Ошибка получения данных клиента:", error.message);
+        res.status(500).json({ error: 'Не удалось получить данные клиента.' });
+    }
 });
 
 // 6. Генерация QR-кода для карты клиента
 app.get('/api/qr/:id', async (req, res) => {
-    const { id } = req.params;
-    
     try {
-        // Проверяем существование клиента
-        const checkSql = `SELECT id FROM customers WHERE id = ?`;
-        db.get(checkSql, [id], async (err, customer) => {
-            if (err) {
-                log.error("Ошибка проверки клиента:", err.message);
-                return res.status(500).json({ error: 'Ошибка базы данных' });
-            }
-            
-            if (!customer) {
-                return res.status(404).json({ error: 'Клиент не найден' });
-            }
-            
-            const customerUrl = `${req.protocol}://${req.get('host')}/card.html?id=${id}`;
-            const qrCodeBuffer = await QRCode.toBuffer(customerUrl, {
-                type: 'png',
-                quality: 0.92,
-                margin: 1,
-                color: {
-                    dark: '#000000',
-                    light: '#FFFFFF'
-                },
-                width: 256
-            });
-            
-            res.setHeader('Content-Type', 'image/png');
-            res.setHeader('Content-Disposition', 'inline; filename="qr-code.png"');
-            res.setHeader('Cache-Control', 'public, max-age=3600'); // Кеш на 1 час
-            res.send(qrCodeBuffer);
+        const { id } = req.params;
+        
+        const result = await pool.query('SELECT id FROM customers WHERE id = $1', [id]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Клиент не найден' });
+        }
+        
+        const customerUrl = `${req.protocol}://${req.get('host')}/card.html?id=${id}`;
+        const qrCodeBuffer = await QRCode.toBuffer(customerUrl, {
+            type: 'png',
+            quality: 0.92,
+            margin: 1,
+            color: {
+                dark: '#000000',
+                light: '#FFFFFF'
+            },
+            width: 256
         });
+        
+        res.setHeader('Content-Type', 'image/png');
+        res.setHeader('Content-Disposition', 'inline; filename="qr-code.png"');
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+        res.send(qrCodeBuffer);
+        
     } catch (error) {
         log.error('Ошибка генерации QR-кода:', error);
         res.status(500).json({ error: 'Не удалось сгенерировать QR-код' });
     }
 });
 
-// 7. Статистика системы (дополнительно)
-app.get('/api/stats', (req, res) => {
-    const queries = [
-        new Promise((resolve) => {
-            db.get("SELECT COUNT(*) as total FROM customers", (err, row) => {
-                resolve({ totalCustomers: err ? 0 : row.total });
-            });
-        }),
-        new Promise((resolve) => {
-            db.get("SELECT COUNT(*) as total FROM purchase_history", (err, row) => {
-                resolve({ totalPurchases: err ? 0 : row.total });
-            });
-        }),
-        new Promise((resolve) => {
-            db.get("SELECT COUNT(*) as ready FROM customers WHERE purchases >= 6", (err, row) => {
-                resolve({ readyForFreeCoffee: err ? 0 : row.ready });
-            });
-        })
-    ];
+// 7. Статистика системы
+app.get('/api/stats', async (req, res) => {
+    try {
+        const [totalCustomers, totalPurchases, readyForFreeCoffee] = await Promise.all([
+            pool.query('SELECT COUNT(*) as total FROM customers'),
+            pool.query('SELECT COUNT(*) as total FROM purchase_history'),
+            pool.query('SELECT COUNT(*) as ready FROM customers WHERE purchases >= 6')
+        ]);
 
-    Promise.all(queries).then(results => {
-        const stats = Object.assign({}, ...results);
+        const stats = {
+            totalCustomers: parseInt(totalCustomers.rows[0].total),
+            totalPurchases: parseInt(totalPurchases.rows[0].total),
+            readyForFreeCoffee: parseInt(readyForFreeCoffee.rows[0].ready)
+        };
+
         res.json(stats);
-    });
+        
+    } catch (error) {
+        log.error('Ошибка получения статистики:', error);
+        res.status(500).json({ error: 'Не удалось получить статистику' });
+    }
 });
 
 // 8. Удаление клиента
-app.delete('/api/customer/:id', (req, res) => {
-    const { id } = req.params;
-    
-    if (!id) {
-        return res.status(400).json({ error: 'ID клиента обязателен.' });
-    }
+app.delete('/api/customer/:id', async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const { id } = req.params;
+        
+        if (!id) {
+            return res.status(400).json({ error: 'ID клиента обязателен.' });
+        }
 
-    // Начинаем транзакцию
-    db.serialize(() => {
-        db.run("BEGIN TRANSACTION");
+        await client.query('BEGIN');
 
-        // Сначала проверяем существование клиента
-        const checkSql = `SELECT id, name FROM customers WHERE id = ?`;
-        db.get(checkSql, [id], (err, customer) => {
-            if (err) {
-                db.run("ROLLBACK");
-                log.error("Ошибка проверки клиента:", err.message);
-                return res.status(500).json({ error: 'Ошибка базы данных при проверке клиента.' });
-            }
+        const customerResult = await client.query('SELECT id, name FROM customers WHERE id = $1', [id]);
 
-            if (!customer) {
-                db.run("ROLLBACK");
-                return res.status(404).json({ error: 'Клиент не найден.' });
-            }
+        if (customerResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Клиент не найден.' });
+        }
 
-            // Удаляем историю покупок клиента
-            const deleteHistorySql = `DELETE FROM purchase_history WHERE customer_id = ?`;
-            db.run(deleteHistorySql, [id], (historyErr) => {
-                if (historyErr) {
-                    db.run("ROLLBACK");
-                    log.error("Ошибка удаления истории покупок:", historyErr.message);
-                    return res.status(500).json({ error: 'Не удалось удалить историю покупок.' });
-                }
+        const customer = customerResult.rows[0];
 
-                // Удаляем самого клиента
-                const deleteCustomerSql = `DELETE FROM customers WHERE id = ?`;
-                db.run(deleteCustomerSql, [id], (customerErr) => {
-                    if (customerErr) {
-                        db.run("ROLLBACK");
-                        log.error("Ошибка удаления клиента:", customerErr.message);
-                        return res.status(500).json({ error: 'Не удалось удалить клиента.' });
-                    }
+        // Удаляем историю покупок (CASCADE должен это сделать автоматически, но для надежности)
+        await client.query('DELETE FROM purchase_history WHERE customer_id = $1', [id]);
 
-                    db.run("COMMIT");
-                    log.success(`Клиент удален: ${customer.name} (ID: ${id})`);
-                    res.json({ 
-                        message: `Клиент "${customer.name}" успешно удален.`,
-                        deletedCustomer: customer
-                    });
-                });
-            });
+        // Удаляем клиента
+        await client.query('DELETE FROM customers WHERE id = $1', [id]);
+
+        await client.query('COMMIT');
+        log.success(`Клиент удален: ${customer.name} (ID: ${id})`);
+        res.json({ 
+            message: `Клиент "${customer.name}" успешно удален.`,
+            deletedCustomer: customer
         });
-    });
+        
+    } catch (error) {
+        await client.query('ROLLBACK');
+        log.error("Ошибка удаления клиента:", error.message);
+        res.status(500).json({ error: 'Не удалось удалить клиента.' });
+    } finally {
+        client.release();
+    }
 });
 
 // 8.5. Редактирование клиента
-app.put('/api/customer/:id', (req, res) => {
-    const { id } = req.params;
-    const { name, phone } = req.body;
-    
-    if (!id) {
-        return res.status(400).json({ error: 'ID клиента обязателен.' });
-    }
+app.put('/api/customer/:id', async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const { id } = req.params;
+        const { name, phone } = req.body;
+        
+        if (!id) {
+            return res.status(400).json({ error: 'ID клиента обязателен.' });
+        }
 
-    // Валидация данных
-    if (!name || !phone) {
-        return res.status(400).json({ error: 'Имя и телефон обязательны для заполнения.' });
-    }
+        // Валидация данных
+        if (!name || !phone) {
+            return res.status(400).json({ error: 'Имя и телефон обязательны для заполнения.' });
+        }
 
-    if (name.length < 2 || name.length > 50) {
-        return res.status(400).json({ error: 'Имя должно содержать от 2 до 50 символов.' });
-    }
+        if (name.length < 2 || name.length > 50) {
+            return res.status(400).json({ error: 'Имя должно содержать от 2 до 50 символов.' });
+        }
 
-    if (!/^\+7 \(\d{3}\) \d{3} \d{2} \d{2}$/.test(phone)) {
-        return res.status(400).json({ error: 'Неверный формат номера телефона.' });
-    }
+        if (!/^\+7 \(\d{3}\) \d{3} \d{2} \d{2}$/.test(phone)) {
+            return res.status(400).json({ error: 'Неверный формат номера телефона.' });
+        }
 
-    // Начинаем транзакцию
-    db.serialize(() => {
-        db.run("BEGIN TRANSACTION");
+        await client.query('BEGIN');
 
-        // Сначала проверяем существование клиента
-        const checkSql = `SELECT id, name, phone FROM customers WHERE id = ?`;
-        db.get(checkSql, [id], (err, customer) => {
-            if (err) {
-                db.run("ROLLBACK");
-                log.error("Ошибка проверки клиента:", err.message);
-                return res.status(500).json({ error: 'Ошибка базы данных при проверке клиента.' });
+        const customerResult = await client.query('SELECT id, name, phone FROM customers WHERE id = $1', [id]);
+
+        if (customerResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Клиент не найден.' });
+        }
+
+        const customer = customerResult.rows[0];
+
+        // Проверяем, не занят ли новый номер телефона другим клиентом
+        if (phone !== customer.phone) {
+            const phoneCheckResult = await client.query('SELECT id FROM customers WHERE phone = $1 AND id != $2', [phone, id]);
+            
+            if (phoneCheckResult.rows.length > 0) {
+                await client.query('ROLLBACK');
+                return res.status(409).json({ error: 'Клиент с таким номером телефона уже существует.' });
             }
+        }
 
-            if (!customer) {
-                db.run("ROLLBACK");
-                return res.status(404).json({ error: 'Клиент не найден.' });
-            }
+        await client.query(
+            'UPDATE customers SET name = $1, phone = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
+            [name, phone, id]
+        );
 
-            // Проверяем, не занят ли новый номер телефона другим клиентом
-            if (phone !== customer.phone) {
-                const phoneCheckSql = `SELECT id FROM customers WHERE phone = ? AND id != ?`;
-                db.get(phoneCheckSql, [phone, id], (phoneErr, existingCustomer) => {
-                    if (phoneErr) {
-                        db.run("ROLLBACK");
-                        log.error("Ошибка проверки номера телефона:", phoneErr.message);
-                        return res.status(500).json({ error: 'Ошибка проверки номера телефона.' });
-                    }
-
-                    if (existingCustomer) {
-                        db.run("ROLLBACK");
-                        return res.status(409).json({ error: 'Клиент с таким номером телефона уже существует.' });
-                    }
-
-                    // Обновляем данные клиента
-                    updateCustomerData();
-                });
-            } else {
-                // Номер не изменился, сразу обновляем
-                updateCustomerData();
-            }
-
-            function updateCustomerData() {
-                const updateSql = `UPDATE customers SET name = ?, phone = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`;
-                db.run(updateSql, [name, phone, id], function(updateErr) {
-                    if (updateErr) {
-                        db.run("ROLLBACK");
-                        log.error("Ошибка обновления клиента:", updateErr.message);
-                        return res.status(500).json({ error: 'Не удалось обновить данные клиента.' });
-                    }
-
-                    db.run("COMMIT");
-                    log.success(`Клиент обновлен: ${customer.name} → ${name}, ${customer.phone} → ${phone}`);
-                    res.json({ 
-                        message: 'Данные клиента успешно обновлены.',
-                        customer: { id, name, phone }
-                    });
-                });
-            }
+        await client.query('COMMIT');
+        log.success(`Клиент обновлен: ${customer.name} → ${name}, ${customer.phone} → ${phone}`);
+        res.json({ 
+            message: 'Данные клиента успешно обновлены.',
+            customer: { id, name, phone }
         });
-    });
+        
+    } catch (error) {
+        await client.query('ROLLBACK');
+        log.error("Ошибка обновления клиента:", error.message);
+        res.status(500).json({ error: 'Не удалось обновить данные клиента.' });
+    } finally {
+        client.release();
+    }
 });
 
 // 9. Получение всех клиентов с подробной информацией
-app.get('/api/customers/all', (req, res) => {
-    const { sort = 'name', order = 'ASC' } = req.query;
-    
-    // Валидация параметров сортировки
-    const validSorts = ['name', 'purchases', 'created_at', 'updated_at'];
-    const validOrders = ['ASC', 'DESC'];
-    
-    const sortField = validSorts.includes(sort) ? sort : 'name';
-    const sortOrder = validOrders.includes(order.toUpperCase()) ? order.toUpperCase() : 'ASC';
-    
-    // Сначала проверяем структуру таблицы
-    db.all("PRAGMA table_info(customers)", [], (err, columns) => {
-        if (err) {
-            log.error("Ошибка получения структуры таблицы:", err.message);
-            return res.status(500).json({ error: 'Ошибка базы данных.' });
-        }
+app.get('/api/customers/all', async (req, res) => {
+    try {
+        const { sort = 'name', order = 'ASC' } = req.query;
         
-        const columnNames = columns.map(col => col.name);
-        const hasTimestamps = columnNames.includes('created_at') && columnNames.includes('updated_at');
+        const validSorts = ['name', 'purchases', 'created_at', 'updated_at'];
+        const validOrders = ['ASC', 'DESC'];
         
-        // Формируем запрос в зависимости от наличия колонок
-        const sql = hasTimestamps ? `
+        const sortField = validSorts.includes(sort) ? sort : 'name';
+        const sortOrder = validOrders.includes(order.toUpperCase()) ? order.toUpperCase() : 'ASC';
+        
+        const result = await pool.query(`
             SELECT 
                 c.id,
                 c.name,
@@ -561,39 +467,24 @@ app.get('/api/customers/all', (req, res) => {
                 (SELECT COUNT(*) FROM purchase_history WHERE customer_id = c.id) as total_history_purchases
             FROM customers c
             ORDER BY ${sortField} ${sortOrder}
-        ` : `
-            SELECT 
-                c.id,
-                c.name,
-                c.phone,
-                c.purchases,
-                NULL as created_at,
-                NULL as updated_at,
-                (SELECT MAX(timestamp) FROM purchase_history WHERE customer_id = c.id) as last_purchase,
-                (SELECT COUNT(*) FROM purchase_history WHERE customer_id = c.id) as total_history_purchases
-            FROM customers c
-            ORDER BY ${sortField === 'created_at' || sortField === 'updated_at' ? 'name' : sortField} ${sortOrder}
-        `;
+        `);
         
-        db.all(sql, [], (err, rows) => {
-            if (err) {
-                log.error("Ошибка получения всех клиентов:", err.message);
-                return res.status(500).json({ error: 'Не удалось получить список клиентов.' });
-            }
-            
-            // Форматируем данные для фронтенда
-            const formattedCustomers = rows.map(customer => ({
-                ...customer,
-                created_at: customer.created_at ? new Date(customer.created_at).toLocaleDateString('ru-RU') : 'Не указано',
-                updated_at: customer.updated_at ? new Date(customer.updated_at).toLocaleDateString('ru-RU') : 'Не указано',
-                last_purchase: customer.last_purchase ? new Date(customer.last_purchase).toLocaleDateString('ru-RU') : null,
-                status: customer.purchases >= 6 ? 'ready' : 'progress'
-            }));
-            
-            log.info(`Запрошен список всех клиентов (${formattedCustomers.length} клиентов)`);
-            res.json(formattedCustomers);
-        });
-    });
+        const formattedCustomers = result.rows.map(customer => ({
+            ...customer,
+            created_at: customer.created_at ? new Date(customer.created_at).toLocaleDateString('ru-RU') : 'Не указано',
+            updated_at: customer.updated_at ? new Date(customer.updated_at).toLocaleDateString('ru-RU') : 'Не указано',
+            last_purchase: customer.last_purchase ? new Date(customer.last_purchase).toLocaleDateString('ru-RU') : null,
+            status: customer.purchases >= 6 ? 'ready' : 'progress',
+            total_history_purchases: parseInt(customer.total_history_purchases) || 0
+        }));
+        
+        log.info(`Запрошен список всех клиентов (${formattedCustomers.length} клиентов)`);
+        res.json(formattedCustomers);
+        
+    } catch (error) {
+        log.error("Ошибка получения всех клиентов:", error.message);
+        res.status(500).json({ error: 'Не удалось получить список клиентов.' });
+    }
 });
 
 // --- Обработка ошибок ---
@@ -603,21 +494,31 @@ app.use((err, req, res, next) => {
 });
 
 // --- Graceful shutdown ---
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
     log.info('Получен сигнал SIGINT, закрытие сервера...');
-    db.close((err) => {
-        if (err) {
-            log.error('Ошибка закрытия базы данных:', err.message);
-        } else {
-            log.success('База данных закрыта.');
-        }
-        process.exit(0);
-    });
+    try {
+        await pool.end();
+        log.success('Подключения к базе данных закрыты.');
+    } catch (error) {
+        log.error('Ошибка закрытия подключений:', error.message);
+    }
+    process.exit(0);
 });
 
-// --- Запуск сервера ---
-app.listen(PORT, () => {
-    log.success(`🚀 Сервер COFFEEMANIA запущен на http://localhost:${PORT}`);
-    log.info(`📱 Панель бариста: http://localhost:${PORT}/admin.html`);
-    log.info(`💾 База данных: ${DB_PATH}`);
-}); 
+// --- Инициализация и запуск сервера ---
+async function startServer() {
+    try {
+        await initializeDatabase();
+        
+        app.listen(PORT, () => {
+            log.success(`🚀 Сервер COFFEEMANIA запущен на http://localhost:${PORT}`);
+            log.info(`📱 Панель бариста: http://localhost:${PORT}/admin.html`);
+            log.info(`💾 База данных: PostgreSQL`);
+        });
+    } catch (error) {
+        log.error('Ошибка запуска сервера:', error);
+        process.exit(1);
+    }
+}
+
+startServer(); 
