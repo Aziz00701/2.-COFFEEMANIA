@@ -450,7 +450,7 @@
             }
 
             try {
-                const response = await fetch(`/api/customer/${customerId}`);
+                const response = await fetch(`https://two-coffeemania.onrender.com/api/customer/${customerId}`);
                 if (!response.ok) throw new Error('Customer not found');
                 
                 const customer = await response.json();
@@ -548,7 +548,7 @@
             const qrFallback = elements.qrFallback;
             
             try {
-                const qrUrl = `/api/qr/${customerId}`;
+                const qrUrl = `https://two-coffeemania.onrender.com/api/qr/${customerId}`;
                 
                 // Проверяем загрузку изображения
                 const testImg = new Image();
