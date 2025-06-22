@@ -992,7 +992,24 @@
             try {
                 console.log('Обработка QR данных:', qrData);
                 
-                const customerId = qrData.split('/').pop();
+                // Останавливаем сканер
+                if (scanner) {
+                    scanner.stop();
+                    scanner = null;
+                    document.getElementById('startScan').style.display = 'block';
+                    document.getElementById('stopScan').style.display = 'none';
+                }
+                
+                // Извлекаем ID клиента из URL
+                let customerId;
+                if (qrData.includes('/card.html?id=')) {
+                    customerId = qrData.split('/card.html?id=')[1];
+                } else if (qrData.includes('id=')) {
+                    customerId = qrData.split('id=')[1];
+                } else {
+                    customerId = qrData.split('/').pop();
+                }
+                
                 console.log('Извлеченный ID клиента:', customerId);
                 
                 const response = await fetch(`/api/purchase/${customerId}`, {
@@ -1016,7 +1033,7 @@
                 }
             } catch (error) {
                 console.error('Ошибка обработки QR:', error);
-                alert('Ошибка обработки QR кода');
+                alert('Ошибка обработки QR кода: ' + error.message);
             }
         }
 
