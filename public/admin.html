@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель Бариста - COFFEEMANIA</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            color: #f8fafc;
+            min-height: 100vh;
+            padding: 12px;
+            line-height: 1.5;
+            font-size: 16px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+            padding: 0 8px;
+        }
+        
+        .header h1 {
+            font-size: clamp(24px, 5vw, 32px);
+            font-weight: 700;
+            background: linear-gradient(135deg, #f472b6 0%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            line-height: 1.2;
+        }
+        
+        .header p {
+            color: #94a3b8;
+            font-size: clamp(14px, 3vw, 16px);
+            font-weight: 500;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 0 auto 20px;
+            max-width: 800px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .container:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+        }
+        
+        .section-title {
+            font-size: clamp(18px, 4vw, 20px);
+            font-weight: 600;
+            color: #f1f5f9;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            line-height: 1.3;
+        }
+        
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(135deg, #f472b6, #a855f7);
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #cbd5e1;
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+        
+        input[type="text"], input[type="tel"] {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #f1f5f9;
+            font-size: 16px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            line-height: 1.4;
+            min-height: 48px;
+        }
+        
+        input[type="text"]:focus, input[type="tel"]:focus {
+            outline: none;
+            border-color: #a855f7;
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+        }
+        
+        input::placeholder {
+            color: #64748b;
+            font-size: 15px;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 16px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            min-height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-align: center;
+            line-height: 1.3;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.6s;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .qr-result {
+            text-align: center;
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .qr-result h3 {
+            color: #f1f5f9;
+            font-size: clamp(16px, 4vw, 18px);
+            margin-bottom: 16px;
+            line-height: 1.3;
+            font-weight: 600;
+        }
+        
+        .qr-result img {
+            max-width: min(200px, 80vw);
+            height: auto;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .qr-result a {
+            color: #a855f7;
+            text-decoration: none;
+            font-size: 14px;
+            word-break: break-all;
+            line-height: 1.4;
+        }
+        
+        .qr-result a:hover {
+            text-decoration: underline;
+        }
+        
+        .scanner-container {
+            text-align: center;
+            margin-top: 16px;
+            border-radius: 16px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .scanner-video {
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+            border-radius: 12px;
+        }
+        
+        .search-results {
+            margin-top: 20px;
+        }
+        
+        .customer-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .customer-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateY(-1px);
+        }
+        
+        .customer-info {
+            margin-bottom: 12px;
+        }
+        
+        .customer-info strong {
+            color: #f1f5f9;
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+        
+        .customer-phone {
+            color: #94a3b8;
+            font-size: 14px;
+            margin: 4px 0;
+            line-height: 1.4;
+        }
+        
+        .customer-progress {
+            color: #a855f7;
+            font-weight: 600;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .customer-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 10px;
+        }
+        
+        .control-btn {
+            padding: 12px 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            white-space: nowrap;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.2;
+            text-align: center;
+        }
+        
+        .purchase-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+        
+        .purchase-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        
+        .history-btn {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+        }
+        
+        .history-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+        
+        .delete-btn {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+        
+        .delete-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+        
+        .history-log {
+            margin-top: 12px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .history-log div {
+            padding: 4px 0;
+            color: #cbd5e1;
+            font-size: 13px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            line-height: 1.4;
+        }
+        
+        .history-log div:last-child {
+            border-bottom: none;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 32px 16px;
+            color: #64748b;
+        }
+        
+        .message {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-weight: 500;
+            font-size: 14px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            transform: translateX(400px);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            max-width: min(350px, calc(100vw - 32px));
+            line-height: 1.4;
+        }
+        
+        .message.show {
+            transform: translateX(0);
+        }
+        
+        .message.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+        
+        .message.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #a855f7;
+            animation: spin 1s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Стили для базы клиентов */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateY(-1px);
+        }
+        
+        .stat-number {
+            font-size: clamp(24px, 6vw, 32px);
+            font-weight: 700;
+            color: #a855f7;
+            margin-bottom: 6px;
+            line-height: 1.1;
+        }
+        
+        .stat-label {
+            font-size: clamp(12px, 3vw, 14px);
+            color: #94a3b8;
+            font-weight: 500;
+            line-height: 1.3;
+        }
+        
+        .controls-row {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .sort-select {
+            padding: 12px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #f1f5f9;
+            font-size: 15px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            min-height: 44px;
+        }
+        
+        .sort-select:focus {
+            outline: none;
+            border-color: #a855f7;
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+        }
+        
+        .btn-icon {
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #94a3b8;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .btn-icon:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #f1f5f9;
+            transform: rotate(180deg);
+        }
+        
+        .customers-list {
+            max-height: 600px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.1);
+        }
+        
+        .customer-row {
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease;
+            gap: 12px;
+        }
+        
+        .customer-row:last-child {
+            border-bottom: none;
+        }
+        
+        .customer-row:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+        
+        .customer-main-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        
+        .customer-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #a855f7, #f472b6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        
+        .customer-main {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .customer-name-row {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+        
+        .customer-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #f1f5f9;
+            line-height: 1.3;
+        }
+        
+        .customer-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            align-self: flex-start;
+            line-height: 1.2;
+        }
+        
+        .badge-ready {
+            background: rgba(34, 197, 94, 0.2);
+            color: #10b981;
+        }
+        
+        .badge-progress {
+            background: rgba(168, 85, 247, 0.2);
+            color: #a855f7;
+        }
+        
+        .customer-details {
+            font-size: 13px;
+            color: #94a3b8;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            line-height: 1.4;
+        }
+        
+        .customer-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 10px;
+        }
+        
+        .action-btn {
+            padding: 10px 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.2;
+            text-align: center;
+        }
+        
+        .action-btn.primary {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+        
+        .action-btn.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+        }
+        
+        .action-btn.danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        .loading-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 16px;
+            color: #64748b;
+        }
+        
+        .empty-database {
+            text-align: center;
+            padding: 32px 16px;
+            color: #64748b;
+        }
+        
+        .empty-database h3 {
+            color: #94a3b8;
+            margin-bottom: 8px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        /* Адаптивные медиа-запросы */
+        @media (min-width: 480px) {
+            body {
+                padding: 16px;
+            }
+            
+            .container {
+                padding: 24px;
+            }
+            
+            .controls-row {
+                flex-direction: row;
+                align-items: flex-end;
+            }
+            
+            .controls-row .form-group {
+                flex: 1;
+                margin-bottom: 0;
+            }
+            
+            .customer-row {
+                flex-direction: row;
+                align-items: center;
+                gap: 16px;
+            }
+            
+            .customer-main-row {
+                flex: 1;
+            }
+            
+            .customer-name-row {
+                flex-direction: row;
+                align-items: center;
+                gap: 12px;
+            }
+            
+            .customer-details {
+                flex-direction: row;
+                gap: 16px;
+            }
+            
+            .customer-actions {
+                flex-shrink: 0;
+                grid-template-columns: repeat(4, minmax(60px, auto));
+                gap: 8px;
+            }
+            
+            .action-btn {
+                min-height: 36px;
+                font-size: 12px;
+                padding: 8px 10px;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            body {
+                padding: 20px;
+            }
+            
+            .container {
+                padding: 28px;
+            }
+            
+            .header {
+                margin-bottom: 32px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 16px;
+                margin-bottom: 24px;
+            }
+        }
+
+        /* Улучшения для модального окна */
+        .modal-content {
+            background: linear-gradient(135deg, #1e1b4b, #3730a3) !important;
+            border-radius: 16px !important;
+            padding: 32px !important;
+            max-width: 500px !important;
+            width: 90% !important;
+            position: relative !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .modal h2 {
+            color: #f1f5f9 !important;
+            margin-bottom: 24px !important;
+            font-size: 24px !important;
+            font-weight: 700 !important;
+            line-height: 1.3 !important;
+        }
+
+        .modal .btn {
+            min-height: 48px !important;
+            font-size: 16px !important;
+            font-weight: 600 !important;
+        }
+
+        .modal .btn-primary {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+            color: white !important;
+        }
+
+        .modal .btn-secondary {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%) !important;
+            color: white !important;
+        }
+
+        .modal button[onclick="closeEditModal()"] {
+            position: absolute !important;
+            top: 16px !important;
+            right: 16px !important;
+            background: none !important;
+            border: none !important;
+            color: #94a3b8 !important;
+            font-size: 28px !important;
+            cursor: pointer !important;
+            line-height: 1 !important;
+            width: 32px !important;
+            height: 32px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>COFFEEMANIA</h1>
+        <p>Панель управления системой лояльности</p>
+    </div>
+
+    <div class="container">
+        <div class="section-title">1. Регистрация клиента</div>
+        <div class="form-group">
+            <label class="form-label" for="customer-name">Имя клиента</label>
+            <input type="text" id="customer-name" placeholder="Введите имя клиента">
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="customer-phone">Номер телефона</label>
+            <input type="tel" id="customer-phone" placeholder="+7 (___) ___ __ __">
+        </div>
+        <button class="btn btn-primary" id="register-button">
+            <span id="register-text">Создать карту лояльности</span>
+            <div class="loading" id="register-loading" style="display: none;"></div>
+        </button>
+        <div id="qr-code-container"></div>
+    </div>
+
+    <div class="container">
+        <div class="section-title">2. Сканирование QR-кода</div>
+        <button class="btn btn-secondary" id="scanner-toggle-button">Начать сканирование</button>
+        <div class="scanner-container" id="scanner-container" style="display:none;">
+            <video id="scanner-video" class="scanner-video" playsinline></video>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="section-title">3. Поиск клиента</div>
+        <div class="form-group">
+            <label class="form-label" for="search-term">Поиск по имени или телефону</label>
+            <input type="text" id="search-term" placeholder="Введите имя или номер телефона">
+        </div>
+        <button class="btn btn-warning" id="search-button">Найти клиента</button>
+        <div class="search-results" id="search-results"></div>
+    </div>
+
+    <div class="container">
+        <div class="section-title">4. База клиентов</div>
+        
+        <!-- Статистика -->
+        <div class="stats-grid" id="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="total-customers">0</div>
+                <div class="stat-label">Всего клиентов</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="total-purchases">0</div>
+                <div class="stat-label">Всего покупок</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="ready-for-free">0</div>
+                <div class="stat-label">Готовы к бесплатному</div>
+            </div>
+        </div>
+
+        <!-- Фильтры и сортировка -->
+        <div class="controls-row">
+            <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                <input type="text" id="filter-input" placeholder="Фильтр по имени или телефону..." style="margin-bottom: 0;">
+            </div>
+            <select id="sort-select" class="sort-select">
+                <option value="name">По имени</option>
+                <option value="purchases">По покупкам</option>
+                <option value="created">По дате создания</option>
+            </select>
+            <button class="btn-icon" id="refresh-button" title="Обновить">🔄</button>
+        </div>
+
+        <!-- Список всех клиентов -->
+        <div class="customers-list" id="customers-list">
+            <div class="loading-state" id="customers-loading">
+                <div class="loading"></div>
+                <p>Загрузка клиентов...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="message" id="message-box"></div>
+
+    <!-- Модальное окно редактирования клиента -->
+    <div class="modal" id="edit-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); z-index: 2000; align-items: center; justify-content: center;">
+        <div class="modal-content" style="background: linear-gradient(135deg, #1e1b4b, #3730a3); border-radius: 16px; padding: 32px; max-width: 500px; width: 90%; position: relative; border: 1px solid rgba(255, 255, 255, 0.1);">
+            <button onclick="closeEditModal()" style="position: absolute; top: 16px; right: 16px; background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer; line-height: 1;">×</button>
+            
+            <h2 style="color: #f1f5f9; margin-bottom: 24px; font-size: 24px;">Редактировать клиента</h2>
+            
+            <div class="form-group">
+                <label class="form-label" for="edit-name">Имя клиента</label>
+                <input type="text" id="edit-name" placeholder="Введите имя клиента">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="edit-phone">Номер телефона</label>
+                <input type="tel" id="edit-phone" placeholder="+7 (___) ___ __ __">
+            </div>
+            
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button class="btn btn-primary" id="save-edit-button" style="flex: 1;">
+                    <span id="save-text">Сохранить изменения</span>
+                    <div class="loading" id="save-loading" style="display: none;"></div>
+                </button>
+                <button class="btn btn-secondary" onclick="closeEditModal()" style="flex: 0 0 auto;">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script>
+        // DOM элементы
+        const elements = {
+            registerButton: document.getElementById('register-button'),
+            registerText: document.getElementById('register-text'),
+            registerLoading: document.getElementById('register-loading'),
+            customerName: document.getElementById('customer-name'),
+            customerPhone: document.getElementById('customer-phone'),
+            qrContainer: document.getElementById('qr-code-container'),
+            messageBox: document.getElementById('message-box'),
+            scannerToggle: document.getElementById('scanner-toggle-button'),
+            scannerContainer: document.getElementById('scanner-container'),
+            video: document.getElementById('scanner-video'),
+            searchButton: document.getElementById('search-button'),
+            searchTerm: document.getElementById('search-term'),
+            searchResults: document.getElementById('search-results'),
+            
+            // Новые элементы для базы клиентов
+            totalCustomers: document.getElementById('total-customers'),
+            totalPurchases: document.getElementById('total-purchases'),
+            readyForFree: document.getElementById('ready-for-free'),
+            filterInput: document.getElementById('filter-input'),
+            sortSelect: document.getElementById('sort-select'),
+            refreshButton: document.getElementById('refresh-button'),
+            customersList: document.getElementById('customers-list'),
+            customersLoading: document.getElementById('customers-loading')
+        };
+
+        let scanning = false;
+        let mediaStream;
+        let allCustomers = []; // Хранилище всех клиентов для фильтрации
+
+        // Показать сообщение
+        function showMessage(text, type = 'success') {
+            elements.messageBox.textContent = text;
+            elements.messageBox.className = `message ${type}`;
+            elements.messageBox.classList.add('show');
+            
+            setTimeout(() => {
+                elements.messageBox.classList.remove('show');
+            }, 5000);
+        }
+
+        // Показать загрузку для кнопки
+        function setButtonLoading(button, textEl, loadingEl, loading) {
+            if (loading) {
+                textEl.style.display = 'none';
+                loadingEl.style.display = 'inline-block';
+                button.disabled = true;
+            } else {
+                textEl.style.display = 'inline';
+                loadingEl.style.display = 'none';
+                button.disabled = false;
+            }
+        }
+
+        // Логика регистрации
+        elements.registerButton.addEventListener('click', async () => {
+            const name = elements.customerName.value.trim();
+            const phone = elements.customerPhone.value.trim();
+            
+            if (!name || phone.length < 18) {
+                return showMessage('Пожалуйста, введите имя и полный номер телефона.', 'error');
+            }
+
+            setButtonLoading(elements.registerButton, elements.registerText, elements.registerLoading, true);
+
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, phone })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    elements.qrContainer.innerHTML = `
+                        <div class="qr-result">
+                            <h3>Карта создана для: ${name}</h3>
+                            <img src="${result.qrCode}" alt="QR Code">
+                            <p style="margin-bottom: 8px; color: #cbd5e1;">Попросите клиента отсканировать QR-код</p>
+                            <p><a href="${result.customerUrl}" target="_blank">Или откройте карту клиента</a></p>
+                        </div>
+                    `;
+                    showMessage(`Карта для "${name}" успешно создана!`);
+                    
+                    // Очистить форму
+                    elements.customerName.value = '';
+                    elements.customerPhone.value = '';
+                } else {
+                    showMessage(result.error || 'Произошла ошибка', 'error');
+                }
+            } catch (error) {
+                showMessage('Не удалось связаться с сервером.', 'error');
+            } finally {
+                setButtonLoading(elements.registerButton, elements.registerText, elements.registerLoading, false);
+            }
+        });
+        
+        // Форматирование номера телефона
+        elements.customerPhone.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '');
+            let formattedValue = '+7 (';
+            if (value.length > 1) formattedValue += value.substring(1, 4);
+            if (value.length >= 5) formattedValue += ') ' + value.substring(4, 7);
+            if (value.length >= 8) formattedValue += ' ' + value.substring(7, 9);
+            if (value.length >= 10) formattedValue += ' ' + value.substring(9, 11);
+            e.target.value = formattedValue;
+        });
+
+        // Логика поиска
+        elements.searchButton.addEventListener('click', async () => {
+            const term = elements.searchTerm.value.trim();
+            if (!term) return showMessage('Введите имя или телефон для поиска.', 'error');
+            
+            try {
+                const response = await fetch(`/api/search?term=${encodeURIComponent(term)}`);
+                const results = await response.json();
+                
+                elements.searchResults.innerHTML = '';
+                
+                if (results.length === 0) {
+                    elements.searchResults.innerHTML = `
+                        <div class="empty-state">
+                            <p>Клиенты не найдены</p>
+                        </div>
+                    `;
+                } else {
+                    results.forEach(customer => {
+                        const item = document.createElement('div');
+                        item.className = 'customer-item';
+                        item.innerHTML = `
+                            <div class="customer-info">
+                                <div><strong>${customer.name}</strong></div>
+                                <div class="customer-phone">${customer.phone}</div>
+                                <div class="customer-progress">Покупок: ${customer.purchases}/6</div>
+                            </div>
+                            <div class="customer-controls">
+                                <button class="control-btn purchase-btn" data-id="${customer.id}">+1 покупка</button>
+                                <button class="control-btn history-btn" data-id="${customer.id}">История</button>
+                                <button class="control-btn delete-btn" data-id="${customer.id}" data-name="${customer.name}">Удалить</button>
+                            </div>
+                            <div class="history-log" id="history-${customer.id}" style="display:none;"></div>
+                        `;
+                        elements.searchResults.appendChild(item);
+                    });
+                }
+            } catch (error) {
+                showMessage('Ошибка при поиске.', 'error');
+            }
+        });
+        
+        // Обработка кнопок в результатах поиска
+        elements.searchResults.addEventListener('click', async (e) => {
+            const target = e.target;
+            const customerId = target.dataset.id;
+            if (!customerId) return;
+
+            if (target.classList.contains('purchase-btn')) {
+                await addPurchase(customerId, true);
+            }
+            
+            if (target.classList.contains('history-btn')) {
+                const historyDiv = document.getElementById(`history-${customerId}`);
+                if (historyDiv.style.display === 'none') {
+                    try {
+                        const response = await fetch(`/api/history/${customerId}`);
+                        const history = await response.json();
+                        
+                        historyDiv.innerHTML = '';
+                        if (history.length > 0) {
+                            history.forEach(item => {
+                                const div = document.createElement('div');
+                                div.textContent = new Date(item.timestamp).toLocaleString('ru-RU');
+                                historyDiv.appendChild(div);
+                            });
+                        } else {
+                            historyDiv.innerHTML = '<div>Покупок пока нет</div>';
+                        }
+                        historyDiv.style.display = 'block';
+                    } catch (error) {
+                        showMessage('Не удалось загрузить историю.', 'error');
+                    }
+                } else {
+                    historyDiv.style.display = 'none';
+                }
+            }
+            
+            if (target.classList.contains('delete-btn')) {
+                const customerName = target.dataset.name;
+                if (confirm(`Вы уверены, что хотите удалить клиента "${customerName}"?\n\nЭто действие нельзя отменить. Будут удалены:\n- Данные клиента\n- История покупок\n- QR-код карты`)) {
+                    await deleteCustomer(customerId, customerName);
+                }
+            }
+        });
+
+        // Логика сканирования
+        elements.scannerToggle.addEventListener('click', () => {
+            if (!scanning) {
+                startScanning();
+            } else {
+                stopScanning();
+            }
+        });
+
+        async function startScanning() {
+            try {
+                scanning = true;
+                elements.scannerContainer.style.display = 'block';
+                elements.scannerToggle.textContent = 'Остановить сканирование';
+                elements.scannerToggle.className = 'btn btn-warning';
+                
+                mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "environment" } 
+                });
+                
+                elements.video.srcObject = mediaStream;
+                elements.video.play();
+                requestAnimationFrame(tick);
+            } catch (err) {
+                scanning = false;
+                showMessage("Камера не доступна.", "error");
+                resetScannerButton();
+            }
+        }
+
+        function stopScanning() {
+            scanning = false;
+            elements.scannerContainer.style.display = 'none';
+            resetScannerButton();
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+            }
+        }
+
+        function resetScannerButton() {
+            elements.scannerToggle.textContent = 'Начать сканирование';
+            elements.scannerToggle.className = 'btn btn-secondary';
+        }
+
+        function tick() {
+            if (elements.video.readyState === elements.video.HAVE_ENOUGH_DATA) {
+                const canvas = document.createElement('canvas');
+                canvas.height = elements.video.videoHeight;
+                canvas.width = elements.video.videoWidth;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(elements.video, 0, 0, canvas.width, canvas.height);
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height, { 
+                    inversionAttempts: "dontInvert" 
+                });
+                
+                if (code) {
+                    try {
+                        const url = new URL(code.data);
+                        const customerId = url.searchParams.get("id");
+                        if (customerId) { 
+                            stopScanning();
+                            addPurchase(customerId);
+                        }
+                    } catch (e) {}
+                }
+            }
+            if (scanning) requestAnimationFrame(tick);
+        }
+        
+        async function addPurchase(customerId, fromSearch = false) {
+            try {
+                const response = await fetch('/api/purchase', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ customerId: customerId })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showMessage(result.message);
+                    if (fromSearch) {
+                        elements.searchButton.click(); 
+                    }
+                } else {
+                    showMessage(result.error || 'Ошибка', 'error');
+                }
+            } catch (error) {
+                showMessage('Не удалось совершить покупку.', 'error');
+            }
+        }
+
+        async function deleteCustomer(customerId, customerName) {
+            try {
+                const response = await fetch(`/api/customer/${customerId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showMessage(`Клиент "${customerName}" успешно удален.`);
+                    // Обновляем базу клиентов и результаты поиска
+                    loadAllCustomers();
+                    if (elements.searchTerm.value.trim()) {
+                        elements.searchButton.click();
+                    }
+                } else {
+                    showMessage(result.error || 'Ошибка при удалении', 'error');
+                }
+            } catch (error) {
+                showMessage('Не удалось удалить клиента.', 'error');
+            }
+        }
+
+        // Поиск по Enter
+        elements.searchTerm.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                elements.searchButton.click();
+            }
+        });
+
+        // Регистрация по Enter
+        elements.customerPhone.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                elements.registerButton.click();
+            }
+        });
+
+        // === БАЗА КЛИЕНТОВ ===
+        
+        // Загрузка всех клиентов
+        async function loadAllCustomers() {
+            try {
+                elements.customersLoading.style.display = 'flex';
+                
+                const sortField = elements.sortSelect.value;
+                const response = await fetch(`/api/customers/all?sort=${sortField}`);
+                
+                if (!response.ok) throw new Error('Failed to fetch customers');
+                
+                allCustomers = await response.json();
+                renderCustomers(allCustomers);
+                updateStatistics();
+                
+            } catch (error) {
+                console.error('Error loading customers:', error);
+                elements.customersList.innerHTML = `
+                    <div class="empty-database">
+                        <h3>Ошибка загрузки</h3>
+                        <p>Не удалось загрузить список клиентов</p>
+                    </div>
+                `;
+            } finally {
+                elements.customersLoading.style.display = 'none';
+            }
+        }
+        
+        // Обновление статистики
+        function updateStatistics() {
+            const stats = {
+                total: allCustomers.length,
+                totalPurchases: allCustomers.reduce((sum, c) => sum + c.total_history_purchases, 0),
+                readyForFree: allCustomers.filter(c => c.status === 'ready').length
+            };
+            
+            animateNumber(elements.totalCustomers, stats.total);
+            animateNumber(elements.totalPurchases, stats.totalPurchases);
+            animateNumber(elements.readyForFree, stats.readyForFree);
+        }
+        
+        // Анимация числа
+        function animateNumber(element, targetValue) {
+            const currentValue = parseInt(element.textContent) || 0;
+            const increment = targetValue > currentValue ? 1 : -1;
+            const step = Math.abs(targetValue - currentValue) / 20;
+            
+            let current = currentValue;
+            const timer = setInterval(() => {
+                current += increment * Math.max(1, Math.floor(step));
+                if ((increment > 0 && current >= targetValue) || (increment < 0 && current <= targetValue)) {
+                    element.textContent = targetValue;
+                    clearInterval(timer);
+                } else {
+                    element.textContent = Math.floor(current);
+                }
+            }, 50);
+        }
+        
+        // Отрисовка списка клиентов
+        function renderCustomers(customers) {
+            if (customers.length === 0) {
+                elements.customersList.innerHTML = `
+                    <div class="empty-database">
+                        <h3>База клиентов пуста</h3>
+                        <p>Зарегистрируйте первого клиента</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const html = customers.map(customer => {
+                const avatar = customer.name.charAt(0).toUpperCase();
+                const badge = customer.status === 'ready' ? 
+                    '<span class="customer-badge badge-ready">Готов к бесплатному</span>' :
+                    `<span class="customer-badge badge-progress">${customer.purchases}/6</span>`;
+                
+                return `
+                    <div class="customer-row">
+                        <div class="customer-main-row">
+                            <div class="customer-avatar">${avatar}</div>
+                            <div class="customer-main">
+                                <div class="customer-name-row">
+                                    <div class="customer-name">${customer.name}</div>
+                                    ${badge}
+                                </div>
+                                <div class="customer-details">
+                                    <span>📱 ${customer.phone}</span>
+                                    <span>📅 Создан: ${customer.created_at}</span>
+                                    ${customer.last_purchase ? `<span>☕ Последняя покупка: ${customer.last_purchase}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="customer-actions">
+                            <button class="action-btn primary" onclick="addPurchaseFromDatabase('${customer.id}')">+1</button>
+                            <button class="action-btn secondary" onclick="showCustomerHistory('${customer.id}', '${customer.name}')">История</button>
+                            <button class="action-btn secondary" onclick="editCustomer('${customer.id}', '${customer.name}', '${customer.phone}')">✏️</button>
+                            <button class="action-btn danger" onclick="deleteCustomerFromDatabase('${customer.id}', '${customer.name}')">✕</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            elements.customersList.innerHTML = html;
+        }
+        
+        // Фильтрация клиентов
+        function filterCustomers() {
+            const filterText = elements.filterInput.value.toLowerCase().trim();
+            
+            if (!filterText) {
+                renderCustomers(allCustomers);
+                return;
+            }
+            
+            const filtered = allCustomers.filter(customer => 
+                customer.name.toLowerCase().includes(filterText) ||
+                customer.phone.includes(filterText)
+            );
+            
+            renderCustomers(filtered);
+        }
+        
+        // Глобальные функции для кнопок
+        window.addPurchaseFromDatabase = async (customerId) => {
+            await addPurchase(customerId);
+            loadAllCustomers(); // Перезагружаем список
+        };
+        
+        window.showCustomerHistory = async (customerId, customerName) => {
+            try {
+                const response = await fetch(`/api/history/${customerId}`);
+                const history = await response.json();
+                
+                let historyText = `История покупок для ${customerName}:\n\n`;
+                if (history.length > 0) {
+                    history.forEach((item, index) => {
+                        historyText += `${index + 1}. ${new Date(item.timestamp).toLocaleString('ru-RU')}\n`;
+                    });
+                } else {
+                    historyText += 'Покупок пока нет';
+                }
+                
+                alert(historyText);
+            } catch (error) {
+                showMessage('Не удалось загрузить историю.', 'error');
+            }
+        };
+        
+        window.deleteCustomerFromDatabase = async (customerId, customerName) => {
+            if (confirm(`Вы уверены, что хотите удалить клиента "${customerName}"?\n\nЭто действие нельзя отменить.`)) {
+                await deleteCustomer(customerId, customerName);
+                loadAllCustomers(); // Перезагружаем список
+            }
+        };
+
+        // === РЕДАКТИРОВАНИЕ КЛИЕНТА ===
+        
+        let currentEditingCustomerId = null;
+        
+        // Открытие модального окна редактирования
+        window.editCustomer = (customerId, currentName, currentPhone) => {
+            currentEditingCustomerId = customerId;
+            
+            document.getElementById('edit-name').value = currentName;
+            document.getElementById('edit-phone').value = currentPhone;
+            
+            const modal = document.getElementById('edit-modal');
+            modal.style.display = 'flex';
+            
+            // Фокус на поле имени
+            setTimeout(() => {
+                document.getElementById('edit-name').focus();
+            }, 100);
+        };
+        
+        // Закрытие модального окна
+        window.closeEditModal = () => {
+            document.getElementById('edit-modal').style.display = 'none';
+            currentEditingCustomerId = null;
+            
+            // Очищаем поля
+            document.getElementById('edit-name').value = '';
+            document.getElementById('edit-phone').value = '';
+        };
+        
+        // Сохранение изменений
+        document.getElementById('save-edit-button').addEventListener('click', async () => {
+            if (!currentEditingCustomerId) return;
+            
+            const name = document.getElementById('edit-name').value.trim();
+            const phone = document.getElementById('edit-phone').value.trim();
+            
+            if (!name || phone.length < 18) {
+                return showMessage('Пожалуйста, введите имя и полный номер телефона.', 'error');
+            }
+            
+            const saveButton = document.getElementById('save-edit-button');
+            const saveText = document.getElementById('save-text');
+            const saveLoading = document.getElementById('save-loading');
+            
+            setButtonLoading(saveButton, saveText, saveLoading, true);
+            
+            try {
+                const response = await fetch(`/api/customer/${currentEditingCustomerId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, phone })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showMessage('Данные клиента успешно обновлены!');
+                    closeEditModal();
+                    loadAllCustomers(); // Перезагружаем список
+                    
+                    // Если есть результаты поиска, обновляем их тоже
+                    if (elements.searchTerm.value.trim()) {
+                        elements.searchButton.click();
+                    }
+                } else {
+                    showMessage(result.error || 'Ошибка при обновлении данных', 'error');
+                }
+            } catch (error) {
+                showMessage('Не удалось обновить данные клиента.', 'error');
+            } finally {
+                setButtonLoading(saveButton, saveText, saveLoading, false);
+            }
+        });
+        
+        // Закрытие модального окна по ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.getElementById('edit-modal').style.display === 'flex') {
+                closeEditModal();
+            }
+        });
+        
+        // Закрытие модального окна по клику на фон
+        document.getElementById('edit-modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('edit-modal')) {
+                closeEditModal();
+            }
+        });
+        
+        // Сохранение по Enter в модальном окне
+        document.getElementById('edit-name').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('save-edit-button').click();
+            }
+        });
+        
+        document.getElementById('edit-phone').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('save-edit-button').click();
+            }
+        });
+
+        // Применение маски номера телефона для поля редактирования
+        document.getElementById('edit-phone').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            
+            if (value.length > 0) {
+                if (value[0] !== '7') {
+                    if (value[0] === '8') {
+                        value = '7' + value.slice(1);
+                    } else {
+                        value = '7' + value;
+                    }
+                }
+                
+                value = value.slice(0, 11);
+                
+                let formatted = '+7';
+                if (value.length > 1) {
+                    formatted += ' (' + value.slice(1, 4);
+                    if (value.length > 4) {
+                        formatted += ') ' + value.slice(4, 7);
+                        if (value.length > 7) {
+                            formatted += ' ' + value.slice(7, 9);
+                            if (value.length > 9) {
+                                formatted += ' ' + value.slice(9, 11);
+                            }
+                        }
+                    }
+                }
+                
+                e.target.value = formatted;
+            }
+        });
+
+        // === ИНИЦИАЛИЗАЦИЯ ===
+        // ... existing code ...
+
+        // === ОБРАБОТЧИКИ ДЛЯ БАЗЫ КЛИЕНТОВ ===
+        
+        // Фильтрация в реальном времени
+        elements.filterInput.addEventListener('input', filterCustomers);
+        
+        // Сортировка
+        elements.sortSelect.addEventListener('change', loadAllCustomers);
+        
+        // Кнопка обновления
+        elements.refreshButton.addEventListener('click', loadAllCustomers);
+        
+        // Обновляем базу клиентов после регистрации нового клиента
+        const originalRegisterHandler = elements.registerButton.onclick;
+        elements.registerButton.addEventListener('click', async (e) => {
+            // Ждем завершения регистрации, затем обновляем базу
+            setTimeout(() => {
+                loadAllCustomers();
+            }, 1000);
+        });
+        
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAllCustomers();
+        });
+
+        // Загружаем базу клиентов сразу
+        loadAllCustomers();
+    </script>
+</body>
+</html>

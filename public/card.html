@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Ваша карта лояльности - COFFEEMANIA</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #1a1a1a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="10" cy="10" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="30" cy="30" r="1" fill="rgba(255,255,255,0.08)"/><circle cx="60" cy="20" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="80" r="1" fill="rgba(255,255,255,0.05)"/><circle cx="20" cy="70" r="1" fill="rgba(255,255,255,0.08)"/></svg>') repeat;
+            pointer-events: none;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 32px 28px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.25),
+                0 0 0 1px rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+            transform: translateY(0);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+            background-size: 200% 100%;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+        
+        @keyframes shimmer {
+            0%, 100% { background-position: 200% 0; }
+            50% { background-position: -200% 0; }
+        }
+        
+        .brand {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+        
+        .customer-info {
+            font-size: 16px;
+            color: #6b7280;
+            margin-bottom: 32px;
+            font-weight: 500;
+        }
+        
+        #customer-name {
+            color: #1f2937;
+            font-weight: 600;
+        }
+        
+        .progress-section {
+            margin-bottom: 32px;
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .progress-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .progress-counter {
+            font-size: 14px;
+            font-weight: 600;
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+            padding: 4px 12px;
+            border-radius: 12px;
+        }
+        
+        .coffee-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .coffee-cup {
+            width: 72px;
+            height: 72px;
+            background: #f3f4f6;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+            cursor: default;
+        }
+        
+        .coffee-cup::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        
+        .coffee-cup.filled {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .coffee-cup.filled::before {
+            opacity: 1;
+        }
+        
+        .coffee-cup.animate {
+            animation: fillCup 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        @keyframes fillCup {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1.05); }
+        }
+        
+        .status-text {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 28px;
+            padding: 16px 20px;
+            border-radius: 16px;
+            background: rgba(102, 126, 234, 0.05);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .status-text.success {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(16, 185, 129, 0.1));
+            border-color: rgba(34, 197, 94, 0.2);
+            color: #059669;
+        }
+        
+        .status-text.warning {
+            color: #7c2d12;
+        }
+        
+        .qr-button {
+            width: 100%;
+            padding: 16px 24px;
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            font-family: inherit;
+        }
+        
+        .qr-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s;
+        }
+        
+        .qr-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        }
+        
+        .qr-button:hover::before {
+            left: 100%;
+        }
+        
+        .qr-button:active {
+            transform: translateY(0);
+        }
+        
+        .qr-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .qr-modal.show {
+            opacity: 1;
+            display: flex;
+        }
+        
+        .qr-content {
+            background: white;
+            border-radius: 24px;
+            padding: 32px;
+            max-width: 90%;
+            max-height: 90%;
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .qr-modal.show .qr-content {
+            transform: scale(1);
+        }
+        
+        .qr-content h3 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+        
+        .qr-content img {
+            max-width: 250px;
+            width: 100%;
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .qr-content p {
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: #f3f4f6;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #6b7280;
+            transition: all 0.2s ease;
+        }
+        
+        .close-modal:hover {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        
+        #confetti {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f4f6;
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .error-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6b7280;
+        }
+        
+        .error-state h2 {
+            font-size: 24px;
+            color: #ef4444;
+            margin-bottom: 12px;
+        }
+        
+        @media (max-width: 480px) {
+            .card {
+                margin: 10px;
+                padding: 24px 20px;
+            }
+            
+            .coffee-cup {
+                width: 64px;
+                height: 64px;
+                font-size: 28px;
+            }
+            
+            .brand {
+                font-size: 24px;
+            }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="brand">COFFEEMANIA</div>
+        <div class="customer-info">
+            Карта лояльности для <span id="customer-name" class="pulse">...</span>
+        </div>
+
+        <div class="progress-section">
+            <div class="progress-header">
+                <div class="progress-title">Прогресс</div>
+                <div class="progress-counter" id="progress-counter">0/6</div>
+            </div>
+            
+            <div class="coffee-grid" id="coffee-grid">
+                <!-- Чашки будут добавлены динамически -->
+            </div>
+        </div>
+
+        <div class="status-text" id="status-text">
+            <div class="loading"></div>
+        </div>
+
+        <button class="qr-button" id="show-qr-button">
+            <span>Показать QR-код</span>
+        </button>
+        
+        <canvas id="confetti"></canvas>
+    </div>
+
+    <div class="qr-modal" id="qr-modal">
+        <div class="qr-content">
+            <button class="close-modal" onclick="closeModal()">×</button>
+            <h3>Ваш QR-код</h3>
+            <img id="qr-image" src="" alt="QR-код" style="display: none;">
+            <div id="qr-fallback" style="display: none;"></div>
+            <p>Покажите этот код бариста для получения бонуса</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <script>
+        // DOM элементы
+        const elements = {
+            customerName: document.getElementById('customer-name'),
+            coffeeGrid: document.getElementById('coffee-grid'),
+            statusText: document.getElementById('status-text'),
+            progressCounter: document.getElementById('progress-counter'),
+            qrButton: document.getElementById('show-qr-button'),
+            qrModal: document.getElementById('qr-modal'),
+            qrImage: document.getElementById('qr-image'),
+            qrFallback: document.getElementById('qr-fallback')
+        };
+
+        // Получаем ID клиента из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const customerId = urlParams.get('id');
+        const customerUrl = window.location.href;
+
+        // Основная функция загрузки данных
+        async function fetchCustomerData() {
+            if (!customerId) {
+                showError('ID клиента не найден', 'Проверьте корректность ссылки');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/customer/${customerId}`);
+                if (!response.ok) throw new Error('Customer not found');
+                
+                const customer = await response.json();
+                await updateCardUI(customer);
+
+            } catch (error) {
+                console.error('Error fetching customer data:', error);
+                showError('Карта не найдена', 'Обратитесь к бариста для регистрации');
+            }
+        }
+
+        // Обновление интерфейса карты
+        async function updateCardUI(customer) {
+            // Анимированное обновление имени
+            elements.customerName.classList.remove('pulse');
+            await sleep(100);
+            elements.customerName.textContent = customer.name;
+            
+            // Обновление счетчика
+            elements.progressCounter.textContent = `${customer.purchases}/6`;
+            
+            // Создание и анимация чашек
+            elements.coffeeGrid.innerHTML = '';
+            for (let i = 1; i <= 6; i++) {
+                const cup = createCoffeeCup(i, customer.purchases);
+                elements.coffeeGrid.appendChild(cup);
+                
+                // Анимированное появление чашек
+                await sleep(50);
+                cup.style.opacity = '1';
+                cup.style.transform = 'translateY(0)';
+            }
+            
+            // Обновление статуса
+            updateStatus(customer.purchases);
+            
+            // Анимация заполненных чашек
+            animateFilledCups(customer.purchases);
+        }
+
+        // Создание элемента чашки
+        function createCoffeeCup(index, purchases) {
+            const cup = document.createElement('div');
+            cup.className = 'coffee-cup';
+            cup.textContent = '☕';
+            cup.style.opacity = '0';
+            cup.style.transform = 'translateY(20px)';
+            cup.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+            
+            if (index <= purchases) {
+                cup.classList.add('filled');
+            }
+            
+            return cup;
+        }
+
+        // Анимация заполненных чашек
+        async function animateFilledCups(purchases) {
+            const cups = elements.coffeeGrid.children;
+            for (let i = 0; i < purchases; i++) {
+                await sleep(100);
+                cups[i].classList.add('animate');
+                setTimeout(() => cups[i].classList.remove('animate'), 600);
+            }
+        }
+
+        // Обновление статуса
+        function updateStatus(purchases) {
+            const statusEl = elements.statusText;
+            
+            if (purchases >= 6) {
+                statusEl.textContent = '🎉 Поздравляем! Следующий кофе бесплатно!';
+                statusEl.className = 'status-text success';
+                launchConfetti();
+            } else {
+                const remaining = 6 - purchases;
+                statusEl.textContent = `Осталось ${remaining} ${getNoun(remaining, 'покупка', 'покупки', 'покупок')} до бесплатного кофе`;
+                statusEl.className = 'status-text warning';
+            }
+        }
+
+        // Склонение числительных
+        function getNoun(number, one, two, five) {
+            const n = Math.abs(number) % 100;
+            const n1 = n % 10;
+            if (n > 10 && n < 20) return five;
+            if (n1 > 1 && n1 < 5) return two;
+            if (n1 === 1) return one;
+            return five;
+        }
+
+        // Генерация QR-кода
+        async function generateQrCode() {
+            const qrImage = elements.qrImage;
+            const qrFallback = elements.qrFallback;
+            
+            try {
+                const qrUrl = `/api/qr/${customerId}`;
+                
+                // Проверяем загрузку изображения
+                const testImg = new Image();
+                testImg.onload = () => {
+                    qrImage.src = qrUrl;
+                    qrImage.style.display = 'block';
+                    qrFallback.style.display = 'none';
+                };
+                testImg.onerror = () => {
+                    showQrFallback();
+                };
+                testImg.src = qrUrl;
+
+            } catch (error) {
+                console.error('QR generation error:', error);
+                showQrFallback();
+            }
+        }
+
+        // Показать альтернативу QR-кода
+        function showQrFallback() {
+            elements.qrImage.style.display = 'none';
+            elements.qrFallback.style.display = 'block';
+            elements.qrFallback.innerHTML = `
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; border: 2px dashed #dee2e6;">
+                    <div style="font-family: monospace; word-break: break-all; font-size: 12px; color: #495057; margin-bottom: 12px;">
+                        ${customerUrl}
+                    </div>
+                    <div style="font-size: 14px; color: #6c757d;">
+                        Покажите эту ссылку бариста
+                    </div>
+                </div>
+            `;
+        }
+
+        // Анимация конфетти
+        function launchConfetti() {
+            const canvas = document.getElementById('confetti');
+            const myConfetti = confetti.create(canvas, {
+                resize: true,
+                useWorker: true
+            });
+            
+            // Несколько залпов конфетти
+            const colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c'];
+            
+            setTimeout(() => myConfetti({
+                particleCount: 50,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: colors
+            }), 0);
+            
+            setTimeout(() => myConfetti({
+                particleCount: 30,
+                spread: 60,
+                origin: { y: 0.7 },
+                colors: colors
+            }), 200);
+        }
+
+        // Показать ошибку
+        function showError(title, description) {
+            document.body.innerHTML = `
+                <div class="error-state">
+                    <h2>${title}</h2>
+                    <p>${description}</p>
+                </div>
+            `;
+        }
+
+        // Открытие модального окна
+        function openModal() {
+            generateQrCode();
+            elements.qrModal.style.display = 'flex';
+            setTimeout(() => elements.qrModal.classList.add('show'), 10);
+        }
+
+        // Закрытие модального окна
+        function closeModal() {
+            elements.qrModal.classList.remove('show');
+            setTimeout(() => elements.qrModal.style.display = 'none', 300);
+        }
+
+        // Утилита для задержки
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Обработчики событий
+        elements.qrButton.addEventListener('click', openModal);
+        elements.qrModal.addEventListener('click', (e) => {
+            if (e.target === elements.qrModal) closeModal();
+        });
+
+        // Инициализация
+        fetchCustomerData();
+    </script>
+</body>
+</html>
