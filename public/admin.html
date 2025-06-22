@@ -153,9 +153,121 @@
         }
 
         @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
             .main-grid {
                 grid-template-columns: 1fr;
                 gap: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .customer-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .action-buttons .btn-small {
+                flex: none;
+                width: 100%;
+                min-width: auto;
+                margin: 0;
+                padding: 12px 16px;
+                font-size: 14px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .theme-switcher {
+                position: relative;
+                margin-top: 20px;
+            }
+
+            .customers-container-full {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .customer-item {
+                padding: 15px;
+            }
+
+            .section {
+                padding: 20px;
+                min-height: auto;
+            }
+
+            .modal-content {
+                margin: 10% auto;
+                padding: 20px;
+                width: 95%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .coffee-icon {
+                width: 60px;
+                height: 60px;
+            }
+
+            .coffee-icon svg {
+                width: 35px;
+                height: 35px;
+            }
+
+            .section {
+                padding: 15px;
+            }
+
+            .customers-full-width {
+                padding: 20px;
+            }
+
+            .customer-item {
+                padding: 12px;
+            }
+
+            .action-buttons {
+                gap: 10px;
+            }
+
+            .action-buttons .btn-small {
+                padding: 10px 12px;
+                font-size: 13px;
+            }
+
+            .stats-grid {
+                gap: 8px;
+            }
+
+            .stat-card {
+                padding: 15px;
+            }
+
+            .stat-number {
+                font-size: 1.5rem;
             }
         }
 
@@ -579,6 +691,16 @@
 
             .action-buttons {
                 flex-direction: column;
+                gap: 12px;
+            }
+
+            .action-buttons .btn-small {
+                flex: none;
+                width: 100%;
+                min-width: auto;
+                margin: 0;
+                padding: 12px 16px;
+                font-size: 14px;
             }
 
             .header h1 {
@@ -590,6 +712,26 @@
             .theme-switcher {
                 position: relative;
                 margin-top: 20px;
+            }
+
+            .customers-container-full {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .customer-item {
+                padding: 15px;
+            }
+
+            .section {
+                padding: 20px;
+                min-height: auto;
+            }
+
+            .modal-content {
+                margin: 10% auto;
+                padding: 20px;
+                width: 95%;
             }
         }
 
@@ -801,17 +943,38 @@
         // QR сканирование
         document.getElementById('startScan').addEventListener('click', async function() {
             try {
+                console.log('Попытка запуска QR сканера...');
+                
                 const videoElement = document.getElementById('qr-video');
                 scanner = new QrScanner(videoElement, result => {
+                    console.log('QR код отсканирован:', result.data);
                     handleQRResult(result.data);
                 });
                 
                 await scanner.start();
+                console.log('QR сканер запущен успешно');
+                
                 document.getElementById('startScan').style.display = 'none';
                 document.getElementById('stopScan').style.display = 'block';
+                
             } catch (error) {
                 console.error('Ошибка запуска сканера:', error);
-                alert('Ошибка доступа к камере');
+                
+                let errorMessage = 'Ошибка доступа к камере: ';
+                
+                if (error.name === 'NotAllowedError') {
+                    errorMessage += 'Разрешите доступ к камере в настройках браузера';
+                } else if (error.name === 'NotFoundError') {
+                    errorMessage += 'Камера не найдена на устройстве';
+                } else if (error.name === 'NotSupportedError') {
+                    errorMessage += 'Камера не поддерживается';
+                } else if (error.name === 'NotReadableError') {
+                    errorMessage += 'Камера используется другим приложением';
+                } else {
+                    errorMessage += error.message;
+                }
+                
+                alert(errorMessage);
             }
         });
 
@@ -819,6 +982,7 @@
             if (scanner) {
                 scanner.stop();
                 scanner = null;
+                console.log('QR сканер остановлен');
             }
             document.getElementById('startScan').style.display = 'block';
             document.getElementById('stopScan').style.display = 'none';
@@ -826,7 +990,11 @@
 
         async function handleQRResult(qrData) {
             try {
+                console.log('Обработка QR данных:', qrData);
+                
                 const customerId = qrData.split('/').pop();
+                console.log('Извлеченный ID клиента:', customerId);
+                
                 const response = await fetch(`/api/purchase/${customerId}`, {
                     method: 'POST'
                 });
