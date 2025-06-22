@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COFFEEMANIA - Панель Бариста</title>
+    <script src="https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .sections {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-small {
+            padding: 8px 15px;
+            font-size: 14px;
+            width: auto;
+            margin: 2px;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f44336 0%, #da190b 100%);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #2196F3 0%, #0b7dda 100%);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
+
+        #video-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        #qr-video {
+            width: 100%;
+            border-radius: 10px;
+        }
+
+        .customer-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .customer-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .customer-details h3 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .customer-details p {
+            color: #666;
+            margin: 2px 0;
+        }
+
+        .progress-bar {
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 20px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+            height: 100%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: black;
+        }
+
+        .history-cycle {
+            background: #f0f8ff;
+            border: 2px solid #4CAF50;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .history-cycle.completed {
+            background: #e8f5e8;
+            border-color: #4CAF50;
+        }
+
+        .history-cycle.current {
+            background: #fff3cd;
+            border-color: #ffc107;
+        }
+
+        .cycle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .cycle-title {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .cycle-status {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .cycle-status.completed {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .cycle-status.current {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .purchase-item {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin: 5px 0;
+            border-left: 3px solid #667eea;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 2000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .whatsapp-section {
+            background: #e8f5e8;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .qr-display {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .qr-display canvas {
+            max-width: 200px;
+            height: auto;
+        }
+
+        .link-display {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            margin: 10px 0;
+            word-break: break-all;
+            font-family: monospace;
+        }
+
+        @media (max-width: 768px) {
+            .sections {
+                grid-template-columns: 1fr;
+            }
+            
+            .customer-info {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .action-buttons {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>☕ COFFEEMANIA</h1>
+            <p>Панель управления бариста</p>
+        </div>
+
+        <div class="sections">
+            <!-- Регистрация -->
+            <div class="section">
+                <h2>1. Регистрация клиента</h2>
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label for="customerName">Имя клиента:</label>
+                        <input type="text" id="customerName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customerPhone">Телефон:</label>
+                        <input type="tel" id="customerPhone" placeholder="+7 (___) ___ __ __" required>
+                    </div>
+                    <button type="submit" class="btn">Зарегистрировать</button>
+                </form>
+            </div>
+
+            <!-- QR сканирование -->
+            <div class="section">
+                <h2>2. QR Сканирование</h2>
+                <div id="video-container">
+                    <video id="qr-video"></video>
+                </div>
+                <button id="startScan" class="btn">Начать сканирование</button>
+                <button id="stopScan" class="btn btn-danger" style="display: none;">Остановить</button>
+            </div>
+
+            <!-- Поиск клиентов -->
+            <div class="section">
+                <h2>3. Поиск клиентов</h2>
+                <div class="form-group">
+                    <input type="text" id="searchInput" placeholder="Поиск по имени или телефону...">
+                </div>
+                <div id="searchResults"></div>
+            </div>
+
+            <!-- База клиентов -->
+            <div class="section">
+                <h2>4. База клиентов</h2>
+                <div class="form-group">
+                    <p><strong>Всего клиентов:</strong> <span id="totalCustomers">0</span></p>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="filterInput" placeholder="Фильтр по имени или телефону...">
+                </div>
+                <div id="allCustomers"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно истории -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>История покупок</h2>
+            <div id="historyContent"></div>
+        </div>
+    </div>
+
+    <!-- Модальное окно отправки -->
+    <div id="shareModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeShareModal()">&times;</span>
+            <h2>Отправить клиенту</h2>
+            <div id="shareContent"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script>
+        let scanner = null;
+        let currentCustomerForShare = null;
+
+        // Форматирование телефона
+        document.getElementById('customerPhone').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.startsWith('8')) value = '7' + value.slice(1);
+            if (value.startsWith('7')) {
+                value = value.slice(1);
+            }
+            
+            let formatted = '+7';
+            if (value.length > 0) formatted += ' (' + value.substring(0, 3);
+            if (value.length > 3) formatted += ') ' + value.substring(3, 6);
+            if (value.length > 6) formatted += ' ' + value.substring(6, 8);
+            if (value.length > 8) formatted += ' ' + value.substring(8, 10);
+            
+            e.target.value = formatted;
+        });
+
+        // Регистрация клиента
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('customerName').value;
+            const phone = document.getElementById('customerPhone').value;
+            
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, phone })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showNotification(`Клиент ${name} зарегистрирован!`);
+                    document.getElementById('registerForm').reset();
+                    loadAllCustomers();
+                } else {
+                    alert('Ошибка: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Ошибка регистрации:', error);
+                alert('Ошибка сети');
+            }
+        });
+
+        // QR сканирование
+        document.getElementById('startScan').addEventListener('click', async function() {
+            try {
+                const videoElement = document.getElementById('qr-video');
+                scanner = new QrScanner(videoElement, result => {
+                    handleQRResult(result.data);
+                });
+                
+                await scanner.start();
+                document.getElementById('startScan').style.display = 'none';
+                document.getElementById('stopScan').style.display = 'block';
+            } catch (error) {
+                console.error('Ошибка запуска сканера:', error);
+                alert('Ошибка доступа к камере');
+            }
+        });
+
+        document.getElementById('stopScan').addEventListener('click', function() {
+            if (scanner) {
+                scanner.stop();
+                scanner = null;
+            }
+            document.getElementById('startScan').style.display = 'block';
+            document.getElementById('stopScan').style.display = 'none';
+        });
+
+        async function handleQRResult(qrData) {
+            try {
+                const customerId = qrData.split('/').pop();
+                const response = await fetch(`/api/purchase/${customerId}`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    const { customer, newPurchases, isComplete } = result;
+                    
+                    if (isComplete) {
+                        showNotification(`🎉 ${customer.name} получает БЕСПЛАТНЫЙ кофе! Цикл завершен!`);
+                    } else {
+                        showNotification(`☕ ${customer.name}: ${newPurchases}/6 кофе куплено`);
+                    }
+                    
+                    loadAllCustomers();
+                    searchCustomers();
+                } else {
+                    alert('Ошибка: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Ошибка обработки QR:', error);
+                alert('Ошибка обработки QR кода');
+            }
+        }
+
+        // Поиск клиентов
+        document.getElementById('searchInput').addEventListener('input', searchCustomers);
+        document.getElementById('filterInput').addEventListener('input', filterAllCustomers);
+
+        async function searchCustomers() {
+            const query = document.getElementById('searchInput').value;
+            if (query.length < 2) {
+                document.getElementById('searchResults').innerHTML = '';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                const customers = await response.json();
+                
+                displayCustomers(customers, 'searchResults');
+            } catch (error) {
+                console.error('Ошибка поиска:', error);
+            }
+        }
+
+        async function loadAllCustomers() {
+            try {
+                const response = await fetch('/api/customers');
+                const customers = await response.json();
+                
+                document.getElementById('totalCustomers').textContent = customers.length;
+                displayCustomers(customers, 'allCustomers');
+            } catch (error) {
+                console.error('Ошибка загрузки клиентов:', error);
+            }
+        }
+
+        function filterAllCustomers() {
+            const filter = document.getElementById('filterInput').value.toLowerCase();
+            const customerItems = document.querySelectorAll('#allCustomers .customer-item');
+            
+            customerItems.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(filter) ? 'block' : 'none';
+            });
+        }
+
+        function displayCustomers(customers, containerId) {
+            const container = document.getElementById(containerId);
+            
+            if (customers.length === 0) {
+                container.innerHTML = '<p>Клиенты не найдены</p>';
+                return;
+            }
+            
+            container.innerHTML = customers.map(customer => {
+                const currentCyclePurchases = customer.purchases % 6;
+                const completedCycles = Math.floor(customer.purchases / 6);
+                const progressPercent = (currentCyclePurchases / 6) * 100;
+                
+                return `
+                    <div class="customer-item">
+                        <div class="customer-info">
+                            <div class="customer-details">
+                                <h3>${customer.name}</h3>
+                                <p>📞 ${customer.phone}</p>
+                                <p>📅 ${new Date(customer.created_at).toLocaleDateString('ru-RU')}</p>
+                                <p>🏆 Завершенных циклов: ${completedCycles}</p>
+                            </div>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${progressPercent}%">
+                                ${currentCyclePurchases}/6
+                            </div>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn btn-success btn-small" onclick="addPurchase(${customer.id})">
+                                +1 покупка
+                            </button>
+                            <button class="btn btn-info btn-small" onclick="showHistory(${customer.id})">
+                                История
+                            </button>
+                            <button class="btn btn-warning btn-small" onclick="shareWithCustomer(${customer.id})">
+                                Отправить клиенту
+                            </button>
+                            <button class="btn btn-danger btn-small" onclick="deleteCustomer(${customer.id}, '${customer.name}')">
+                                Удалить
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function addPurchase(customerId) {
+            try {
+                const response = await fetch(`/api/purchase/${customerId}`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    const { customer, newPurchases, isComplete } = result;
+                    
+                    if (isComplete) {
+                        showNotification(`🎉 ${customer.name} получает БЕСПЛАТНЫЙ кофе! Цикл завершен!`);
+                    } else {
+                        showNotification(`☕ ${customer.name}: ${newPurchases}/6 кофе куплено`);
+                    }
+                    
+                    loadAllCustomers();
+                    searchCustomers();
+                } else {
+                    alert('Ошибка: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Ошибка добавления покупки:', error);
+                alert('Ошибка сети');
+            }
+        }
+
+        async function showHistory(customerId) {
+            try {
+                const response = await fetch(`/api/history/${customerId}`);
+                const data = await response.json();
+                
+                const { customer, history } = data;
+                
+                // Группируем покупки по циклам
+                const cycles = [];
+                let currentCycle = [];
+                let cycleNumber = 1;
+                
+                history.forEach((purchase, index) => {
+                    currentCycle.push(purchase);
+                    
+                    if (currentCycle.length === 6 || index === history.length - 1) {
+                        cycles.push({
+                            number: cycleNumber,
+                            purchases: [...currentCycle],
+                            completed: currentCycle.length === 6,
+                            current: index === history.length - 1 && currentCycle.length < 6
+                        });
+                        currentCycle = [];
+                        cycleNumber++;
+                    }
+                });
+                
+                const historyHTML = cycles.map(cycle => `
+                    <div class="history-cycle ${cycle.completed ? 'completed' : cycle.current ? 'current' : ''}">
+                        <div class="cycle-header">
+                            <div class="cycle-title">Цикл ${cycle.number} (${cycle.purchases.length}/6)</div>
+                            <div class="cycle-status ${cycle.completed ? 'completed' : 'current'}">
+                                ${cycle.completed ? 'Завершен' : 'Текущий'}
+                            </div>
+                        </div>
+                        ${cycle.purchases.map((purchase, i) => `
+                            <div class="purchase-item">
+                                <strong>Покупка ${i + 1}:</strong> ${new Date(purchase.created_at).toLocaleString('ru-RU')}
+                            </div>
+                        `).join('')}
+                        ${cycle.completed ? '<div style="color: #4CAF50; font-weight: bold; text-align: center; margin-top: 10px;">🎉 БЕСПЛАТНЫЙ КОФЕ ПОЛУЧЕН!</div>' : ''}
+                    </div>
+                `).join('');
+                
+                document.getElementById('historyContent').innerHTML = `
+                    <h3>${customer.name} (${customer.phone})</h3>
+                    <p><strong>Всего покупок:</strong> ${history.length}</p>
+                    <p><strong>Завершенных циклов:</strong> ${Math.floor(history.length / 6)}</p>
+                    <hr style="margin: 20px 0;">
+                    ${historyHTML}
+                `;
+                
+                document.getElementById('historyModal').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Ошибка загрузки истории:', error);
+                alert('Ошибка загрузки истории');
+            }
+        }
+
+        async function shareWithCustomer(customerId) {
+            try {
+                const response = await fetch(`/api/customer/${customerId}`);
+                const customer = await response.json();
+                
+                currentCustomerForShare = customer;
+                
+                const customerUrl = `${window.location.origin}/card.html?id=${customerId}`;
+                const qrUrl = `${window.location.origin}/api/qr/${customerId}`;
+                
+                // Генерируем QR код
+                const qrCanvas = document.createElement('canvas');
+                await QRCode.toCanvas(qrCanvas, customerUrl, { width: 200 });
+                
+                const whatsappMessage = encodeURIComponent(
+                    `☕ COFFEEMANIA - Ваша карта лояльности\n\n` +
+                    `Привет, ${customer.name}! 👋\n\n` +
+                    `Ваша персональная карта: ${customerUrl}\n\n` +
+                    `Покажите QR-код бариста для получения отметки о покупке.`
+                );
+                
+                const whatsappUrl = `https://wa.me/${customer.phone.replace(/\D/g, '')}?text=${whatsappMessage}`;
+                
+                document.getElementById('shareContent').innerHTML = `
+                    <h3>${customer.name}</h3>
+                    <p><strong>Телефон:</strong> ${customer.phone}</p>
+                    
+                    <div class="whatsapp-section">
+                        <h4>Отправить в WhatsApp:</h4>
+                        <a href="${whatsappUrl}" target="_blank" class="btn btn-success">
+                            📱 Открыть WhatsApp
+                        </a>
+                    </div>
+                    
+                    <div class="qr-display">
+                        <h4>QR-код клиента:</h4>
+                        ${qrCanvas.outerHTML}
+                    </div>
+                    
+                    <div>
+                        <h4>Ссылка на карту клиента:</h4>
+                        <div class="link-display">${customerUrl}</div>
+                        <button class="btn btn-info" onclick="copyToClipboard('${customerUrl}')">
+                            📋 Копировать ссылку
+                        </button>
+                    </div>
+                `;
+                
+                document.getElementById('shareModal').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Ошибка подготовки данных для отправки:', error);
+                alert('Ошибка подготовки данных');
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showNotification('Ссылка скопирована в буфер обмена!');
+            });
+        }
+
+        function closeShareModal() {
+            document.getElementById('shareModal').style.display = 'none';
+            currentCustomerForShare = null;
+        }
+
+        async function deleteCustomer(customerId, customerName) {
+            if (!confirm(`Вы уверены, что хотите удалить клиента "${customerName}"?\nЭто действие нельзя отменить.`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/customer/${customerId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    showNotification(`Клиент ${customerName} удален`);
+                    loadAllCustomers();
+                    searchCustomers();
+                } else {
+                    const result = await response.json();
+                    alert('Ошибка: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Ошибка удаления:', error);
+                alert('Ошибка сети');
+            }
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.classList.add('show'), 100);
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => document.body.removeChild(notification), 300);
+            }, 3000);
+        }
+
+        // Модальные окна
+        document.querySelectorAll('.close').forEach(closeBtn => {
+            closeBtn.addEventListener('click', function() {
+                this.closest('.modal').style.display = 'none';
+            });
+        });
+
+        window.addEventListener('click', function(event) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        });
+
+        // Загрузка данных при запуске
+        loadAllCustomers();
+    </script>
+</body>
+</html> 

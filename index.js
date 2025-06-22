@@ -113,7 +113,7 @@ app.post('/api/register', async (req, res) => {
         
         await client.query('COMMIT');
         
-        const customerUrl = `${req.protocol}://${req.get('host')}/card.html?id=${id}`;
+        const customerUrl = `https://2-coffeemania.vercel.app/card.html?id=${id}`;
         
         const qrCode = await QRCode.toDataURL(customerUrl, {
             type: 'image/png',
@@ -151,18 +151,18 @@ app.post('/api/register', async (req, res) => {
 // 2. Поиск клиента
 app.get('/api/search', async (req, res) => {
     try {
-        const { term } = req.query;
+        const { q } = req.query;
         
-        if (!term || term.length < 2) {
+        if (!q || q.length < 2) {
             return res.status(400).json({ error: 'Поисковый запрос должен содержать минимум 2 символа.' });
         }
 
         const result = await pool.query(
-            'SELECT id, name, phone, purchases FROM customers WHERE name ILIKE $1 OR phone LIKE $2 ORDER BY name ASC LIMIT 20',
-            [`%${term}%`, `%${term}%`]
+            'SELECT id, name, phone, purchases, created_at FROM customers WHERE name ILIKE $1 OR phone LIKE $2 ORDER BY name ASC LIMIT 20',
+            [`%${q}%`, `%${q}%`]
         );
         
-        log.info(`Поиск "${term}" - найдено результатов: ${result.rows.length}`);
+        log.info(`Поиск "${q}" - найдено результатов: ${result.rows.length}`);
         res.json(result.rows);
         
     } catch (error) {
@@ -171,11 +171,27 @@ app.get('/api/search', async (req, res) => {
     }
 });
 
+// 2.1. Получение всех клиентов
+app.get('/api/customers', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT id, name, phone, purchases, created_at FROM customers ORDER BY created_at DESC'
+        );
+        
+        log.info(`Загружено клиентов: ${result.rows.length}`);
+        res.json(result.rows);
+        
+    } catch (error) {
+        log.error("Ошибка загрузки клиентов:", error.message);
+        res.status(500).json({ error: 'Ошибка загрузки клиентов.' });
+    }
+});
+
 // 3. Засчитывание покупки
-app.post('/api/purchase', async (req, res) => {
+app.post('/api/purchase/:customerId', async (req, res) => {
     const client = await pool.connect();
     try {
-        const { customerId } = req.body;
+        const { customerId } = req.params;
         
         if (!customerId) {
             return res.status(400).json({ error: 'ID клиента обязателен.' });
@@ -184,7 +200,7 @@ app.post('/api/purchase', async (req, res) => {
         await client.query('BEGIN');
 
         const customerResult = await client.query(
-            'SELECT id, name, purchases FROM customers WHERE id = $1',
+            'SELECT id, name, phone, purchases FROM customers WHERE id = $1',
             [customerId]
         );
 
@@ -197,16 +213,17 @@ app.post('/api/purchase', async (req, res) => {
         let currentPurchases = customer.purchases;
         let newPurchases;
         let message;
-        let isFreeCoffee = false;
+        let isComplete = false;
 
         if (currentPurchases >= 6) {
-            newPurchases = 0; // Сброс после бесплатного кофе
-            message = 'Клиент получил бесплатный кофе! Счетчик обнулен.';
-            isFreeCoffee = true;
+            newPurchases = 1; // Начинаем новый цикл
+            message = 'Клиент получил бесплатный кофе! Начат новый цикл.';
+            isComplete = true;
         } else {
             newPurchases = currentPurchases + 1;
             if (newPurchases === 6) {
                 message = `Покупка засчитана. Следующий кофе бесплатно!`;
+                isComplete = true;
             } else {
                 message = `Покупка засчитана. Прогресс: ${newPurchases}/6.`;
             }
@@ -217,17 +234,20 @@ app.post('/api/purchase', async (req, res) => {
             [newPurchases, customerId]
         );
         
-        // Логируем покупку только если это не получение бесплатного кофе
-        if (!isFreeCoffee) {
-            await client.query(
-                'INSERT INTO purchase_history (customer_id) VALUES ($1)',
-                [customerId]
-            );
-        }
+        // Всегда логируем покупку
+        await client.query(
+            'INSERT INTO purchase_history (customer_id) VALUES ($1)',
+            [customerId]
+        );
         
         await client.query('COMMIT');
         log.success(`Покупка засчитана: ${customer.name} (${currentPurchases} → ${newPurchases})`);
-        res.json({ message, purchases: newPurchases });
+        res.json({ 
+            message, 
+            customer,
+            newPurchases,
+            isComplete
+        });
         
     } catch (error) {
         await client.query('ROLLBACK');
@@ -243,12 +263,19 @@ app.get('/api/history/:id', async (req, res) => {
     try {
         const { id } = req.params;
         
-        const result = await pool.query(
-            'SELECT timestamp FROM purchase_history WHERE customer_id = $1 ORDER BY timestamp DESC LIMIT 50',
-            [id]
-        );
+        const [customerResult, historyResult] = await Promise.all([
+            pool.query('SELECT id, name, phone, purchases FROM customers WHERE id = $1', [id]),
+            pool.query('SELECT created_at FROM purchase_history WHERE customer_id = $1 ORDER BY created_at ASC', [id])
+        ]);
         
-        res.json(result.rows);
+        if (customerResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Клиент не найден.' });
+        }
+        
+        res.json({
+            customer: customerResult.rows[0],
+            history: historyResult.rows
+        });
         
     } catch (error) {
         log.error("Ошибка получения истории:", error.message);
@@ -289,7 +316,7 @@ app.get('/api/qr/:id', async (req, res) => {
             return res.status(404).json({ error: 'Клиент не найден' });
         }
         
-        const customerUrl = `${req.protocol}://${req.get('host')}/card.html?id=${id}`;
+        const customerUrl = `https://2-coffeemania.vercel.app/card.html?id=${id}`;
         const qrCodeBuffer = await QRCode.toBuffer(customerUrl, {
             type: 'png',
             quality: 0.92,
