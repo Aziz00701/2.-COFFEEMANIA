@@ -33,13 +33,9 @@ async function initializeDatabase() {
         log.success('Успешное подключение к PostgreSQL');
         client.release();
 
-        // Удаляем старые таблицы и создаем заново
-        await pool.query('DROP TABLE IF EXISTS purchase_history CASCADE');
-        await pool.query('DROP TABLE IF EXISTS customers CASCADE');
-
-        // Создание таблицы клиентов
+        // Создание таблицы клиентов (если не существует)
         await pool.query(`
-            CREATE TABLE customers (
+            CREATE TABLE IF NOT EXISTS customers (
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
                 phone TEXT NOT NULL UNIQUE,
@@ -48,18 +44,18 @@ async function initializeDatabase() {
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
-        log.info('Таблица customers создана');
+        log.info('Таблица customers проверена/создана');
 
-        // Создание таблицы истории покупок
+        // Создание таблицы истории покупок (если не существует)
         await pool.query(`
-            CREATE TABLE purchase_history (
+            CREATE TABLE IF NOT EXISTS purchase_history (
                 id SERIAL PRIMARY KEY,
                 customer_id TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
             )
         `);
-        log.info('Таблица purchase_history создана');
+        log.info('Таблица purchase_history проверена/создана');
 
         const result = await pool.query('SELECT COUNT(*) as count FROM customers');
         log.info(`В базе зарегистрировано клиентов: ${result.rows[0].count}`);
@@ -342,6 +338,29 @@ app.delete('/api/customer/:id', async (req, res) => {
         res.status(500).json({ error: 'Ошибка удаления клиента' });
     } finally {
         client.release();
+    }
+});
+
+// 9. Статистика
+app.get('/api/stats', async (req, res) => {
+    try {
+        const [customersResult, purchasesResult, readyResult] = await Promise.all([
+            pool.query('SELECT COUNT(*) as total FROM customers'),
+            pool.query('SELECT COUNT(*) as total FROM purchase_history'),
+            pool.query('SELECT COUNT(*) as ready FROM customers WHERE purchases >= 6')
+        ]);
+
+        const stats = {
+            totalCustomers: parseInt(customersResult.rows[0].total),
+            totalPurchases: parseInt(purchasesResult.rows[0].total),
+            readyForFreeCoffee: parseInt(readyResult.rows[0].ready)
+        };
+
+        res.json(stats);
+        
+    } catch (error) {
+        log.error('Ошибка получения статистики:', error);
+        res.status(500).json({ error: 'Ошибка получения статистики' });
     }
 });
 
