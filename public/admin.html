@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>COFFEEMANIA - Панель Бариста</title>
-    <script src="https://unpkg.com/@zxing/library@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700;800;900&display=swap');
         
@@ -705,8 +705,8 @@
 
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
-                gap: 12px;
-                margin-bottom: 20px;
+                gap: 8px;
+                margin-bottom: 16px;
             }
             
             .stat-card {
@@ -942,7 +942,7 @@
             }
             
             .stats-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, 1fr);
                 gap: 8px;
                 margin-bottom: 16px;
             }
@@ -1371,11 +1371,11 @@
         <div id="success-message" class="success-message hidden"></div>
         <div id="error-message" class="error-message hidden"></div>
 
-        <div class="main-grid">
+        <div class="main-grid" style="margin-top: 20px;">
             <!-- Sidebar Controls -->
             <div>
                 <!-- Registration Section -->
-                <div class="glass-card">
+                <div class="glass-card" style="margin-bottom: 20px;">
                     <div class="card-header">
                         <div class="card-icon">👤</div>
                         <div class="card-title">Регистрация клиента</div>
@@ -1396,13 +1396,14 @@
                 </div>
 
                 <!-- QR Scanner Section -->
-                <div class="glass-card">
+                <div class="glass-card" style="margin-bottom: 20px;">
                     <div class="card-header">
                         <div class="card-icon">📱</div>
                         <div class="card-title">QR Сканер</div>
                     </div>
                     <div class="scanner-preview" id="scanner-preview">
-                        Нажмите "Запустить сканер" для начала работы
+                        📱 Нажмите "Запустить сканер" для QR-сканирования<br>
+                        <small style="opacity: 0.7; font-size: 13px;">На мобильном: разрешите доступ к камере</small>
                     </div>
                     <button class="btn btn-success" id="scanner-btn" onclick="toggleScanner()">
                         Запустить сканер
@@ -1467,7 +1468,7 @@
         let currentCustomers = [];
         let selectedCustomer = null;
         let isScanning = false;
-        let codeReader = null;
+        let qrScanner = null;
 
         // Update current time
         function updateTime() {
@@ -1832,51 +1833,46 @@
                 console.log('Запуск QR сканера...');
                 
                 const preview = document.getElementById('scanner-preview');
-                preview.innerHTML = '<video id="scanner-video" style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;"></video>';
+                preview.innerHTML = '<video id="scanner-video" style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;" autoplay muted playsinline></video>';
                 preview.classList.add('scanner-active');
 
-                // Initialize ZXing code reader
-                codeReader = new ZXing.BrowserQRCodeReader();
+                const video = document.getElementById('scanner-video');
                 
-                console.log('ZXing инициализирован');
-                
-                // Get available video devices
-                const videoDevices = await ZXing.BrowserCodeReader.listVideoInputDevices();
-                console.log('Доступные устройства:', videoDevices.length);
-                
-                if (videoDevices.length === 0) {
-                    throw new Error('Камера не найдена');
+                // Check if QrScanner is available
+                if (typeof QrScanner === 'undefined') {
+                    throw new Error('QR сканер не загружен');
                 }
                 
-                // Use back camera if available (for mobile)
-                let selectedDeviceId = videoDevices[0].deviceId;
+                // Check camera support
+                const hasCamera = await QrScanner.hasCamera();
+                if (!hasCamera) {
+                    throw new Error('Камера не доступна на этом устройстве');
+                }
                 
-                // Try to find back camera
-                for (const device of videoDevices) {
-                    if (device.label.toLowerCase().includes('back') || 
-                        device.label.toLowerCase().includes('rear') ||
-                        device.label.toLowerCase().includes('environment')) {
-                        selectedDeviceId = device.deviceId;
-                        break;
+                // Initialize QrScanner
+                qrScanner = new QrScanner(
+                    video,
+                    result => {
+                        console.log('QR код обнаружен:', result.data);
+                        stopScanner();
+                        processQRCode(result.data);
+                    },
+                    {
+                        onDecodeError: error => {
+                            // Ignore decode errors silently
+                        },
+                        preferredCamera: 'environment', // Use back camera on mobile
+                        highlightScanRegion: true,
+                        highlightCodeOutline: true,
+                        maxScansPerSecond: 5,
+                        returnDetailedScanResult: true
                     }
-                }
+                );
                 
-                console.log('Используется устройство:', selectedDeviceId);
+                console.log('QrScanner инициализирован');
                 
                 // Start scanning
-                codeReader.decodeFromVideoDevice(selectedDeviceId, 'scanner-video', (result, err) => {
-                    if (result) {
-                        console.log('QR код обнаружен:', result.text);
-                        
-                        // Stop scanning to process result
-                        codeReader.reset();
-                        processQRCode(result.text);
-                    }
-                    
-                    if (err && !(err instanceof ZXing.NotFoundException)) {
-                        console.log('Ошибка сканирования:', err);
-                    }
-                });
+                await qrScanner.start();
                 
                 isScanning = true;
                 document.getElementById('scanner-btn').textContent = 'Остановить сканер';
@@ -1884,21 +1880,42 @@
                 
             } catch (error) {
                 console.error('Ошибка запуска камеры:', error);
-                showError('Не удалось запустить камеру: ' + error.message);
+                
+                let errorMsg = 'Не удалось запустить камеру';
+                if (error.name === 'NotAllowedError') {
+                    errorMsg = 'Доступ к камере запрещен. Разрешите использование камеры в настройках браузера';
+                } else if (error.name === 'NotFoundError') {
+                    errorMsg = 'Камера не найдена на устройстве';
+                } else if (error.name === 'NotSupportedError') {
+                    errorMsg = 'Камера не поддерживается этим браузером';
+                } else if (error.message) {
+                    errorMsg += ': ' + error.message;
+                }
+                
+                showError(errorMsg);
                 stopScanner();
             }
         }
 
-        function stopScanner() {
+        async function stopScanner() {
             console.log('Остановка сканера');
             
-            if (codeReader) {
-                codeReader.reset();
-                codeReader = null;
+            try {
+                if (qrScanner) {
+                    qrScanner.stop();
+                    qrScanner.destroy();
+                }
+            } catch (error) {
+                console.error('Ошибка остановки сканера:', error);
             }
             
+            qrScanner = null;
+            
             const preview = document.getElementById('scanner-preview');
-            preview.innerHTML = 'Нажмите "Запустить сканер" для начала работы';
+            preview.innerHTML = `
+                📱 Нажмите "Запустить сканер" для QR-сканирования<br>
+                <small style="opacity: 0.7; font-size: 13px;">На мобильном: разрешите доступ к камере</small>
+            `;
             preview.classList.remove('scanner-active');
             document.getElementById('scanner-btn').textContent = 'Запустить сканер';
             isScanning = false;
