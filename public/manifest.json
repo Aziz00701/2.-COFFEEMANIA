@@ -1,0 +1,53 @@
+{
+  "name": "COFFEEMANIA - Карта лояльности",
+  "short_name": "COFFEEMANIA",
+  "description": "Программа лояльности кофейни COFFEEMANIA - каждая 7-я чашка бесплатно!",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#667eea",
+  "background_color": "#667eea",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "ru",
+  "categories": ["food", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Моя карта",
+      "short_name": "Карта",
+      "description": "Открыть мою карту лояльности",
+      "url": "/card.html",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Админ панель",
+      "short_name": "Админ",
+      "description": "Панель бариста",
+      "url": "/admin.html",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+} 

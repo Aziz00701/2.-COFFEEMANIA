@@ -4,6 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>COFFEEMANIA - Карта лояльности</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="COFFEEMANIA">
+    <meta name="description" content="Программа лояльности кофейни COFFEEMANIA - каждая 7-я чашка бесплатно!">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700;800;900&display=swap');
         
@@ -259,24 +274,29 @@
         .action-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
-            gap: 16px;
+            gap: 12px;
             margin-bottom: 32px;
         }
         
         .action-btn {
             background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
             border-radius: 20px;
-            padding: 20px 16px;
-            color: white;
+            padding: 16px 8px;
             text-decoration: none;
-            text-align: center;
+            color: white;
             font-weight: 600;
-            font-size: 15px;
+            font-size: 13px;
+            text-align: center;
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80px;
         }
         
         .action-btn::before {
@@ -286,7 +306,7 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
             transition: left 0.6s;
         }
         
@@ -294,14 +314,16 @@
             left: 100%;
         }
         
-        .action-btn:active {
-            transform: scale(0.98);
+        .action-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.2);
         }
         
         .action-btn .emoji {
             display: block;
-            font-size: 24px;
-            margin-bottom: 8px;
+            font-size: 22px;
+            margin-bottom: 6px;
         }
         
         .bottom-nav {
@@ -484,18 +506,19 @@
         /* Mobile Responsive */
         @media (max-width: 767px) {
             .action-buttons {
-                grid-template-columns: 1fr 1fr;
-                gap: 12px;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 8px;
             }
             
             .action-btn {
-                padding: 16px 12px;
-                font-size: 14px;
+                padding: 12px 6px;
+                font-size: 12px;
+                min-height: 70px;
             }
             
             .action-btn .emoji {
-                font-size: 20px;
-                margin-bottom: 6px;
+                font-size: 18px;
+                margin-bottom: 4px;
             }
             
             .brand-footer {
@@ -622,15 +645,15 @@
         </div>
 
         <div class="action-buttons">
-            <a href="#" class="action-btn" onclick="showQR()">
+            <a href="#" class="action-btn" onclick="showQR(); return false;">
                 <span class="emoji">📱</span>
                 Мой QR-код
             </a>
-            <a href="#" class="action-btn" onclick="showGiftHistory()">
+            <a href="#" class="action-btn" onclick="showGiftHistory(); return false;">
                 <span class="emoji">🎁</span>
                 Подарочный кофе
             </a>
-            <a href="tel:+77754555570" class="action-btn" id="preorder-btn">
+            <a href="#" class="action-btn" id="preorder-btn" onclick="openPreorder(); return false;">
                 <span class="emoji">📞</span>
                 Предзаказ
             </a>
@@ -655,7 +678,12 @@
             <div class="qr-instructions">
                 Покажите этот QR-код бариста для получения скидки
             </div>
-            <button class="close-btn" onclick="hideQR()">Закрыть</button>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0;">
+                <button class="close-btn" style="background: #25D366;" onclick="shareCard()">
+                    📱 Поделиться
+                </button>
+                <button class="close-btn" onclick="hideQR()">Закрыть</button>
+            </div>
         </div>
     </div>
 
@@ -767,24 +795,30 @@
                 `${purchases} из ${maxPurchases} покупок`;
         }
 
-        // Load admin phone for preorder
-        function loadAdminPhone() {
-            const adminPhone = localStorage.getItem('adminPhone');
-            if (adminPhone) {
-                const preorderBtn = document.getElementById('preorder-btn');
-                const cleanPhone = adminPhone.replace(/\D/g, '');
-                preorderBtn.href = `tel:+${cleanPhone}`;
-            }
-        }
-
         // Show QR modal
         function showQR() {
             if (!customerId) return;
             
-            const qrImage = document.getElementById('qr-image');
-            qrImage.src = `/api/qr/${customerId}`;
-            
             const modal = document.getElementById('qr-modal');
+            const content = modal.querySelector('.qr-content');
+            
+            // Reset modal content to QR code
+            content.innerHTML = `
+                <div class="qr-title">Ваш QR-код</div>
+                <div class="qr-code">
+                    <img id="qr-image" src="/api/qr/${customerId}" alt="QR Code" style="width: 200px; height: 200px;">
+                </div>
+                <div class="qr-instructions">
+                    Покажите этот QR-код бариста для получения скидки
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0;">
+                    <button class="close-btn" style="background: #25D366;" onclick="shareCard()">
+                        📱 Поделиться
+                    </button>
+                    <button class="close-btn" onclick="hideQR()">Закрыть</button>
+                </div>
+            `;
+            
             modal.style.display = 'flex';
         }
 
@@ -813,11 +847,17 @@
             
             content.innerHTML = `
                 <div class="qr-title">История подарков</div>
-                <div style="color: #e2e8f0; margin-bottom: 20px;">
-                    <div style="font-size: 16px; margin-bottom: 12px;">🎁 <strong>Подарочные кофе</strong></div>
-                    <div style="font-size: 14px; line-height: 1.6;">
-                        Здесь будет отображаться история ваших бесплатных кофе.<br>
-                        После каждых 6 покупок вы получаете 1 бесплатный кофе!
+                <div style="color: #333; margin-bottom: 20px; text-align: left;">
+                    <div style="font-size: 16px; margin-bottom: 16px; text-align: center;">🎁 <strong>Подарочные кофе</strong></div>
+                    <div style="font-size: 14px; line-height: 1.6; background: rgba(102, 126, 234, 0.1); padding: 16px; border-radius: 12px; border: 1px solid rgba(102, 126, 234, 0.2);">
+                        <div style="margin-bottom: 12px;">📊 <strong>Как это работает:</strong></div>
+                        <div style="margin-bottom: 8px;">• Каждая покупка кофе засчитывается</div>
+                        <div style="margin-bottom: 8px;">• После 6 покупок получаете 1 бесплатный кофе</div>
+                        <div style="margin-bottom: 12px;">• Покажите QR-код бариста для получения</div>
+                        
+                        <div style="margin-bottom: 8px;">🎯 <strong>Ваш прогресс:</strong></div>
+                        <div>Покупок: ${customerData ? customerData.purchases : 0}/6</div>
+                        <div>Статус: ${customerData && customerData.purchases >= 6 ? '🎁 Бесплатный кофе готов!' : '☕ Собираем покупки'}</div>
                     </div>
                 </div>
                 <button class="close-btn" onclick="hideQR()">Закрыть</button>
@@ -825,11 +865,108 @@
             
             modal.style.display = 'flex';
         }
+
+        // Open preorder options
+        function openPreorder() {
+            const adminPhone = localStorage.getItem('adminPhone') || '+77754555570';
+            const cleanPhone = adminPhone.replace(/\D/g, '');
+            
+            const modal = document.getElementById('qr-modal');
+            const content = modal.querySelector('.qr-content');
+            
+            content.innerHTML = `
+                <div class="qr-title">Предзаказ кофе</div>
+                <div style="color: #333; margin-bottom: 24px; text-align: left;">
+                    <div style="font-size: 16px; margin-bottom: 16px; text-align: center;">📞 <strong>Свяжитесь с бариста</strong></div>
+                    <div style="font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
+                        Выберите удобный способ связи для предзаказа:
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                        <a href="https://wa.me/${cleanPhone}?text=Привет!%20Хочу%20сделать%20предзаказ%20кофе%20☕" 
+                           target="_blank" 
+                           style="background: #25D366; color: white; padding: 12px 8px; border-radius: 12px; text-decoration: none; text-align: center; font-weight: 600; font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                            <span style="font-size: 18px;">💬</span>
+                            WhatsApp
+                        </a>
+                        <a href="tel:+${cleanPhone}" 
+                           style="background: #007AFF; color: white; padding: 12px 8px; border-radius: 12px; text-decoration: none; text-align: center; font-weight: 600; font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                            <span style="font-size: 18px;">📞</span>
+                            Позвонить
+                        </a>
+                    </div>
+                    
+                    <div style="font-size: 12px; color: #666; text-align: center; margin-bottom: 8px;">
+                        Номер бариста: ${adminPhone}
+                    </div>
+                </div>
+                <button class="close-btn" onclick="hideQR()">Закрыть</button>
+            `;
+            
+            modal.style.display = 'flex';
+        }
+
+        // Share card function
+        function shareCard() {
+            if (!customerId || !customerData) return;
+            
+            const cardUrl = `${window.location.origin}/card.html?id=${customerId}`;
+            const customerName = customerData.name;
+            
+            const whatsappMessage = `🎉 Привет! Я использую карту лояльности COFFEEMANIA ☕\n\n👤 Клиент: ${customerName}\n🔗 Моя карта: ${cardUrl}\n\n💎 Каждая 7-я чашка кофе - БЕСПЛАТНО!`;
+            
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`;
+            
+            window.open(whatsappUrl, '_blank');
+        }
         
         // Initialize
         setCurrentDate();
         loadCustomerData();
-        loadAdminPhone();
+    </script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                .then((registration) => {
+                    console.log('COFFEEMANIA SW registered: ', registration);
+                })
+                .catch((registrationError) => {
+                    console.log('COFFEEMANIA SW registration failed: ', registrationError);
+                });
+            });
+        }
+        
+        // PWA Install prompt
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent Chrome 67 and earlier from automatically showing the prompt
+            e.preventDefault();
+            // Stash the event so it can be triggered later
+            deferredPrompt = e;
+            
+            // Show install banner (optional)
+            console.log('COFFEEMANIA: Install prompt available');
+        });
+        
+        // Function to trigger install (can be called from a button)
+        function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('COFFEEMANIA: User accepted the install prompt');
+                    } else {
+                        console.log('COFFEEMANIA: User dismissed the install prompt');
+                    }
+                    deferredPrompt = null;
+                });
+            }
+        }
     </script>
 </body>
 </html>

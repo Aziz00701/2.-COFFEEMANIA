@@ -1,0 +1,29 @@
+<svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background with gradient -->
+  <rect width="192" height="192" rx="40" fill="url(#gradient0_linear_1_1)"/>
+  
+  <!-- Coffee cup icon -->
+  <circle cx="96" cy="80" r="35" fill="rgba(255,255,255,0.2)" stroke="white" stroke-width="3"/>
+  <path d="M61 80 C 61 95, 75 110, 96 110 C 117 110, 131 95, 131 80" fill="rgba(139,69,19,0.8)"/>
+  <rect x="126" y="75" width="15" height="10" rx="5" fill="rgba(255,255,255,0.3)"/>
+  
+  <!-- Steam lines -->
+  <path d="M80 50 Q 82 45 80 40" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+  <path d="M96 45 Q 98 40 96 35" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+  <path d="M112 50 Q 114 45 112 40" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+  
+  <!-- App name -->
+  <text x="96" y="140" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white" text-anchor="middle" opacity="0.95">COFFEEMANIA</text>
+  <text x="96" y="160" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="white" text-anchor="middle" opacity="0.8">Loyalty Card</text>
+  
+  <!-- Gradient definition -->
+  <defs>
+    <linearGradient id="gradient0_linear_1_1" x1="0" y1="0" x2="192" y2="192" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#667eea"/>
+      <stop offset="0.25" stop-color="#764ba2"/>
+      <stop offset="0.5" stop-color="#f093fb"/>
+      <stop offset="0.75" stop-color="#f5576c"/>
+      <stop offset="1" stop-color="#4facfe"/>
+    </linearGradient>
+  </defs>
+</svg> 

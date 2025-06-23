@@ -4,7 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>COFFEEMANIA - Панель Бариста</title>
-    <script src="https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="COFFEEMANIA Admin">
+    <meta name="description" content="Панель бариста COFFEEMANIA - управление программой лояльности">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700;800;900&display=swap');
         
@@ -1468,7 +1483,9 @@
         let currentCustomers = [];
         let selectedCustomer = null;
         let isScanning = false;
-        let qrScanner = null;
+        let stream = null;
+        let canvas = null;
+        let context = null;
 
         // Update current time
         function updateTime() {
@@ -1838,41 +1855,57 @@
 
                 const video = document.getElementById('scanner-video');
                 
-                // Check if QrScanner is available
-                if (typeof QrScanner === 'undefined') {
-                    throw new Error('QR сканер не загружен');
+                // Check if jsQR is available
+                if (typeof jsQR === 'undefined') {
+                    throw new Error('jsQR библиотека не загружена');
                 }
                 
-                // Check camera support
-                const hasCamera = await QrScanner.hasCamera();
-                if (!hasCamera) {
-                    throw new Error('Камера не доступна на этом устройстве');
-                }
+                console.log('jsQR загружен');
                 
-                // Initialize QrScanner
-                qrScanner = new QrScanner(
-                    video,
-                    result => {
-                        console.log('QR код обнаружен:', result.data);
-                        stopScanner();
-                        processQRCode(result.data);
-                    },
-                    {
-                        onDecodeError: error => {
-                            // Ignore decode errors silently
-                        },
-                        preferredCamera: 'environment', // Use back camera on mobile
-                        highlightScanRegion: true,
-                        highlightCodeOutline: true,
-                        maxScansPerSecond: 5,
-                        returnDetailedScanResult: true
+                // Request camera access
+                const constraints = {
+                    video: {
+                        facingMode: 'environment', // Use back camera on mobile
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
                     }
-                );
+                };
                 
-                console.log('QrScanner инициализирован');
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
                 
-                // Start scanning
-                await qrScanner.start();
+                // Create canvas for QR scanning
+                canvas = document.createElement('canvas');
+                context = canvas.getContext('2d');
+                
+                console.log('Камера запущена');
+                
+                // Start scanning loop
+                const scanFrame = () => {
+                    if (!isScanning) return;
+                    
+                    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                        canvas.height = video.videoHeight;
+                        canvas.width = video.videoWidth;
+                        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                        
+                        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                        const code = jsQR(imageData.data, imageData.width, imageData.height);
+                        
+                        if (code) {
+                            console.log('QR код найден:', code.data);
+                            stopScanner();
+                            processQRCode(code.data);
+                            return;
+                        }
+                    }
+                    
+                    requestAnimationFrame(scanFrame);
+                };
+                
+                video.addEventListener('loadedmetadata', () => {
+                    scanFrame();
+                });
                 
                 isScanning = true;
                 document.getElementById('scanner-btn').textContent = 'Остановить сканер';
@@ -1901,15 +1934,16 @@
             console.log('Остановка сканера');
             
             try {
-                if (qrScanner) {
-                    qrScanner.stop();
-                    qrScanner.destroy();
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    stream = null;
                 }
             } catch (error) {
                 console.error('Ошибка остановки сканера:', error);
             }
             
-            qrScanner = null;
+            canvas = null;
+            context = null;
             
             const preview = document.getElementById('scanner-preview');
             preview.innerHTML = `
