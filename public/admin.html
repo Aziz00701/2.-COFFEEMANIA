@@ -1569,8 +1569,8 @@
                             <button class="btn btn-small btn-success" onclick="openPurchaseModal('${customer.id}')">
                                 Добавить покупку
                             </button>
-                            <button class="btn btn-small btn-primary" onclick="showCustomerQR('${customer.id}')">
-                                Поделиться QR
+                            <button class="btn btn-small btn-primary" onclick="sendToCustomer('${customer.id}')">
+                                Отправить клиенту
                             </button>
                             <button class="btn btn-small btn-warning" onclick="showPurchaseHistory('${customer.id}')">
                                 История покупок
@@ -1960,12 +1960,26 @@
             try {
                 console.log('Обработка QR кода:', qrCode);
                 
-                // QR код должен содержать ID клиента
-                const customerId = qrCode.trim();
+                // QR код содержит URL, нужно извлечь ID клиента
+                let customerId = qrCode.trim();
+                
+                // Если QR код содержит URL, извлекаем ID из него
+                if (qrCode.includes('card.html?id=')) {
+                    const urlParts = qrCode.split('card.html?id=');
+                    if (urlParts.length > 1) {
+                        customerId = urlParts[1].split('&')[0]; // Берем только ID, убираем другие параметры
+                    }
+                } else if (qrCode.includes('/')) {
+                    // Если это просто путь с ID
+                    const parts = qrCode.split('/');
+                    customerId = parts[parts.length - 1];
+                }
                 
                 if (!customerId) {
-                    throw new Error('QR код пуст');
+                    throw new Error('Не удалось извлечь ID клиента из QR кода');
                 }
+                
+                console.log('Извлеченный ID клиента:', customerId);
                 
                 // Показываем индикатор обработки
                 showSuccess('⏳ Обработка QR кода...');
@@ -1973,10 +1987,11 @@
                 // Проверяем существование клиента
                 const customerResponse = await fetch(`/api/customer/${customerId}`);
                 if (!customerResponse.ok) {
-                    throw new Error('Клиент не найден');
+                    throw new Error(`Клиент с ID "${customerId}" не найден`);
                 }
                 
                 const customer = await customerResponse.json();
+                console.log('Клиент найден:', customer.name);
                 
                 // Автоматически добавляем покупку
                 const purchaseResponse = await fetch(`/api/purchase/${customerId}`, {
@@ -2030,7 +2045,7 @@
                             ${error.message}
                         </div>
                         <div style="margin-top: 8px; font-size: 12px; opacity: 0.6;">
-                            QR код: ${qrCode}
+                            QR код: ${qrCode.length > 50 ? qrCode.substring(0, 50) + '...' : qrCode}
                         </div>
                     </div>
                 `);
@@ -2530,6 +2545,67 @@
 
         // Auto-refresh every 30 seconds
         setInterval(loadData, 30000);
+
+        // Send customer card via WhatsApp
+        function sendToCustomer(customerId) {
+            // Find customer info
+            const customer = currentCustomers.find(c => c.id === customerId);
+            if (!customer) {
+                showError('Клиент не найден');
+                return;
+            }
+            
+            const customerCardUrl = `${window.location.origin}/card.html?id=${customerId}`;
+            const cleanPhone = customer.phone.replace(/\D/g, '');
+            
+            // Create WhatsApp message
+            const message = `Спасибо, что посетили COFFEEMANIA! ☕\n\n🎁 Ваша личная карта лояльности готова:\n${customerCardUrl}\n\n💎 Каждая 7-я чашка кофе - БЕСПЛАТНО!\n\n☕ COFFEEMANIA - лучший кофе в городе!`;
+            
+            const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+            
+            // Show confirmation modal
+            const modal = document.getElementById('history-modal');
+            
+            document.getElementById('history-customer-info').innerHTML = `
+                <div style="text-align: center; margin-bottom: 20px; padding: 20px; background: var(--card-bg); border-radius: 16px; border: 1px solid var(--card-border);">
+                    <h3 style="margin-bottom: 16px; color: var(--text-primary);">📱 Отправить клиенту</h3>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <div style="color: var(--text-secondary); font-size: 18px; font-weight: 600; margin-bottom: 8px;">👤 ${customer.name}</div>
+                        <div style="color: var(--text-muted); font-size: 16px; margin-bottom: 16px;">📞 ${customer.phone}</div>
+                    </div>
+                    
+                    <div style="margin-bottom: 24px; padding: 16px; background: rgba(37, 211, 102, 0.1); border: 1px solid rgba(37, 211, 102, 0.2); border-radius: 12px;">
+                        <div style="color: var(--text-secondary); font-size: 14px; font-weight: 600; margin-bottom: 8px;">💬 Сообщение для отправки:</div>
+                        <div style="color: var(--text-primary); font-size: 13px; line-height: 1.4; white-space: pre-line; text-align: left;">
+                            ${message}
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                        <button onclick="window.open('${whatsappUrl}', '_blank')" class="btn btn-success" style="background: #25D366;">
+                            💬 Отправить через WhatsApp
+                        </button>
+                        <button onclick="showCustomerQR('${customerId}')" class="btn btn-primary" style="margin: 4px;">
+                            📱 Показать QR код
+                        </button>
+                        <button onclick="copyToClipboard('${customerCardUrl}')" class="btn btn-warning" style="margin: 4px;">
+                            📋 Копировать ссылку
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('history-content').innerHTML = `
+                <div style="text-align: center; padding: 30px; color: var(--text-muted);">
+                    <div style="font-size: 48px; margin-bottom: 16px;">📱</div>
+                    <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Готово к отправке!</div>
+                    <div style="font-size: 14px;">Нажмите кнопку выше, чтобы открыть WhatsApp и отправить сообщение</div>
+                </div>
+            `;
+            
+            modal.style.display = 'block';
+        }
     </script>
 </body>
 </html>
