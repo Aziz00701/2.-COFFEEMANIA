@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>COFFEEMANIA - Панель Бариста</title>
-    <script src="https://unpkg.com/quagga@0.12.1/dist/quagga.min.js"></script>
+    <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700;800;900&display=swap');
         
@@ -660,36 +660,176 @@
                 text-align: center;
             }
             
+            .brand-section {
+                flex-direction: column;
+                gap: 12px;
+                align-items: center;
+            }
+            
+            .brand-icon {
+                width: 48px;
+                height: 48px;
+                font-size: 24px;
+            }
+            
+            .brand-text h1 {
+                font-size: 24px;
+                margin-bottom: 4px;
+            }
+            
+            .brand-text p {
+                font-size: 14px;
+            }
+            
+            .theme-controls {
+                flex-direction: column;
+                gap: 12px;
+                width: 100%;
+            }
+            
+            .admin-phone-section {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .admin-phone-input {
+                width: 200px;
+                font-size: 16px;
+                padding: 12px;
+            }
+            
             .form-grid {
                 grid-template-columns: 1fr;
                 gap: 16px;
             }
-            
+
             .stats-grid {
-                grid-template-columns: 1fr;
-                gap: 16px;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+                margin-bottom: 20px;
+            }
+            
+            .stat-card {
+                padding: 16px;
+            }
+            
+            .stat-icon {
+                font-size: 24px;
+                margin-bottom: 8px;
+            }
+            
+            .stat-number {
+                font-size: 28px;
+                margin-bottom: 6px;
+            }
+            
+            .stat-label {
+                font-size: 12px;
             }
             
             .main-grid {
-                gap: 20px;
+                gap: 16px;
             }
             
             .glass-card {
-                padding: 24px;
+                padding: 20px;
+                border-radius: 20px;
             }
             
+            .card-header {
+                margin-bottom: 16px;
+            }
+            
+            .card-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+            
+            .card-title {
+                font-size: 20px;
+            }
+            
+            .form-input {
+                padding: 14px 16px;
+                font-size: 16px;
+                border-radius: 12px;
+            }
+            
+            .btn {
+                padding: 14px 24px;
+                font-size: 16px;
+                border-radius: 12px;
+            }
+            
+            .btn-small {
+                padding: 8px 12px;
+                font-size: 13px;
+                margin: 2px;
+            }
+            
+            .customer-item {
+                padding: 16px;
+                margin-bottom: 12px;
+                border-radius: 16px;
+            }
+
             .customer-header {
                 flex-direction: column;
                 gap: 12px;
                 align-items: flex-start;
             }
             
+            .customer-info h4 {
+                font-size: 18px;
+            }
+            
+            .customer-info p {
+                font-size: 14px;
+            }
+            
+            .coffee-progress {
+                padding: 8px 12px;
+                border-radius: 12px;
+                font-size: 14px;
+                align-self: flex-start;
+            }
+            
+            .progress-dots {
+                justify-content: flex-start;
+                margin: 8px 0;
+            }
+            
+            .progress-dot {
+                width: 6px;
+                height: 6px;
+            }
+
             .action-buttons {
                 justify-content: flex-start;
+                margin-top: 12px;
             }
-        }
-        
-        @media (max-width: 768px) {
+            
+            .scanner-preview {
+                height: 250px;
+                margin-bottom: 16px;
+                border-radius: 16px;
+                font-size: 14px;
+            }
+            
+            .modal-content {
+                margin: 10% auto;
+                padding: 24px;
+                width: 95%;
+                max-width: 400px;
+                border-radius: 20px;
+            }
+            
+            .customer-list {
+                max-height: 400px;
+            }
+            
+            /* Cycle cards mobile optimization */
             .cycle-card {
                 padding: 16px !important;
                 margin-bottom: 12px !important;
@@ -773,6 +913,295 @@
             .purchases-section > div:first-child {
                 font-size: 12px !important;
                 margin-bottom: 8px !important;
+            }
+        }
+        
+        /* Mobile specific optimizations */
+        @media (max-width: 480px) {
+            .container {
+                padding: 12px;
+            }
+            
+            .header {
+                padding: 16px;
+                gap: 12px;
+            }
+            
+            .brand-text h1 {
+                font-size: 20px;
+            }
+            
+            .brand-text p {
+                font-size: 13px;
+            }
+            
+            .brand-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+                margin-bottom: 16px;
+            }
+            
+            .stat-card {
+                padding: 12px;
+            }
+            
+            .stat-icon {
+                font-size: 20px;
+                margin-bottom: 6px;
+            }
+            
+            .stat-number {
+                font-size: 24px;
+                margin-bottom: 4px;
+            }
+            
+            .stat-label {
+                font-size: 11px;
+            }
+            
+            .glass-card {
+                padding: 16px;
+                border-radius: 16px;
+            }
+            
+            .card-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 16px;
+            }
+            
+            .card-title {
+                font-size: 18px;
+            }
+            
+            .form-input {
+                padding: 12px 14px;
+                font-size: 16px;
+            }
+            
+            .btn {
+                padding: 12px 20px;
+                font-size: 15px;
+            }
+            
+            .btn-small {
+                padding: 6px 10px;
+                font-size: 12px;
+                margin: 2px;
+            }
+            
+            .customer-item {
+                padding: 14px;
+                margin-bottom: 10px;
+            }
+            
+            .customer-info h4 {
+                font-size: 16px;
+            }
+            
+            .customer-info p {
+                font-size: 13px;
+            }
+            
+            .coffee-progress {
+                padding: 6px 10px;
+                font-size: 13px;
+            }
+            
+            .scanner-preview {
+                height: 200px;
+                font-size: 13px;
+            }
+            
+            .admin-phone-input {
+                width: 180px;
+                font-size: 15px;
+                padding: 10px;
+            }
+            
+            .modal-content {
+                margin: 15% auto;
+                padding: 20px;
+                width: 95%;
+                border-radius: 16px;
+            }
+            
+            .current-time {
+                font-size: 13px;
+            }
+        }
+        
+        /* Extra small mobile screens */
+        @media (max-width: 360px) {
+            .container {
+                padding: 8px;
+            }
+            
+            .header {
+                padding: 12px;
+                gap: 8px;
+            }
+            
+            .brand-text h1 {
+                font-size: 18px;
+            }
+            
+            .brand-text p {
+                font-size: 12px;
+            }
+            
+            .brand-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 18px;
+            }
+            
+            .stats-grid {
+                gap: 6px;
+                margin-bottom: 12px;
+            }
+            
+            .stat-card {
+                padding: 10px;
+            }
+            
+            .stat-icon {
+                font-size: 18px;
+                margin-bottom: 4px;
+            }
+            
+            .stat-number {
+                font-size: 20px;
+                margin-bottom: 2px;
+            }
+            
+            .stat-label {
+                font-size: 10px;
+            }
+            
+            .glass-card {
+                padding: 12px;
+                border-radius: 14px;
+            }
+            
+            .card-icon {
+                width: 32px;
+                height: 32px;
+                font-size: 14px;
+            }
+            
+            .card-title {
+                font-size: 16px;
+            }
+            
+            .form-input {
+                padding: 10px 12px;
+                font-size: 16px;
+            }
+            
+            .btn {
+                padding: 10px 16px;
+                font-size: 14px;
+            }
+            
+            .btn-small {
+                padding: 5px 8px;
+                font-size: 11px;
+                margin: 1px;
+            }
+            
+            .customer-item {
+                padding: 12px;
+                margin-bottom: 8px;
+            }
+            
+            .customer-info h4 {
+                font-size: 15px;
+            }
+            
+            .customer-info p {
+                font-size: 12px;
+            }
+            
+            .coffee-progress {
+                padding: 5px 8px;
+                font-size: 12px;
+            }
+            
+            .scanner-preview {
+                height: 180px;
+                font-size: 12px;
+            }
+            
+            .admin-phone-input {
+                width: 160px;
+                font-size: 14px;
+                padding: 8px;
+            }
+            
+            .modal-content {
+                margin: 20% auto;
+                padding: 16px;
+                width: 95%;
+                border-radius: 14px;
+            }
+            
+            .current-time {
+                font-size: 12px;
+            }
+            
+            .action-buttons {
+                gap: 4px;
+            }
+            
+            .progress-dots {
+                gap: 2px;
+            }
+            
+            .progress-dot {
+                width: 5px;
+                height: 5px;
+            }
+            
+            .customer-list {
+                max-height: 350px;
+            }
+        }
+        
+        /* Touch optimizations for mobile */
+        @media (hover: none) and (pointer: coarse) {
+            .btn, .btn-small, .form-input, .customer-item {
+                min-height: 44px; /* iOS recommended touch target */
+            }
+            
+            .btn-small {
+                min-height: 36px;
+                padding: 8px 12px;
+            }
+            
+            .stat-card:hover, .glass-card:hover, .customer-item:hover {
+                transform: none; /* Disable hover effects on touch devices */
+            }
+            
+            .scanner-preview {
+                border: 3px dashed rgba(255, 255, 255, 0.4);
+                padding: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                line-height: 1.4;
+            }
+            
+            .scanner-active {
+                padding: 0;
+                border: 3px solid #10b981;
             }
         }
         
@@ -1038,6 +1467,7 @@
         let currentCustomers = [];
         let selectedCustomer = null;
         let isScanning = false;
+        let codeReader = null;
 
         // Update current time
         function updateTime() {
@@ -1399,79 +1829,72 @@
 
         async function startScanner() {
             try {
+                console.log('Запуск QR сканера...');
+                
                 const preview = document.getElementById('scanner-preview');
                 preview.innerHTML = '<video id="scanner-video" style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;"></video>';
                 preview.classList.add('scanner-active');
 
-                // Initialize Quagga for QR code scanning
-                Quagga.init({
-                    inputStream: {
-                        name: "Live",
-                        type: "LiveStream",
-                        target: document.querySelector('#scanner-video'),
-                        constraints: {
-                            width: 300,
-                            height: 300,
-                            facingMode: "environment"
-                        }
-                    },
-                    locator: {
-                        patchSize: "medium",
-                        halfSample: true
-                    },
-                    numOfWorkers: 2,
-                    frequency: 10,
-                    decoder: {
-                        readers: [
-                            "code_128_reader",
-                            "ean_reader",
-                            "ean_8_reader",
-                            "code_39_reader",
-                            "code_39_vin_reader",
-                            "codabar_reader",
-                            "upc_reader",
-                            "upc_e_reader",
-                            "i2of5_reader"
-                        ]
-                    },
-                    locate: true
-                }, function(err) {
-                    if (err) {
-                        console.error('Ошибка инициализации сканера:', err);
-                        showError('Не удалось запустить сканер: ' + err.message);
-                        stopScanner();
-                        return;
+                // Initialize ZXing code reader
+                codeReader = new ZXing.BrowserQRCodeReader();
+                
+                console.log('ZXing инициализирован');
+                
+                // Get available video devices
+                const videoDevices = await ZXing.BrowserCodeReader.listVideoInputDevices();
+                console.log('Доступные устройства:', videoDevices.length);
+                
+                if (videoDevices.length === 0) {
+                    throw new Error('Камера не найдена');
+                }
+                
+                // Use back camera if available (for mobile)
+                let selectedDeviceId = videoDevices[0].deviceId;
+                
+                // Try to find back camera
+                for (const device of videoDevices) {
+                    if (device.label.toLowerCase().includes('back') || 
+                        device.label.toLowerCase().includes('rear') ||
+                        device.label.toLowerCase().includes('environment')) {
+                        selectedDeviceId = device.deviceId;
+                        break;
+                    }
+                }
+                
+                console.log('Используется устройство:', selectedDeviceId);
+                
+                // Start scanning
+                codeReader.decodeFromVideoDevice(selectedDeviceId, 'scanner-video', (result, err) => {
+                    if (result) {
+                        console.log('QR код обнаружен:', result.text);
+                        
+                        // Stop scanning to process result
+                        codeReader.reset();
+                        processQRCode(result.text);
                     }
                     
-                    console.log("Сканер QR запущен успешно");
-                    Quagga.start();
-                    
-                    // Listen for successful scans
-                    Quagga.onDetected(function(result) {
-                        const code = result.codeResult.code;
-                        console.log('QR код обнаружен:', code);
-                        
-                        // Stop scanning temporarily to process result
-                        Quagga.stop();
-                        processQRCode(code);
-                    });
-                    
-                    isScanning = true;
-                    document.getElementById('scanner-btn').textContent = 'Остановить сканер';
-                    showSuccess('🔍 Сканер активен! Наведите на QR код клиента');
+                    if (err && !(err instanceof ZXing.NotFoundException)) {
+                        console.log('Ошибка сканирования:', err);
+                    }
                 });
-
+                
+                isScanning = true;
+                document.getElementById('scanner-btn').textContent = 'Остановить сканер';
+                showSuccess('🔍 Сканер активен! Наведите на QR код клиента');
+                
             } catch (error) {
+                console.error('Ошибка запуска камеры:', error);
                 showError('Не удалось запустить камеру: ' + error.message);
-                console.error('Camera error:', error);
                 stopScanner();
             }
         }
 
         function stopScanner() {
-            if (isScanning) {
-                Quagga.stop();
-                Quagga.offDetected();
+            console.log('Остановка сканера');
+            
+            if (codeReader) {
+                codeReader.reset();
+                codeReader = null;
             }
             
             const preview = document.getElementById('scanner-preview');
@@ -1484,15 +1907,17 @@
         // Process QR code result
         async function processQRCode(qrCode) {
             try {
+                console.log('Обработка QR кода:', qrCode);
+                
                 // QR код должен содержать ID клиента
-                // Формат: просто ID клиента (например: "abc123")
                 const customerId = qrCode.trim();
                 
                 if (!customerId) {
                     throw new Error('QR код пуст');
                 }
                 
-                console.log('Обработка QR кода для клиента:', customerId);
+                // Показываем индикатор обработки
+                showSuccess('⏳ Обработка QR кода...');
                 
                 // Проверяем существование клиента
                 const customerResponse = await fetch(`/api/customer/${customerId}`);
