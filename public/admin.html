@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>COFFEEMANIA - Панель Бариста</title>
+    <script src="https://unpkg.com/quagga@0.12.1/dist/quagga.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700;800;900&display=swap');
         
@@ -688,6 +689,93 @@
             }
         }
         
+        @media (max-width: 768px) {
+            .cycle-card {
+                padding: 16px !important;
+                margin-bottom: 12px !important;
+                border-radius: 16px !important;
+            }
+            
+            .cycle-header {
+                flex-direction: column !important;
+                gap: 12px !important;
+                align-items: flex-start !important;
+            }
+            
+            .cycle-period {
+                text-align: left !important;
+                width: 100%;
+            }
+            
+            .cycle-dot {
+                width: 35px !important;
+                height: 35px !important;
+                font-size: 14px !important;
+                margin: 3px !important;
+            }
+            
+            .cycle-dot div:first-child {
+                font-size: 12px !important;
+            }
+            
+            .cycle-dot div:last-child {
+                font-size: 8px !important;
+            }
+            
+            .cycle-dot .cycle-dot-check {
+                width: 16px !important;
+                height: 16px !important;
+                font-size: 7px !important;
+                top: -3px !important;
+                right: -3px !important;
+            }
+            
+            .dots-grid {
+                gap: 4px !important;
+                margin-bottom: 10px !important;
+            }
+            
+            .purchase-item {
+                padding: 8px 10px !important;
+                margin-bottom: 6px !important;
+                gap: 8px !important;
+            }
+            
+            .purchase-item div:first-child {
+                width: 24px !important;
+                height: 24px !important;
+                font-size: 10px !important;
+            }
+            
+            .purchase-item div:nth-child(2) {
+                padding: 3px 8px !important;
+                font-size: 11px !important;
+            }
+            
+            .purchase-item div:last-child {
+                font-size: 11px !important;
+            }
+            
+            .progress-section {
+                margin-bottom: 12px !important;
+            }
+            
+            .progress-section > div:first-child {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 8px !important;
+            }
+            
+            .purchases-section {
+                margin-bottom: 8px !important;
+            }
+            
+            .purchases-section > div:first-child {
+                font-size: 12px !important;
+                margin-bottom: 8px !important;
+            }
+        }
+        
         :root {
             /* Default Dark Theme */
             --bg-primary: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%);
@@ -1311,49 +1399,173 @@
 
         async function startScanner() {
             try {
-                const video = document.createElement('video');
-                video.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 16px;';
-                
                 const preview = document.getElementById('scanner-preview');
-                preview.innerHTML = '';
-                preview.appendChild(video);
+                preview.innerHTML = '<video id="scanner-video" style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;"></video>';
                 preview.classList.add('scanner-active');
 
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'environment' } 
-                });
-                
-                video.srcObject = stream;
-                video.play();
-
-                document.getElementById('scanner-btn').textContent = 'Остановить сканер';
-                isScanning = true;
-
-                // Simulate QR detection
-                setTimeout(() => {
-                    if (isScanning) {
-                        showSuccess('QR сканирование активно...');
+                // Initialize Quagga for QR code scanning
+                Quagga.init({
+                    inputStream: {
+                        name: "Live",
+                        type: "LiveStream",
+                        target: document.querySelector('#scanner-video'),
+                        constraints: {
+                            width: 300,
+                            height: 300,
+                            facingMode: "environment"
+                        }
+                    },
+                    locator: {
+                        patchSize: "medium",
+                        halfSample: true
+                    },
+                    numOfWorkers: 2,
+                    frequency: 10,
+                    decoder: {
+                        readers: [
+                            "code_128_reader",
+                            "ean_reader",
+                            "ean_8_reader",
+                            "code_39_reader",
+                            "code_39_vin_reader",
+                            "codabar_reader",
+                            "upc_reader",
+                            "upc_e_reader",
+                            "i2of5_reader"
+                        ]
+                    },
+                    locate: true
+                }, function(err) {
+                    if (err) {
+                        console.error('Ошибка инициализации сканера:', err);
+                        showError('Не удалось запустить сканер: ' + err.message);
+                        stopScanner();
+                        return;
                     }
-                }, 2000);
+                    
+                    console.log("Сканер QR запущен успешно");
+                    Quagga.start();
+                    
+                    // Listen for successful scans
+                    Quagga.onDetected(function(result) {
+                        const code = result.codeResult.code;
+                        console.log('QR код обнаружен:', code);
+                        
+                        // Stop scanning temporarily to process result
+                        Quagga.stop();
+                        processQRCode(code);
+                    });
+                    
+                    isScanning = true;
+                    document.getElementById('scanner-btn').textContent = 'Остановить сканер';
+                    showSuccess('🔍 Сканер активен! Наведите на QR код клиента');
+                });
 
             } catch (error) {
-                showError('Не удалось запустить камеру');
+                showError('Не удалось запустить камеру: ' + error.message);
                 console.error('Camera error:', error);
+                stopScanner();
             }
         }
 
         function stopScanner() {
-            const preview = document.getElementById('scanner-preview');
-            const video = preview.querySelector('video');
-            
-            if (video && video.srcObject) {
-                video.srcObject.getTracks().forEach(track => track.stop());
+            if (isScanning) {
+                Quagga.stop();
+                Quagga.offDetected();
             }
             
+            const preview = document.getElementById('scanner-preview');
             preview.innerHTML = 'Нажмите "Запустить сканер" для начала работы';
             preview.classList.remove('scanner-active');
             document.getElementById('scanner-btn').textContent = 'Запустить сканер';
             isScanning = false;
+        }
+
+        // Process QR code result
+        async function processQRCode(qrCode) {
+            try {
+                // QR код должен содержать ID клиента
+                // Формат: просто ID клиента (например: "abc123")
+                const customerId = qrCode.trim();
+                
+                if (!customerId) {
+                    throw new Error('QR код пуст');
+                }
+                
+                console.log('Обработка QR кода для клиента:', customerId);
+                
+                // Проверяем существование клиента
+                const customerResponse = await fetch(`/api/customer/${customerId}`);
+                if (!customerResponse.ok) {
+                    throw new Error('Клиент не найден');
+                }
+                
+                const customer = await customerResponse.json();
+                
+                // Автоматически добавляем покупку
+                const purchaseResponse = await fetch(`/api/purchase/${customerId}`, {
+                    method: 'POST'
+                });
+                
+                if (!purchaseResponse.ok) {
+                    const error = await purchaseResponse.json();
+                    throw new Error(error.error || 'Ошибка добавления покупки');
+                }
+                
+                const result = await purchaseResponse.json();
+                
+                // Показываем результат
+                if (result.isComplete) {
+                    showSuccess(`
+                        <div style="text-align: center; font-size: 18px;">
+                            🎉 <strong>${customer.name}</strong> получает бесплатный кофе!
+                            <div style="margin-top: 10px; font-size: 14px; opacity: 0.8;">
+                                Цикл завершен: ${result.newPurchases}/6 покупок
+                            </div>
+                        </div>
+                    `);
+                } else {
+                    showSuccess(`
+                        <div style="text-align: center; font-size: 18px;">
+                            ☕ Покупка засчитана! <strong>${customer.name}</strong>
+                            <div style="margin-top: 10px; font-size: 14px; opacity: 0.8;">
+                                Прогресс: ${result.newPurchases}/6 покупок (осталось ${6 - result.newPurchases})
+                            </div>
+                        </div>
+                    `);
+                }
+                
+                // Обновляем данные
+                await loadData();
+                
+                // Автоматически перезапускаем сканер через 3 секунды
+                setTimeout(() => {
+                    if (document.getElementById('scanner-btn').textContent === 'Остановить сканер') {
+                        startScanner();
+                    }
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Ошибка обработки QR кода:', error);
+                showError(`
+                    <div style="text-align: center;">
+                        ❌ Ошибка сканирования QR кода
+                        <div style="margin-top: 8px; font-size: 14px; opacity: 0.8;">
+                            ${error.message}
+                        </div>
+                        <div style="margin-top: 8px; font-size: 12px; opacity: 0.6;">
+                            QR код: ${qrCode}
+                        </div>
+                    </div>
+                `);
+                
+                // Перезапускаем сканер через 2 секунды при ошибке
+                setTimeout(() => {
+                    if (document.getElementById('scanner-btn').textContent === 'Остановить сканер') {
+                        startScanner();
+                    }
+                }, 2000);
+            }
         }
 
         // Show messages
@@ -1446,101 +1658,106 @@
                             year: 'numeric'
                         });
                         
-                        // Create progress dots for the cycle
+                        // Create compact progress dots for mobile/desktop
                         let progressDots = '';
                         for (let i = 1; i <= 6; i++) {
                             const isFilled = i <= purchaseCount;
                             progressDots += `
-                                <div style="
-                                    width: 60px; height: 60px; border-radius: 20px;
-                                    display: flex; align-items: center; justify-content: center;
-                                    font-size: 20px; margin: 6px;
+                                <div class="cycle-dot" style="
+                                    width: 45px; 
+                                    height: 45px; 
+                                    border-radius: 14px;
+                                    display: flex; 
+                                    align-items: center; 
+                                    justify-content: center;
+                                    font-size: 16px; 
+                                    margin: 4px;
                                     background: ${isFilled ? 'linear-gradient(135deg, #8B4513 0%, #D2691E 100%)' : 'var(--card-bg)'};
                                     color: ${isFilled ? 'white' : 'var(--text-muted)'};
-                                    border: 3px solid ${isFilled ? 'rgba(139, 69, 19, 0.4)' : 'var(--card-border)'};
-                                    box-shadow: ${isFilled ? '0 10px 25px rgba(139, 69, 19, 0.4)' : '0 4px 12px rgba(0,0,0,0.1)'};
+                                    border: 2px solid ${isFilled ? 'rgba(139, 69, 19, 0.4)' : 'var(--card-border)'};
+                                    box-shadow: ${isFilled ? '0 6px 16px rgba(139, 69, 19, 0.3)' : '0 3px 8px rgba(0,0,0,0.1)'};
                                     transition: all 0.3s ease;
                                     position: relative;
                                     font-weight: 700;
                                 ">
                                     <div style="display: flex; flex-direction: column; align-items: center; line-height: 1;">
-                                        <div style="font-size: 16px;">☕</div>
-                                        <div style="font-size: 10px; font-weight: 900; margin-top: 2px; color: ${isFilled ? 'rgba(255,255,255,0.9)' : 'var(--text-muted)'};">${i}</div>
+                                        <div style="font-size: 14px;">☕</div>
+                                        <div style="font-size: 9px; font-weight: 900; margin-top: 1px; color: ${isFilled ? 'rgba(255,255,255,0.9)' : 'var(--text-muted)'};">${i}</div>
                                     </div>
                                     ${isFilled ? `
-                                        <div style="
+                                        <div class="cycle-dot-check" style="
                                             position: absolute;
-                                            top: -6px;
-                                            right: -6px;
+                                            top: -4px;
+                                            right: -4px;
                                             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
                                             color: white;
                                             border-radius: 50%;
-                                            width: 22px;
-                                            height: 22px;
+                                            width: 18px;
+                                            height: 18px;
                                             display: flex;
                                             align-items: center;
                                             justify-content: center;
-                                            font-size: 10px;
+                                            font-size: 8px;
                                             font-weight: 900;
-                                            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
-                                            border: 2px solid white;
+                                            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                                            border: 1px solid white;
                                         ">✓</div>
                                     ` : ''}
                                 </div>
                             `;
                         }
                         
-                        // Individual purchase times
+                        // Compact purchase list for mobile
                         const purchasesList = cycle.filter(record => record.action !== 'free_coffee').map((record, index) => {
                             const time = new Date(record.purchase_date).toLocaleTimeString('ru-RU', {
                                 hour: '2-digit',
                                 minute: '2-digit'
                             });
                             return `
-                                <div style="
+                                <div class="purchase-item" style="
                                     display: flex;
                                     align-items: center;
-                                    gap: 14px;
-                                    padding: 12px 16px;
+                                    gap: 10px;
+                                    padding: 10px 12px;
                                     background: var(--card-bg);
-                                    border-radius: 16px;
-                                    border: 2px solid var(--card-border);
-                                    margin-bottom: 10px;
-                                    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+                                    border-radius: 12px;
+                                    border: 1px solid var(--card-border);
+                                    margin-bottom: 8px;
+                                    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
                                 ">
                                     <div style="
                                         background: linear-gradient(135deg, #8B4513 0%, #D2691E 100%);
                                         color: white;
-                                        width: 32px;
-                                        height: 32px;
-                                        border-radius: 12px;
+                                        width: 28px;
+                                        height: 28px;
+                                        border-radius: 10px;
                                         display: flex;
                                         align-items: center;
                                         justify-content: center;
-                                        font-size: 14px;
+                                        font-size: 12px;
                                         font-weight: 900;
-                                        box-shadow: 0 4px 12px rgba(139, 69, 19, 0.3);
+                                        box-shadow: 0 3px 8px rgba(139, 69, 19, 0.3);
                                     ">${index + 1}</div>
                                     <div style="
                                         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                                         color: white;
-                                        padding: 6px 12px;
-                                        border-radius: 12px;
-                                        font-size: 15px;
+                                        padding: 4px 10px;
+                                        border-radius: 10px;
+                                        font-size: 13px;
                                         font-weight: 700;
                                         font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
-                                        letter-spacing: 0.5px;
-                                        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+                                        letter-spacing: 0.3px;
+                                        box-shadow: 0 3px 8px rgba(102, 126, 234, 0.3);
                                     ">🕐 ${time}</div>
                                     <div style="
                                         color: var(--text-primary); 
-                                        font-size: 15px; 
+                                        font-size: 13px; 
                                         font-weight: 600;
                                         display: flex;
                                         align-items: center;
-                                        gap: 8px;
+                                        gap: 6px;
                                     ">
-                                        ☕ Покупка кофе
+                                        ☕ Покупка
                                     </div>
                                 </div>
                             `;
@@ -1553,43 +1770,42 @@
                         }) : null;
                         
                         return `
-                            <div style="
+                            <div class="cycle-card" style="
                                 background: var(--card-bg);
-                                border: 3px solid ${isCompleteCycle ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' : 'var(--card-border)'};
-                                border-image: ${isCompleteCycle ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%) 1' : 'none'};
-                                border-radius: 24px;
-                                padding: 32px;
-                                margin-bottom: 24px;
+                                border: 2px solid ${isCompleteCycle ? '#f59e0b' : 'var(--card-border)'};
+                                border-radius: 20px;
+                                padding: 20px;
+                                margin-bottom: 16px;
                                 transition: all 0.3s ease;
                                 position: relative;
                                 overflow: hidden;
-                                box-shadow: ${isCompleteCycle ? '0 16px 40px rgba(245, 158, 11, 0.2)' : '0 8px 24px rgba(0,0,0,0.1)'};
-                            " onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='translateY(0)'">
+                                box-shadow: ${isCompleteCycle ? '0 12px 28px rgba(245, 158, 11, 0.2)' : '0 6px 16px rgba(0,0,0,0.1)'};
+                            " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
                                 
-                                <!-- Cycle Header -->
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                                <!-- Compact Cycle Header -->
+                                <div class="cycle-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                                     <div style="
                                         background: ${isCompleteCycle ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'};
                                         color: white;
-                                        padding: 12px 20px;
-                                        border-radius: 16px;
-                                        font-size: 18px;
+                                        padding: 8px 14px;
+                                        border-radius: 12px;
+                                        font-size: 15px;
                                         font-weight: 700;
                                         display: flex;
                                         align-items: center;
-                                        gap: 12px;
-                                        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+                                        gap: 8px;
+                                        box-shadow: 0 6px 16px rgba(0,0,0,0.2);
                                     ">
                                         ${isCompleteCycle ? '🎁' : '☕'} Цикл #${cycleNumber}
                                         ${isCompleteCycle ? 
-                                            '<span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 8px; font-size: 12px;">ЗАВЕРШЕН</span>' : 
-                                            '<span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 8px; font-size: 12px;">В ПРОЦЕССЕ</span>'
+                                            '<span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 6px; font-size: 10px;">ЗАВЕРШЕН</span>' : 
+                                            '<span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 6px; font-size: 10px;">В ПРОЦЕССЕ</span>'
                                         }
                                     </div>
-                                    <div style="text-align: right; color: var(--text-secondary);">
-                                        <div style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">📅 Период цикла:</div>
+                                    <div class="cycle-period" style="text-align: right; color: var(--text-secondary);">
+                                        <div style="font-size: 12px; font-weight: 600; margin-bottom: 2px;">📅 Период:</div>
                                         <div style="
-                                            font-size: 16px; 
+                                            font-size: 13px; 
                                             font-weight: 700; 
                                             color: var(--text-primary);
                                             font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -1599,175 +1815,109 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Coffee Progress Visual -->
-                                <div style="
-                                    background: var(--modal-bg);
-                                    border: 2px solid var(--card-border);
-                                    border-radius: 20px;
-                                    padding: 24px;
-                                    margin-bottom: 24px;
-                                    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-                                ">
+                                <!-- Progress Section -->
+                                <div class="progress-section" style="margin-bottom: 16px;">
                                     <div style="
-                                        color: var(--text-primary); 
-                                        font-size: 18px; 
-                                        font-weight: 700; 
-                                        margin-bottom: 20px; 
-                                        text-align: center;
-                                        display: flex;
-                                        align-items: center;
-                                        justify-content: center;
-                                        gap: 10px;
+                                        display: flex; 
+                                        justify-content: space-between; 
+                                        align-items: center; 
+                                        margin-bottom: 12px;
                                     ">
-                                        ☕ Прогресс цикла лояльности
-                                    </div>
-                                    <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;">
-                                        ${progressDots}
-                                    </div>
-                                    <div style="text-align: center;">
                                         <div style="
-                                            color: var(--text-primary); 
-                                            font-weight: 900; 
-                                            font-size: 20px; 
-                                            margin-bottom: 12px;
-                                            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                                        ">
-                                            📊 ${purchaseCount}/6 покупок выполнено
-                                        </div>
-                                        ${isCompleteCycle ? `
-                                            <div style="
-                                                background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-                                                color: white;
-                                                padding: 16px 24px;
-                                                border-radius: 20px;
-                                                font-size: 16px;
-                                                font-weight: 700;
-                                                display: inline-block;
-                                                box-shadow: 0 10px 25px rgba(245, 158, 11, 0.4);
-                                                border: 3px solid rgba(255,255,255,0.3);
-                                            ">🎉 БЕСПЛАТНЫЙ КОФЕ ПОЛУЧЕН!</div>
-                                        ` : `
-                                            <div style="
-                                                color: var(--text-primary); 
-                                                font-size: 16px;
-                                                font-weight: 600;
-                                                background: var(--card-bg);
-                                                padding: 12px 20px;
-                                                border-radius: 16px;
-                                                border: 2px solid var(--card-border);
-                                                display: inline-block;
-                                            ">
-                                                ⏳ Осталось ${6 - purchaseCount} покупок до подарка
-                                            </div>
-                                        `}
-                                    </div>
-                                </div>
-                                
-                                <!-- Purchase Details -->
-                                <div style="
-                                    background: var(--card-bg);
-                                    border: 2px solid var(--card-border);
-                                    border-radius: 20px;
-                                    padding: 24px;
-                                    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-                                ">
-                                    <div style="
-                                        color: var(--text-primary); 
-                                        font-size: 18px; 
-                                        font-weight: 700; 
-                                        margin-bottom: 20px;
-                                        display: flex;
-                                        align-items: center;
-                                        gap: 10px;
-                                    ">
-                                        📋 Детали покупок цикла
-                                    </div>
-                                    
-                                    <div style="margin-bottom: 20px;">
-                                        <div style="
-                                            color: var(--text-primary); 
-                                            font-size: 16px; 
+                                            font-size: 14px; 
                                             font-weight: 700; 
-                                            margin-bottom: 16px;
+                                            color: var(--text-primary);
                                             display: flex;
                                             align-items: center;
                                             gap: 8px;
                                         ">
-                                            ☕ Покупки кофе:
+                                            📊 Прогресс: <span style="color: ${isCompleteCycle ? '#f59e0b' : '#667eea'};">${purchaseCount}/6 покупок</span>
                                         </div>
-                                        ${purchasesList}
+                                        ${isCompleteCycle ? `
+                                            <div style="
+                                                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                                                color: white;
+                                                padding: 4px 8px;
+                                                border-radius: 8px;
+                                                font-size: 11px;
+                                                font-weight: 700;
+                                                box-shadow: 0 3px 8px rgba(16, 185, 129, 0.3);
+                                            ">✅ ГОТОВ К ПОДАРКУ</div>
+                                        ` : `
+                                            <div style="
+                                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                                color: white;
+                                                padding: 4px 8px;
+                                                border-radius: 8px;
+                                                font-size: 11px;
+                                                font-weight: 700;
+                                                box-shadow: 0 3px 8px rgba(102, 126, 234, 0.3);
+                                            ">⏳ В ПРОЦЕССЕ</div>
+                                        `}
                                     </div>
                                     
-                                    ${freeCoffeeTime ? `
-                                        <div style="
-                                            border-top: 3px solid var(--card-border);
-                                            padding-top: 20px;
-                                        ">
-                                            <div style="
-                                                color: var(--text-primary); 
-                                                font-size: 16px; 
-                                                font-weight: 700; 
-                                                margin-bottom: 16px;
-                                                display: flex;
-                                                align-items: center;
-                                                gap: 8px;
-                                            ">
-                                                🎁 Бесплатный кофе:
-                                            </div>
-                                            <div style="
-                                                display: flex;
-                                                align-items: center;
-                                                gap: 16px;
-                                                padding: 16px 20px;
-                                                background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-                                                border-radius: 20px;
-                                                color: white;
-                                                box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
-                                            ">
-                                                <div style="
-                                                    background: rgba(255,255,255,0.25);
-                                                    width: 40px;
-                                                    height: 40px;
-                                                    border-radius: 15px;
-                                                    display: flex;
-                                                    align-items: center;
-                                                    justify-content: center;
-                                                    font-size: 18px;
-                                                ">🎁</div>
-                                                <div style="
-                                                    background: rgba(255,255,255,0.25);
-                                                    color: white;
-                                                    padding: 8px 16px;
-                                                    border-radius: 15px;
-                                                    font-size: 16px;
-                                                    font-weight: 700;
-                                                    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
-                                                    letter-spacing: 0.5px;
-                                                ">🕐 ${freeCoffeeTime}</div>
-                                                <div style="font-size: 16px; font-weight: 600;">
-                                                    Получен бесплатный кофе
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ` : ''}
+                                    <!-- Coffee Dots Grid -->
+                                    <div class="dots-grid" style="
+                                        display: grid;
+                                        grid-template-columns: repeat(6, 1fr);
+                                        gap: 8px;
+                                        margin-bottom: 12px;
+                                        justify-items: center;
+                                    ">
+                                        ${progressDots}
+                                    </div>
                                 </div>
                                 
-                                <!-- Cycle Summary -->
-                                <div style="
-                                    margin-top: 24px;
-                                    padding-top: 20px;
-                                    border-top: 2px solid var(--card-border);
-                                    text-align: center;
-                                    color: var(--text-secondary);
-                                    font-size: 14px;
-                                    font-weight: 600;
-                                    background: var(--modal-bg);
-                                    padding: 16px;
-                                    border-radius: 16px;
-                                ">
-                                    📈 Цикл ${isCompleteCycle ? 'завершен' : 'в процессе'} • Покупок в цикле: ${purchaseCount} • 
-                                    ${isCompleteCycle ? `🎁 Подарок получен ${freeCoffeeTime}` : `⏳ До подарка: ${6 - purchaseCount} покупок`}
-                                </div>
+                                <!-- Purchases List -->
+                                ${purchaseCount > 0 ? `
+                                    <div class="purchases-section" style="margin-bottom: 12px;">
+                                        <div style="
+                                            font-size: 13px; 
+                                            font-weight: 700; 
+                                            color: var(--text-primary); 
+                                            margin-bottom: 10px;
+                                            display: flex;
+                                            align-items: center;
+                                            gap: 8px;
+                                        ">
+                                            📋 Детали покупок:
+                                        </div>
+                                        <div class="purchases-list">
+                                            ${purchasesList}
+                                        </div>
+                                    </div>
+                                ` : ''}
+                                
+                                <!-- Free Coffee Section -->
+                                ${freeCoffeeRecord ? `
+                                    <div style="
+                                        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                                        color: white;
+                                        padding: 12px 16px;
+                                        border-radius: 14px;
+                                        margin-top: 12px;
+                                        box-shadow: 0 6px 16px rgba(245, 158, 11, 0.3);
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 12px;
+                                    ">
+                                        <div style="
+                                            background: rgba(255,255,255,0.2);
+                                            width: 36px;
+                                            height: 36px;
+                                            border-radius: 12px;
+                                            display: flex;
+                                            align-items: center;
+                                            justify-content: center;
+                                            font-size: 18px;
+                                        ">🎁</div>
+                                        <div>
+                                            <div style="font-size: 14px; font-weight: 700;">Бесплатный кофе получен!</div>
+                                            <div style="font-size: 12px; opacity: 0.9;">🕐 ${freeCoffeeTime}</div>
+                                        </div>
+                                    </div>
+                                ` : ''}
+                                
                             </div>
                         `;
                     }).join('');
