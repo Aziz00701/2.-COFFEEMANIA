@@ -706,31 +706,21 @@
         // Load customer data
         async function loadCustomerData() {
             if (!customerId) {
-                // If no ID provided, show a helpful message with available customers
-                try {
-                    const response = await fetch('/api/customers');
-                    const customers = await response.json();
-                    
-                    if (customers.length > 0) {
-                        document.getElementById('customer-name').textContent = 'Выберите клиента';
-                        document.getElementById('progress-text').innerHTML = `
-                            <div style="margin-bottom: 16px;">Доступные клиенты:</div>
-                            ${customers.map(customer => 
-                                `<div style="margin: 8px 0;">
-                                    <a href="?id=${customer.id}" style="color: rgba(255,255,255,0.9); text-decoration: underline;">
-                                        ${customer.name} (${customer.phone})
-                                    </a>
-                                </div>`
-                            ).join('')}
-                        `;
-                    } else {
-                        document.getElementById('customer-name').textContent = 'Нет клиентов';
-                        document.getElementById('progress-text').textContent = 'Зарегистрируйте первого клиента в админ панели';
-                    }
-                } catch (error) {
-                    document.getElementById('customer-name').textContent = 'ID не указан';
-                    document.getElementById('progress-text').textContent = 'Укажите ID клиента в URL: ?id=CUSTOMER_ID';
-                }
+                // If no ID provided, show error message - no access to other customers
+                document.getElementById('customer-name').textContent = 'Ошибка доступа';
+                document.getElementById('progress-text').innerHTML = `
+                    <div style="margin-bottom: 16px; color: rgba(255,255,255,0.9);">
+                        🔒 Доступ запрещен
+                    </div>
+                    <div style="font-size: 14px; line-height: 1.5;">
+                        Для доступа к карточке клиента необходимо получить персональную ссылку от бариста COFFEEMANIA.
+                    </div>
+                    <div style="margin-top: 16px;">
+                        <a href="/admin.html" style="color: rgba(255,255,255,0.8); text-decoration: underline; font-size: 14px;">
+                            Панель бариста
+                        </a>
+                    </div>
+                `;
                 return;
             }
 
@@ -748,10 +738,15 @@
                 console.error('Error loading customer:', error);
                 document.getElementById('customer-name').textContent = 'Клиент не найден';
                 document.getElementById('progress-text').innerHTML = `
-                    <div style="margin-bottom: 16px;">Клиент с ID "${customerId}" не найден</div>
-                    <div>
-                        <a href="admin.html" style="color: rgba(255,255,255,0.9); text-decoration: underline;">
-                            Перейти в админ панель
+                    <div style="margin-bottom: 16px; color: rgba(255,255,255,0.9);">
+                        ❌ Клиент с этим ID не существует
+                    </div>
+                    <div style="font-size: 14px; line-height: 1.5;">
+                        Проверьте правильность ссылки или обратитесь к бариста COFFEEMANIA для получения новой карточки.
+                    </div>
+                    <div style="margin-top: 16px;">
+                        <a href="/admin.html" style="color: rgba(255,255,255,0.8); text-decoration: underline; font-size: 14px;">
+                            Панель бариста
                         </a>
                     </div>
                 `;
@@ -867,43 +862,97 @@
         }
 
         // Open preorder options
-        function openPreorder() {
-            const adminPhone = localStorage.getItem('adminPhone') || '+77754555570';
-            const cleanPhone = adminPhone.replace(/\D/g, '');
-            
-            const modal = document.getElementById('qr-modal');
-            const content = modal.querySelector('.qr-content');
-            
-            content.innerHTML = `
-                <div class="qr-title">Предзаказ кофе</div>
-                <div style="color: #333; margin-bottom: 24px; text-align: left;">
-                    <div style="font-size: 16px; margin-bottom: 16px; text-align: center;">📞 <strong>Свяжитесь с бариста</strong></div>
-                    <div style="font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
-                        Выберите удобный способ связи для предзаказа:
+        async function openPreorder() {
+            try {
+                // Получаем актуальный номер бариста с сервера
+                const response = await fetch('/api/barista-phone');
+                let adminPhone = '+77754555570'; // Дефолтный номер
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    adminPhone = data.phone;
+                } else {
+                    // Fallback к localStorage если сервер недоступен
+                    adminPhone = localStorage.getItem('adminPhone') || '+77754555570';
+                }
+                
+                const cleanPhone = adminPhone.replace(/\D/g, '');
+                
+                const modal = document.getElementById('qr-modal');
+                const content = modal.querySelector('.qr-content');
+                
+                content.innerHTML = `
+                    <div class="qr-title">Предзаказ кофе</div>
+                    <div style="color: #333; margin-bottom: 24px; text-align: left;">
+                        <div style="font-size: 16px; margin-bottom: 16px; text-align: center;">📞 <strong>Свяжитесь с бариста</strong></div>
+                        <div style="font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
+                            Выберите удобный способ связи для предзаказа:
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                            <a href="https://wa.me/${cleanPhone}?text=Привет!%20Хочу%20сделать%20предзаказ%20кофе%20☕" 
+                               target="_blank" 
+                               style="background: #25D366; color: white; padding: 12px 8px; border-radius: 12px; text-decoration: none; text-align: center; font-weight: 600; font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                                <span style="font-size: 18px;">💬</span>
+                                WhatsApp
+                            </a>
+                            <a href="tel:+${cleanPhone}" 
+                               style="background: #007AFF; color: white; padding: 12px 8px; border-radius: 12px; text-decoration: none; text-align: center; font-weight: 600; font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                                <span style="font-size: 18px;">📞</span>
+                                Позвонить
+                            </a>
+                        </div>
+                        
+                        <div style="font-size: 12px; color: #666; text-align: center; margin-bottom: 8px;">
+                            Номер бариста: ${adminPhone}
+                        </div>
                     </div>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-                        <a href="https://wa.me/${cleanPhone}?text=Привет!%20Хочу%20сделать%20предзаказ%20кофе%20☕" 
-                           target="_blank" 
-                           style="background: #25D366; color: white; padding: 12px 8px; border-radius: 12px; text-decoration: none; text-align: center; font-weight: 600; font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 4px;">
-                            <span style="font-size: 18px;">💬</span>
-                            WhatsApp
-                        </a>
-                        <a href="tel:+${cleanPhone}" 
-                           style="background: #007AFF; color: white; padding: 12px 8px; border-radius: 12px; text-decoration: none; text-align: center; font-weight: 600; font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 4px;">
-                            <span style="font-size: 18px;">📞</span>
-                            Позвонить
-                        </a>
+                    <button class="close-btn" onclick="hideQR()">Закрыть</button>
+                `;
+                
+                modal.style.display = 'flex';
+                
+            } catch (error) {
+                console.error('Ошибка получения номера бариста:', error);
+                
+                // Fallback к localStorage при ошибке
+                const adminPhone = localStorage.getItem('adminPhone') || '+77754555570';
+                const cleanPhone = adminPhone.replace(/\D/g, '');
+                
+                const modal = document.getElementById('qr-modal');
+                const content = modal.querySelector('.qr-content');
+                
+                content.innerHTML = `
+                    <div class="qr-title">Предзаказ кофе</div>
+                    <div style="color: #333; margin-bottom: 24px; text-align: left;">
+                        <div style="font-size: 16px; margin-bottom: 16px; text-align: center;">📞 <strong>Свяжитесь с бариста</strong></div>
+                        <div style="font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
+                            Выберите удобный способ связи для предзаказа:
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                            <a href="https://wa.me/${cleanPhone}?text=Привет!%20Хочу%20сделать%20предзаказ%20кофе%20☕" 
+                               target="_blank" 
+                               style="background: #25D366; color: white; padding: 12px 8px; border-radius: 12px; text-decoration: none; text-align: center; font-weight: 600; font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                                <span style="font-size: 18px;">💬</span>
+                                WhatsApp
+                            </a>
+                            <a href="tel:+${cleanPhone}" 
+                               style="background: #007AFF; color: white; padding: 12px 8px; border-radius: 12px; text-decoration: none; text-align: center; font-weight: 600; font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                                <span style="font-size: 18px;">📞</span>
+                                Позвонить
+                            </a>
+                        </div>
+                        
+                        <div style="font-size: 12px; color: #666; text-align: center; margin-bottom: 8px;">
+                            Номер бариста: ${adminPhone} ${error ? '(сохранённый)' : ''}
+                        </div>
                     </div>
-                    
-                    <div style="font-size: 12px; color: #666; text-align: center; margin-bottom: 8px;">
-                        Номер бариста: ${adminPhone}
-                    </div>
-                </div>
-                <button class="close-btn" onclick="hideQR()">Закрыть</button>
-            `;
-            
-            modal.style.display = 'flex';
+                    <button class="close-btn" onclick="hideQR()">Закрыть</button>
+                `;
+                
+                modal.style.display = 'flex';
+            }
         }
 
         // Share card function

@@ -1,34 +1,40 @@
 {
-  "name": "COFFEEMANIA - Карта лояльности",
+  "name": "COFFEEMANIA - Система лояльности",
   "short_name": "COFFEEMANIA",
-  "description": "Программа лояльности кофейни COFFEEMANIA - каждая 7-я чашка бесплатно!",
+  "description": "Программа лояльности кофейни - каждая 7-я чашка БЕСПЛАТНО!",
   "start_url": "/",
   "display": "standalone",
-  "theme_color": "#667eea",
-  "background_color": "#667eea",
-  "orientation": "portrait",
-  "scope": "/",
+  "background_color": "#2d1b69",
+  "theme_color": "#2d1b69",
+  "orientation": "portrait-primary",
+  "categories": ["food", "lifestyle", "business"],
   "lang": "ru",
-  "categories": ["food", "lifestyle"],
+  "scope": "/",
   "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ],
   "shortcuts": [
     {
       "name": "Моя карта",
       "short_name": "Карта",
-      "description": "Открыть мою карту лояльности",
+      "description": "Открыть карту лояльности",
       "url": "/card.html",
       "icons": [
         {
@@ -38,9 +44,9 @@
       ]
     },
     {
-      "name": "Админ панель",
+      "name": "Панель бариста",
       "short_name": "Админ",
-      "description": "Панель бариста",
+      "description": "Панель управления для бариста",
       "url": "/admin.html",
       "icons": [
         {

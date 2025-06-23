@@ -97,57 +97,64 @@ app.use((req, res, next) => {
 
 // API Routes
 
-// 1. Регистрация клиента
+// 1. Регистрация клиента (только для админ панели)
 app.post('/api/register', async (req, res) => {
-    const client = await pool.connect();
     try {
-        const { name, phone } = req.body;
+        // Проверяем, что запрос идет от админ панели
+        const referer = req.get('Referer') || '';
         
+        if (!referer.includes('/admin.html') && !referer.includes('/admin')) {
+            return res.status(403).json({ error: 'Доступ запрещен' });
+        }
+        
+        const { name, phone } = req.body;
+
         if (!name || !phone) {
             return res.status(400).json({ error: 'Имя и телефон обязательны' });
         }
 
-        if (name.length < 2) {
-            return res.status(400).json({ error: 'Имя должно содержать минимум 2 символа' });
+        const existingCustomer = await pool.query(
+            'SELECT id FROM customers WHERE phone = $1',
+            [phone]
+        );
+
+        if (existingCustomer.rows.length > 0) {
+            return res.status(400).json({ error: 'Клиент с таким номером уже существует' });
         }
 
-        const id = nanoid(10);
+        const customerId = nanoid(10);
         
-        await client.query('BEGIN');
-        
-        await client.query(
-            'INSERT INTO customers (id, name, phone, purchases) VALUES ($1, $2, $3, 0)',
-            [id, name, phone]
+        await pool.query(
+            'INSERT INTO customers (id, name, phone, purchases) VALUES ($1, $2, $3, $4)',
+            [customerId, name, phone, 0]
         );
         
-        await client.query('COMMIT');
+        log.success(`Новый клиент: ${name} (${phone}) - ID: ${customerId}`);
         
-        const customerUrl = `${req.protocol}://${req.get('host')}/card.html?id=${id}`;
-        
-        log.success(`Новый клиент: ${name} (${phone}) - ID: ${id}`);
-        
-        res.status(201).json({ 
-            message: 'Клиент зарегистрирован!',
-            customerId: id,
-            customerUrl,
-            customer: { id, name, phone, purchases: 0 }
+        res.json({ 
+            success: true, 
+            customerId,
+            message: 'Клиент успешно зарегистрирован' 
         });
         
     } catch (error) {
-        await client.query('ROLLBACK');
-        if (error.constraint === 'customers_phone_key') {
-            return res.status(409).json({ error: 'Клиент с таким номером уже существует' });
-        }
         log.error("Ошибка регистрации:", error.message);
-        res.status(500).json({ error: 'Ошибка регистрации клиента' });
-    } finally {
-        client.release();
+        res.status(500).json({ error: 'Ошибка при регистрации клиента' });
     }
 });
 
-// 2. Поиск клиентов
+// 2. Поиск клиентов (только для админ панели)
 app.get('/api/search', async (req, res) => {
     try {
+        // Проверяем, что запрос идет от админ панели
+        const referer = req.get('Referer') || '';
+        const userAgent = req.get('User-Agent') || '';
+        
+        // Если запрос не от админ панели - блокируем
+        if (!referer.includes('/admin.html') && !referer.includes('/admin')) {
+            return res.status(403).json({ error: 'Доступ запрещен' });
+        }
+        
         const { q } = req.query;
         
         if (!q || q.length < 2) {
@@ -167,9 +174,17 @@ app.get('/api/search', async (req, res) => {
     }
 });
 
-// 3. Получение всех клиентов
+// 3. Получение всех клиентов (только для админ панели)
 app.get('/api/customers', async (req, res) => {
     try {
+        // Проверяем, что запрос идет от админ панели
+        const referer = req.get('Referer') || '';
+        
+        // Если запрос не от админ панели - блокируем
+        if (!referer.includes('/admin.html') && !referer.includes('/admin')) {
+            return res.status(403).json({ error: 'Доступ запрещен' });
+        }
+        
         const result = await pool.query(
             'SELECT id, name, phone, purchases, created_at FROM customers ORDER BY created_at DESC'
         );
@@ -204,8 +219,15 @@ app.get('/api/customer/:id', async (req, res) => {
     }
 });
 
-// 5. Добавление покупки
+// 5. Добавление покупки (только для админ панели)
 app.post('/api/purchase/:customerId', async (req, res) => {
+    // Проверяем, что запрос идет от админ панели
+    const referer = req.get('Referer') || '';
+    
+    if (!referer.includes('/admin.html') && !referer.includes('/admin')) {
+        return res.status(403).json({ error: 'Доступ запрещен' });
+    }
+    
     const client = await pool.connect();
     try {
         const { customerId } = req.params;
@@ -280,9 +302,16 @@ app.post('/api/purchase/:customerId', async (req, res) => {
     }
 });
 
-// 6. История покупок
+// 6. История покупок (только для админ панели)
 app.get('/api/history/:id', async (req, res) => {
     try {
+        // Проверяем, что запрос идет от админ панели
+        const referer = req.get('Referer') || '';
+        
+        if (!referer.includes('/admin.html') && !referer.includes('/admin')) {
+            return res.status(403).json({ error: 'Доступ запрещен' });
+        }
+        
         const { id } = req.params;
         
         const result = await pool.query(
@@ -325,8 +354,15 @@ app.get('/api/qr/:id', async (req, res) => {
     }
 });
 
-// 8. Удаление клиента
+// 8. Удаление клиента (только для админ панели)
 app.delete('/api/customer/:id', async (req, res) => {
+    // Проверяем, что запрос идет от админ панели
+    const referer = req.get('Referer') || '';
+    
+    if (!referer.includes('/admin.html') && !referer.includes('/admin')) {
+        return res.status(403).json({ error: 'Доступ запрещен' });
+    }
+    
     const client = await pool.connect();
     try {
         const { id } = req.params;
@@ -347,21 +383,69 @@ app.delete('/api/customer/:id', async (req, res) => {
 
         await client.query('COMMIT');
         
-        log.success(`Клиент удален: ${customerName}`);
-        res.json({ message: 'Клиент удален' });
+        log.info(`Клиент удален: ${customerName} (ID: ${id})`);
         
-                    } catch (error) {
+        res.json({ message: 'Клиент успешно удален' });
+        
+    } catch (error) {
         await client.query('ROLLBACK');
-        log.error("Ошибка удаления:", error.message);
-        res.status(500).json({ error: 'Ошибка удаления клиента' });
+        log.error("Ошибка удаления клиента:", error.message);
+        res.status(500).json({ error: 'Не удалось удалить клиента' });
     } finally {
         client.release();
     }
 });
 
-// 9. Статистика
+// 9. Получение номера бариста
+app.get('/api/barista-phone', async (req, res) => {
+    try {
+        // Возвращаем номер бариста из переменной окружения или дефолтный
+        const baristaPhone = process.env.BARISTA_PHONE || '+77754555570';
+        res.json({ phone: baristaPhone });
+    } catch (error) {
+        log.error('Ошибка получения номера бариста:', error);
+        res.status(500).json({ error: 'Ошибка получения номера бариста' });
+    }
+});
+
+// 10. Установка номера бариста (только для админ панели)
+app.post('/api/barista-phone', async (req, res) => {
+    try {
+        // Проверяем, что запрос идет от админ панели
+        const referer = req.get('Referer') || '';
+        
+        if (!referer.includes('/admin.html') && !referer.includes('/admin')) {
+            return res.status(403).json({ error: 'Доступ запрещен' });
+        }
+        
+        const { phone } = req.body;
+        
+        if (!phone) {
+            return res.status(400).json({ error: 'Номер телефона обязателен' });
+        }
+        
+        // В данной реализации сохраняем в переменную окружения (временно)
+        process.env.BARISTA_PHONE = phone;
+        
+        log.success(`Номер бариста обновлен: ${phone}`);
+        res.json({ message: 'Номер бариста обновлен', phone });
+        
+    } catch (error) {
+        log.error('Ошибка установки номера бариста:', error);
+        res.status(500).json({ error: 'Ошибка установки номера бариста' });
+    }
+});
+
+// 11. Статистика (только для админ панели)
 app.get('/api/stats', async (req, res) => {
     try {
+        // Проверяем, что запрос идет от админ панели
+        const referer = req.get('Referer') || '';
+        
+        if (!referer.includes('/admin.html') && !referer.includes('/admin')) {
+            return res.status(403).json({ error: 'Доступ запрещен' });
+        }
+        
         const [customersResult, purchasesResult, readyResult] = await Promise.all([
             pool.query('SELECT COUNT(*) as total FROM customers'),
             pool.query('SELECT COUNT(*) as total FROM purchase_history'),
