@@ -51,10 +51,27 @@ async function initializeDatabase() {
             CREATE TABLE IF NOT EXISTS purchase_history (
                 id SERIAL PRIMARY KEY,
                 customer_id TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                action TEXT NOT NULL DEFAULT 'purchase',
+                purchases_before INTEGER NOT NULL DEFAULT 0,
+                purchases_after INTEGER NOT NULL DEFAULT 0,
+                notes TEXT,
+                purchase_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
             )
         `);
+        
+        // Добавляем недостающие столбцы если они не существуют
+        try {
+            await pool.query(`ALTER TABLE purchase_history ADD COLUMN IF NOT EXISTS action TEXT NOT NULL DEFAULT 'purchase'`);
+            await pool.query(`ALTER TABLE purchase_history ADD COLUMN IF NOT EXISTS purchases_before INTEGER NOT NULL DEFAULT 0`);
+            await pool.query(`ALTER TABLE purchase_history ADD COLUMN IF NOT EXISTS purchases_after INTEGER NOT NULL DEFAULT 0`);
+            await pool.query(`ALTER TABLE purchase_history ADD COLUMN IF NOT EXISTS notes TEXT`);
+            // Переименовываем created_at в purchase_date если нужно
+            await pool.query(`ALTER TABLE purchase_history RENAME COLUMN created_at TO purchase_date`);
+        } catch (error) {
+            // Игнорируем ошибки если столбцы уже существуют
+        }
+        
         log.info('Таблица purchase_history проверена/создана');
 
         const result = await pool.query('SELECT COUNT(*) as count FROM customers');
@@ -181,7 +198,7 @@ app.get('/api/customer/:id', async (req, res) => {
         
         res.json(result.rows[0]);
         
-    } catch (error) {
+            } catch (error) {
         log.error("Ошибка получения клиента:", error.message);
         res.status(500).json({ error: 'Ошибка получения данных клиента' });
     }
@@ -213,27 +230,35 @@ app.post('/api/purchase/:customerId', async (req, res) => {
         let currentPurchases = customer.purchases;
         let newPurchases;
         let isComplete = false;
+        let action = 'purchase';
 
         if (currentPurchases >= 6) {
-            // Сброс после получения бесплатного кофе
-            newPurchases = 1;
+            // Выдача бесплатного кофе и сброс счетчика
+            newPurchases = 0;
             isComplete = true;
+            action = 'free_coffee';
+            
+            // Добавляем запись о выдаче бесплатного кофе
+            await client.query(
+                'INSERT INTO purchase_history (customer_id, action, purchases_before, purchases_after, notes) VALUES ($1, $2, $3, $4, $5)',
+                [customerId, 'free_coffee', currentPurchases, newPurchases, 'Бесплатный кофе выдан, счетчик сброшен']
+            );
         } else {
             newPurchases = currentPurchases + 1;
-            if (newPurchases === 6) {
+            if (newPurchases >= 6) {
                 isComplete = true;
             }
+            
+            // Добавляем запись о покупке
+            await client.query(
+                'INSERT INTO purchase_history (customer_id, action, purchases_before, purchases_after, notes) VALUES ($1, $2, $3, $4, $5)',
+                [customerId, 'purchase', currentPurchases, newPurchases, newPurchases >= 6 ? 'Клиент готов к получению бесплатного кофе' : null]
+            );
         }
         
         await client.query(
             'UPDATE customers SET purchases = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
             [newPurchases, customerId]
-        );
-        
-        // Добавляем запись в историю
-        await client.query(
-            'INSERT INTO purchase_history (customer_id) VALUES ($1)',
-            [customerId]
         );
         
         await client.query('COMMIT');
@@ -260,19 +285,12 @@ app.get('/api/history/:id', async (req, res) => {
     try {
         const { id } = req.params;
         
-        const [customerResult, historyResult] = await Promise.all([
-            pool.query('SELECT id, name, phone, purchases FROM customers WHERE id = $1', [id]),
-            pool.query('SELECT created_at FROM purchase_history WHERE customer_id = $1 ORDER BY created_at ASC', [id])
-        ]);
+        const result = await pool.query(
+            'SELECT id, customer_id, action, purchases_before, purchases_after, notes, purchase_date FROM purchase_history WHERE customer_id = $1 ORDER BY purchase_date DESC',
+            [id]
+        );
         
-        if (customerResult.rows.length === 0) {
-            return res.status(404).json({ error: 'Клиент не найден' });
-        }
-        
-        res.json({
-            customer: customerResult.rows[0],
-            history: historyResult.rows
-        });
+        res.json(result.rows);
         
     } catch (error) {
         log.error("Ошибка получения истории:", error.message);
@@ -332,7 +350,7 @@ app.delete('/api/customer/:id', async (req, res) => {
         log.success(`Клиент удален: ${customerName}`);
         res.json({ message: 'Клиент удален' });
         
-    } catch (error) {
+                    } catch (error) {
         await client.query('ROLLBACK');
         log.error("Ошибка удаления:", error.message);
         res.status(500).json({ error: 'Ошибка удаления клиента' });

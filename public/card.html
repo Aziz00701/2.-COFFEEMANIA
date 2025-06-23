@@ -2,10 +2,10 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Ваша карта лояльности - COFFEEMANIA</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COFFEEMANIA - Карта лояльности</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700;800;900&display=swap');
         
         * {
             margin: 0;
@@ -14,750 +14,822 @@
         }
         
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #1a1a1a;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            position: relative;
             overflow-x: hidden;
+            position: relative;
         }
         
         body::before {
             content: '';
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="10" cy="10" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="30" cy="30" r="1" fill="rgba(255,255,255,0.08)"/><circle cx="60" cy="20" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="80" r="1" fill="rgba(255,255,255,0.05)"/><circle cx="20" cy="70" r="1" fill="rgba(255,255,255,0.08)"/></svg>') repeat;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 60%, rgba(120, 219, 226, 0.1) 0%, transparent 50%);
             pointer-events: none;
+            z-index: 0;
         }
         
-        .card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 24px;
-            padding: 32px 28px;
-            width: 100%;
-            max-width: 380px;
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 428px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-top: 40px;
+        }
+        
+        .greeting {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .customer-name {
+            color: white;
+            font-size: 32px;
+            font-weight: 800;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        
+        .current-date {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+        }
+        
+        .main-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(30px);
+            border-radius: 32px;
+            padding: 32px 24px;
+            margin-bottom: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: 
-                0 25px 50px -12px rgba(0, 0, 0, 0.25),
-                0 0 0 1px rgba(255, 255, 255, 0.2);
+                0 32px 64px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
             position: relative;
             overflow: hidden;
             text-align: center;
-            transform: translateY(0);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
-        .card::before {
+        .main-card::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
-            background-size: 200% 100%;
-            animation: shimmer 3s ease-in-out infinite;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
         }
         
-        @keyframes shimmer {
-            0%, 100% { background-position: 200% 0; }
-            50% { background-position: -200% 0; }
-        }
-        
-        .brand {
-            font-size: 28px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 8px;
-            letter-spacing: -0.5px;
-        }
-        
-        .customer-info {
-            font-size: 16px;
-            color: #6b7280;
-            margin-bottom: 32px;
-            font-weight: 500;
-        }
-        
-        #customer-name {
-            color: #1f2937;
-            font-weight: 600;
-        }
-        
-        .progress-section {
-            margin-bottom: 32px;
-        }
-        
-        .progress-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        
-        .progress-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #6b7280;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .progress-counter {
-            font-size: 14px;
-            font-weight: 600;
-            color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
-            padding: 4px 12px;
-            border-radius: 12px;
-        }
-        
-        .coffee-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
+        .coffee-illustration {
+            width: 100%;
+            height: 200px;
+            border-radius: 24px;
+            background: linear-gradient(135deg, #8B4513 0%, #D2691E 25%, #CD853F 50%, #DEB887 100%);
+            position: relative;
             margin-bottom: 24px;
+            overflow: hidden;
+            box-shadow: 0 16px 32px rgba(139, 69, 19, 0.3);
         }
         
-        .coffee-cup {
-            width: 72px;
-            height: 72px;
-            background: #f3f4f6;
+        .coffee-illustration::before {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: 20%;
+            width: 60%;
+            height: 60%;
+            background: 
+                radial-gradient(circle at 30% 40%, #6F4E37 0%, transparent 50%),
+                radial-gradient(circle at 70% 60%, #A0522D 0%, transparent 40%);
+            border-radius: 50%;
+        }
+        
+        .coffee-illustration::after {
+            content: '☕';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            opacity: 0.7;
+        }
+        
+        .coffee-beans {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #3C2415;
+            border-radius: 50%;
+            opacity: 0.3;
+        }
+        
+        .bean-1 { top: 10%; left: 15%; }
+        .bean-2 { top: 20%; right: 20%; }
+        .bean-3 { bottom: 15%; left: 25%; }
+        .bean-4 { bottom: 25%; right: 15%; }
+        
+        .loyalty-section {
+            text-align: center;
+        }
+        
+        .section-title {
+            color: white;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .progress-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .progress-text {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        
+        .coffee-dots {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .coffee-dot {
+            width: 44px;
+            height: 44px;
             border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 32px;
-            position: relative;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 2px solid transparent;
-            cursor: default;
-        }
-        
-        .coffee-cup::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 14px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            opacity: 0;
-            transition: opacity 0.4s ease;
-        }
-        
-        .coffee-cup.filled {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            transform: scale(1.05);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-        }
-        
-        .coffee-cup.filled::before {
-            opacity: 1;
-        }
-        
-        .coffee-cup.animate {
-            animation: fillCup 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        @keyframes fillCup {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1.05); }
-        }
-        
-        .status-text {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 28px;
-            padding: 16px 20px;
-            border-radius: 16px;
-            background: rgba(102, 126, 234, 0.05);
-            border: 1px solid rgba(102, 126, 234, 0.1);
+            font-size: 20px;
             transition: all 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.2);
         }
         
-        .status-text.success {
-            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(16, 185, 129, 0.1));
-            border-color: rgba(34, 197, 94, 0.2);
-            color: #059669;
+        .coffee-dot.filled {
+            background: linear-gradient(135deg, #8B4513 0%, #D2691E 100%);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 
+                0 8px 16px rgba(139, 69, 19, 0.3),
+                0 0 0 3px rgba(139, 69, 19, 0.1);
+            animation: fillPop 0.5s ease-out;
         }
         
-        .status-text.warning {
-            color: #7c2d12;
+        .coffee-dot.empty {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.4);
         }
         
-        .qr-button {
+        @keyframes fillPop {
+            0% { transform: scale(0.8); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .progress-bar {
             width: 100%;
-            padding: 16px 24px;
-            border: none;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #8B4513 0%, #D2691E 100%);
+            border-radius: 3px;
+            transition: width 0.8s ease;
+            box-shadow: 0 0 10px rgba(139, 69, 19, 0.5);
+        }
+        
+        .progress-label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .free-coffee-badge {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #8B4513;
+            padding: 12px 24px;
+            border-radius: 20px;
             font-size: 16px;
+            font-weight: 700;
+            display: inline-block;
+            box-shadow: 0 8px 24px rgba(255, 215, 0, 0.4);
+            animation: glow 2s infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { box-shadow: 0 8px 24px rgba(255, 215, 0, 0.4); }
+            to { box-shadow: 0 8px 32px rgba(255, 215, 0, 0.6), 0 0 20px rgba(255, 215, 0, 0.3); }
+        }
+        
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        
+        .action-btn {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 20px 16px;
+            color: white;
+            text-decoration: none;
+            text-align: center;
             font-weight: 600;
-            border-radius: 16px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 15px;
+            transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
-            font-family: inherit;
         }
         
-        .qr-button::before {
+        .action-btn::before {
             content: '';
             position: absolute;
             top: 0;
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
             transition: left 0.6s;
         }
         
-        .qr-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
-        }
-        
-        .qr-button:hover::before {
+        .action-btn:hover::before {
             left: 100%;
         }
         
-        .qr-button:active {
-            transform: translateY(0);
+        .action-btn:active {
+            transform: scale(0.98);
+        }
+        
+        .action-btn .emoji {
+            display: block;
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .bottom-nav {
+            margin-top: auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(30px);
+            border-radius: 24px;
+            padding: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-items {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+        
+        .nav-item {
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            font-size: 24px;
+            padding: 12px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-item.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
         }
         
         .qr-modal {
             display: none;
             position: fixed;
-            z-index: 1000;
-            left: 0;
             top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(8px);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
             align-items: center;
             justify-content: center;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        
-        .qr-modal.show {
-            opacity: 1;
-            display: flex;
         }
         
         .qr-content {
-            background: white;
-            border-radius: 24px;
-            padding: 32px;
-            max-width: 90%;
-            max-height: 90%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(30px);
+            border-radius: 32px;
+            padding: 40px;
             text-align: center;
-            transform: scale(0.9);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 32px 64px rgba(0, 0, 0, 0.2);
+            max-width: 320px;
+            width: 90%;
         }
         
-        .qr-modal.show .qr-content {
-            transform: scale(1);
-        }
-        
-        .qr-content h3 {
+        .qr-title {
+            color: #333;
             font-size: 24px;
             font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 20px;
-        }
-        
-        .qr-content img {
-            max-width: 250px;
-            width: 100%;
-            border-radius: 12px;
             margin-bottom: 16px;
         }
         
-        .qr-content p {
-            color: #6b7280;
+        .qr-code {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+        
+        .qr-instructions {
+            color: #666;
             font-size: 14px;
-            line-height: 1.5;
+            margin-bottom: 24px;
         }
         
-        .close-modal {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            width: 32px;
-            height: 32px;
+        .close-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             border: none;
-            background: #f3f4f6;
-            border-radius: 50%;
+            padding: 12px 24px;
+            border-radius: 16px;
+            font-weight: 600;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            color: #6b7280;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
         }
         
-        .close-modal:hover {
-            background: #e5e7eb;
-            color: #374151;
-        }
-        
-        #confetti {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 10;
+        .close-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
         }
         
         .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 2px solid #f3f4f6;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            padding: 40px;
+        }
+        
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
             border-radius: 50%;
-            border-top-color: #667eea;
-            animation: spin 1s ease-in-out infinite;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
         }
         
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         
-        .error-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #6b7280;
-        }
-        
-        .error-state h2 {
-            font-size: 24px;
-            color: #ef4444;
-            margin-bottom: 12px;
-        }
-        
-        @media (max-width: 480px) {
-            .card {
-                margin: 10px;
+        /* Desktop Responsive */
+        @media (min-width: 768px) {
+            .container {
+                max-width: 500px;
+                padding: 40px;
+            }
+            
+            .header {
+                padding-top: 60px;
+                margin-bottom: 40px;
+            }
+            
+            .customer-name {
+                font-size: 36px;
+            }
+            
+            .main-card {
+                padding: 40px 32px;
+                margin-bottom: 32px;
+            }
+            
+            .coffee-illustration {
+                height: 240px;
+                margin-bottom: 32px;
+            }
+            
+            .action-buttons {
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+                margin-bottom: 40px;
+            }
+            
+            .action-btn {
                 padding: 24px 20px;
+                font-size: 16px;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            body {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 40px;
             }
             
-            .coffee-cup {
-                width: 64px;
-                height: 64px;
-                font-size: 28px;
+            .container {
+                max-width: 600px;
+                min-height: auto;
+                background: rgba(255, 255, 255, 0.05);
+                backdrop-filter: blur(40px);
+                border-radius: 40px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                box-shadow: 0 40px 80px rgba(0, 0, 0, 0.2);
+                padding: 60px 50px;
             }
             
-            .brand {
+            .action-buttons {
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 16px;
+            }
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 767px) {
+            .action-buttons {
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+            }
+            
+            .action-btn {
+                padding: 16px 12px;
+                font-size: 14px;
+            }
+            
+            .action-btn .emoji {
+                font-size: 20px;
+                margin-bottom: 6px;
+            }
+            
+            .brand-footer {
+                margin-top: 20px;
+                padding: 20px 16px;
+            }
+            
+            .brand-title {
                 font-size: 24px;
+                letter-spacing: 1px;
+            }
+            
+            .brand-subtitle {
+                font-size: 13px;
             }
         }
         
-        .pulse {
-            animation: pulse 2s infinite;
+        .brand-footer {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(30px);
+            border-radius: 24px;
+            padding: 24px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            margin-top: auto;
         }
         
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+        .brand-footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        }
+        
+        .brand-title {
+            font-size: 28px;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.95);
+            margin-bottom: 8px;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            letter-spacing: 2px;
+        }
+        
+        .brand-subtitle {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+        
+        .barista-info {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 12px 16px;
+            margin-top: 16px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+            display: none;
+        }
+        
+        .barista-info.visible {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body>
-    <div class="card">
-        <div class="brand">COFFEEMANIA</div>
-        <div class="customer-info">
-            Карта лояльности для <span id="customer-name" class="pulse">...</span>
+    <div class="container">
+        <div class="header">
+            <div class="greeting">Добро пожаловать,</div>
+            <div class="customer-name" id="customer-name">Загрузка...</div>
+            <div class="current-date" id="current-date"></div>
+            <div class="header-controls">
+                <div class="current-time" id="current-time"></div>
+            </div>
         </div>
 
-        <div class="progress-section">
-            <div class="progress-header">
-                <div class="progress-title">Прогресс</div>
-                <div class="progress-counter" id="progress-counter">0/6</div>
+        <div class="main-card">
+            <div class="coffee-illustration">
+                <div class="coffee-beans bean-1"></div>
+                <div class="coffee-beans bean-2"></div>
+                <div class="coffee-beans bean-3"></div>
+                <div class="coffee-beans bean-4"></div>
             </div>
             
-            <div class="coffee-grid" id="coffee-grid">
-                <!-- Чашки будут добавлены динамически -->
+            <div class="loyalty-section">
+                <div class="section-title">COFFEEMANIA</div>
+                <div style="color: rgba(255, 255, 255, 0.8); font-size: 16px; font-weight: 500; margin-bottom: 20px;">
+                    Программа лояльности
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-text" id="progress-text">Загрузка...</div>
+                    
+                    <div class="coffee-dots" id="coffee-dots">
+                        <!-- Dots will be generated by JavaScript -->
+                    </div>
+                    
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    
+                    <div class="progress-label" id="progress-label">0 из 6 покупок</div>
+                </div>
+                
+                <div id="free-coffee-notice" style="display: none;">
+                    <div class="free-coffee-badge">
+                        🎉 Бесплатный кофе готов!
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="status-text" id="status-text">
-            <div class="loading"></div>
+        <div class="action-buttons">
+            <a href="#" class="action-btn" onclick="showQR()">
+                <span class="emoji">📱</span>
+                Мой QR-код
+            </a>
+            <a href="#" class="action-btn" onclick="showGiftHistory()">
+                <span class="emoji">🎁</span>
+                Подарочный кофе
+            </a>
+            <a href="tel:+77754555570" class="action-btn" id="preorder-btn">
+                <span class="emoji">📞</span>
+                Предзаказ
+            </a>
         </div>
 
-        <button class="qr-button" id="show-qr-button">
-            <span>Показать QR-код</span>
-        </button>
-        
-        <canvas id="confetti"></canvas>
+        <div class="brand-footer">
+            <div class="brand-title">COFFEEMANIA</div>
+            <div class="brand-subtitle">Ваша программа лояльности</div>
+            <div class="barista-info" id="barista-info">
+                👨‍💼 Ваш бариста сохранен
+            </div>
+        </div>
     </div>
 
+    <!-- QR Modal -->
     <div class="qr-modal" id="qr-modal">
         <div class="qr-content">
-            <button class="close-modal" onclick="closeModal()">×</button>
-            <h3>Ваш QR-код</h3>
-            <img id="qr-image" src="" alt="QR-код" style="display: none;">
-            <div id="qr-fallback" style="display: none;"></div>
-            <p>Покажите этот код бариста для получения бонуса</p>
+            <div class="qr-title">Ваш QR-код</div>
+            <div class="qr-code">
+                <img id="qr-image" src="" alt="QR Code" style="width: 200px; height: 200px;">
+            </div>
+            <div class="qr-instructions">
+                Покажите этот QR-код бариста для получения скидки
+            </div>
+            <button class="close-btn" onclick="hideQR()">Закрыть</button>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
     <script>
-        // DOM элементы
-        const elements = {
-            customerName: document.getElementById('customer-name'),
-            coffeeGrid: document.getElementById('coffee-grid'),
-            statusText: document.getElementById('status-text'),
-            progressCounter: document.getElementById('progress-counter'),
-            qrButton: document.getElementById('show-qr-button'),
-            qrModal: document.getElementById('qr-modal'),
-            qrImage: document.getElementById('qr-image'),
-            qrFallback: document.getElementById('qr-fallback')
-        };
+        let customerData = null;
+        const customerId = new URLSearchParams(window.location.search).get('id');
 
-        // Получаем ID клиента из URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const customerId = urlParams.get('id');
-        const customerUrl = window.location.href;
+        // Set current date
+        function setCurrentDate() {
+            const now = new Date();
+            const options = { 
+                day: 'numeric', 
+                month: 'long', 
+                year: 'numeric' 
+            };
+            document.getElementById('current-date').textContent = 
+                now.toLocaleDateString('ru-RU', options);
+        }
 
-        // Основная функция загрузки данных
-        async function fetchCustomerData() {
+        // Load customer data
+        async function loadCustomerData() {
             if (!customerId) {
-                showError('ID клиента не найден', 'Проверьте корректность ссылки');
+                // If no ID provided, show a helpful message with available customers
+                try {
+                    const response = await fetch('/api/customers');
+                    const customers = await response.json();
+                    
+                    if (customers.length > 0) {
+                        document.getElementById('customer-name').textContent = 'Выберите клиента';
+                        document.getElementById('progress-text').innerHTML = `
+                            <div style="margin-bottom: 16px;">Доступные клиенты:</div>
+                            ${customers.map(customer => 
+                                `<div style="margin: 8px 0;">
+                                    <a href="?id=${customer.id}" style="color: rgba(255,255,255,0.9); text-decoration: underline;">
+                                        ${customer.name} (${customer.phone})
+                                    </a>
+                                </div>`
+                            ).join('')}
+                        `;
+                    } else {
+                        document.getElementById('customer-name').textContent = 'Нет клиентов';
+                        document.getElementById('progress-text').textContent = 'Зарегистрируйте первого клиента в админ панели';
+                    }
+                } catch (error) {
+                    document.getElementById('customer-name').textContent = 'ID не указан';
+                    document.getElementById('progress-text').textContent = 'Укажите ID клиента в URL: ?id=CUSTOMER_ID';
+                }
                 return;
             }
 
             try {
-                const response = await fetch(`https://two-coffeemania.onrender.com/api/customer/${customerId}`);
-                if (!response.ok) throw new Error('Customer not found');
+                const response = await fetch(`/api/customer/${customerId}`);
                 
-                const customer = await response.json();
-                await updateCardUI(customer);
-
-            } catch (error) {
-                console.error('Error fetching customer data:', error);
-                showError('Карта не найдена', 'Обратитесь к бариста для регистрации');
-            }
-        }
-
-        // Обновление интерфейса карты
-        async function updateCardUI(customer) {
-            // Анимированное обновление имени
-            elements.customerName.classList.remove('pulse');
-            await sleep(100);
-            elements.customerName.textContent = customer.name;
-            
-            // Обновление счетчика
-            elements.progressCounter.textContent = `${customer.purchases}/6`;
-            
-            // Создание и анимация чашек
-            elements.coffeeGrid.innerHTML = '';
-            for (let i = 1; i <= 6; i++) {
-                const cup = createCoffeeCup(i, customer.purchases);
-                elements.coffeeGrid.appendChild(cup);
-                
-                // Анимированное появление чашек
-                await sleep(50);
-                cup.style.opacity = '1';
-                cup.style.transform = 'translateY(0)';
-            }
-            
-            // Обновление статуса
-            updateStatus(customer.purchases);
-            
-            // Анимация заполненных чашек
-            animateFilledCups(customer.purchases);
-        }
-
-        // Создание элемента чашки
-        function createCoffeeCup(index, purchases) {
-            const cup = document.createElement('div');
-            cup.className = 'coffee-cup';
-            cup.textContent = '☕';
-            cup.style.opacity = '0';
-            cup.style.transform = 'translateY(20px)';
-            cup.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
-            
-            if (index <= purchases) {
-                cup.classList.add('filled');
-            }
-            
-            return cup;
-        }
-
-        // Анимация заполненных чашек
-        async function animateFilledCups(purchases) {
-            const cups = elements.coffeeGrid.children;
-            for (let i = 0; i < purchases; i++) {
-                await sleep(100);
-                cups[i].classList.add('animate');
-                setTimeout(() => cups[i].classList.remove('animate'), 600);
-            }
-        }
-
-        // Обновление статуса
-        function updateStatus(purchases) {
-            const statusEl = elements.statusText;
-            
-            if (purchases >= 6) {
-                statusEl.textContent = '🎉 Поздравляем! Следующий кофе бесплатно!';
-                statusEl.className = 'status-text success';
-                launchConfetti();
-            } else {
-                const remaining = 6 - purchases;
-                statusEl.textContent = `Осталось ${remaining} ${getNoun(remaining, 'покупка', 'покупки', 'покупок')} до бесплатного кофе`;
-                statusEl.className = 'status-text warning';
-            }
-        }
-
-        // Склонение числительных
-        function getNoun(number, one, two, five) {
-            const n = Math.abs(number) % 100;
-            const n1 = n % 10;
-            if (n > 10 && n < 20) return five;
-            if (n1 > 1 && n1 < 5) return two;
-            if (n1 === 1) return one;
-            return five;
-        }
-
-        // Генерация QR-кода
-        async function generateQrCode() {
-            const qrImage = elements.qrImage;
-            const qrFallback = elements.qrFallback;
-            
-            try {
-                // Используем несколько вариантов QR генерации
-                const qrServices = [
-                    `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(customerUrl)}`,
-                    `https://chart.googleapis.com/chart?chs=250x250&cht=qr&chl=${encodeURIComponent(customerUrl)}`,
-                    `https://two-coffeemania.onrender.com/api/qr/${customerId}`
-                ];
-                
-                // Пробуем каждый сервис по очереди
-                let qrLoaded = false;
-                for (const qrUrl of qrServices) {
-                    if (qrLoaded) break;
-                    
-                    try {
-                        await new Promise((resolve, reject) => {
-                            const testImg = new Image();
-                            const timeout = setTimeout(() => {
-                                reject(new Error('Timeout'));
-                            }, 5000);
-                            
-                            testImg.onload = () => {
-                                clearTimeout(timeout);
-                                qrImage.src = qrUrl;
-                                qrImage.style.display = 'block';
-                                qrFallback.style.display = 'none';
-                                qrLoaded = true;
-                                resolve();
-                            };
-                            
-                            testImg.onerror = () => {
-                                clearTimeout(timeout);
-                                reject(new Error('Failed to load'));
-                            };
-                            
-                            testImg.src = qrUrl;
-                        });
-                    } catch (error) {
-                        console.log(`QR service failed: ${qrUrl}`);
-                        continue;
-                    }
+                if (!response.ok) {
+                    throw new Error('Клиент не найден');
                 }
                 
-                if (!qrLoaded) {
-                    throw new Error('All QR services failed');
-                }
-
+                customerData = await response.json();
+                updateUI();
+                
             } catch (error) {
-                console.error('QR generation error:', error);
-                showQrFallback();
+                console.error('Error loading customer:', error);
+                document.getElementById('customer-name').textContent = 'Клиент не найден';
+                document.getElementById('progress-text').innerHTML = `
+                    <div style="margin-bottom: 16px;">Клиент с ID "${customerId}" не найден</div>
+                    <div>
+                        <a href="admin.html" style="color: rgba(255,255,255,0.9); text-decoration: underline;">
+                            Перейти в админ панель
+                        </a>
+                    </div>
+                `;
             }
         }
 
-        // Показать альтернативу QR-кода
-        function showQrFallback() {
-            elements.qrImage.style.display = 'none';
-            elements.qrFallback.style.display = 'block';
-            elements.qrFallback.innerHTML = `
-                <div style="background: linear-gradient(135deg, #f8f9fa, #e9ecef); padding: 25px; border-radius: 16px; border: 2px solid #dee2e6; max-width: 280px;">
-                    <div style="background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                        <div style="font-family: 'Courier New', monospace; word-break: break-all; font-size: 11px; color: #495057; line-height: 1.4;">
-                            ${customerUrl}
-                        </div>
-                    </div>
-                    <div style="font-size: 14px; color: #6c757d; font-weight: 500;">
-                        📱 Покажите эту ссылку бариста
-                    </div>
-                    <div style="font-size: 12px; color: #adb5bd; margin-top: 8px;">
-                        или скопируйте ссылку для отправки
-                    </div>
-                    <button onclick="copyToClipboard('${customerUrl}')" style="
-                        margin-top: 15px; 
-                        padding: 10px 20px; 
-                        background: linear-gradient(135deg, #667eea, #764ba2); 
-                        color: white; 
-                        border: none; 
-                        border-radius: 8px; 
-                        font-size: 13px; 
-                        font-weight: 600; 
-                        cursor: pointer;
-                        transition: transform 0.2s ease;
-                    " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-                        📋 Копировать ссылку
-                    </button>
-                </div>
-            `;
-        }
+        // Update UI with customer data
+        function updateUI() {
+            if (!customerData) return;
 
-        // Функция копирования в буфер обмена
-        function copyToClipboard(text) {
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(text).then(() => {
-                    showNotification('Ссылка скопирована!');
-                }).catch(() => {
-                    fallbackCopyTextToClipboard(text);
-                });
+            document.getElementById('customer-name').textContent = customerData.name;
+            
+            const purchases = customerData.purchases;
+            const maxPurchases = 6;
+            const progressPercent = Math.min((purchases / maxPurchases) * 100, 100);
+            
+            // Update progress text
+            if (purchases >= maxPurchases) {
+                document.getElementById('progress-text').textContent = 'Поздравляем! Бесплатный кофе готов';
+                document.getElementById('free-coffee-notice').style.display = 'block';
             } else {
-                fallbackCopyTextToClipboard(text);
+                const remaining = maxPurchases - purchases;
+                document.getElementById('progress-text').textContent = 
+                    `Еще ${remaining} покупок до бесплатного кофе`;
+            }
+            
+            // Update coffee dots
+            const dotsContainer = document.getElementById('coffee-dots');
+            dotsContainer.innerHTML = '';
+            
+            for (let i = 1; i <= maxPurchases; i++) {
+                const dot = document.createElement('div');
+                dot.className = `coffee-dot ${i <= purchases ? 'filled' : 'empty'}`;
+                dot.textContent = '☕';
+                dotsContainer.appendChild(dot);
+            }
+            
+            // Update progress bar
+            document.getElementById('progress-fill').style.width = `${progressPercent}%`;
+            document.getElementById('progress-label').textContent = 
+                `${purchases} из ${maxPurchases} покупок`;
+        }
+
+        // Load admin phone for preorder
+        function loadAdminPhone() {
+            const adminPhone = localStorage.getItem('adminPhone');
+            if (adminPhone) {
+                const preorderBtn = document.getElementById('preorder-btn');
+                const cleanPhone = adminPhone.replace(/\D/g, '');
+                preorderBtn.href = `tel:+${cleanPhone}`;
             }
         }
 
-        // Fallback для копирования
-        function fallbackCopyTextToClipboard(text) {
-            const textArea = document.createElement("textarea");
-            textArea.value = text;
-            textArea.style.position = "fixed";
-            textArea.style.left = "-999999px";
-            textArea.style.top = "-999999px";
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
+        // Show QR modal
+        function showQR() {
+            if (!customerId) return;
             
-            try {
-                document.execCommand('copy');
-                showNotification('Ссылка скопирована!');
-            } catch (err) {
-                showNotification('Не удалось скопировать');
+            const qrImage = document.getElementById('qr-image');
+            qrImage.src = `/api/qr/${customerId}`;
+            
+            const modal = document.getElementById('qr-modal');
+            modal.style.display = 'flex';
+        }
+
+        // Hide QR modal
+        function hideQR() {
+            document.getElementById('qr-modal').style.display = 'none';
+        }
+
+        // Click outside modal to close
+        document.getElementById('qr-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideQR();
             }
-            
-            document.body.removeChild(textArea);
-        }
-
-        // Показать уведомление
-        function showNotification(message) {
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: linear-gradient(135deg, #10b981, #059669);
-                color: white;
-                padding: 12px 20px;
-                border-radius: 12px;
-                font-size: 14px;
-                font-weight: 600;
-                z-index: 10000;
-                box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
-                transform: translateX(100%);
-                transition: transform 0.3s ease;
-            `;
-            notification.textContent = message;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => notification.style.transform = 'translateX(0)', 100);
-            setTimeout(() => {
-                notification.style.transform = 'translateX(100%)';
-                setTimeout(() => document.body.removeChild(notification), 300);
-            }, 2000);
-        }
-
-        // Анимация конфетти
-        function launchConfetti() {
-            const canvas = document.getElementById('confetti');
-            const myConfetti = confetti.create(canvas, {
-                resize: true,
-                useWorker: true
-            });
-            
-            // Несколько залпов конфетти
-            const colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c'];
-            
-            setTimeout(() => myConfetti({
-                particleCount: 50,
-                spread: 70,
-                origin: { y: 0.6 },
-                colors: colors
-            }), 0);
-            
-            setTimeout(() => myConfetti({
-                particleCount: 30,
-                spread: 60,
-                origin: { y: 0.7 },
-                colors: colors
-            }), 200);
-        }
-
-        // Показать ошибку
-        function showError(title, description) {
-            document.body.innerHTML = `
-                <div class="error-state">
-                    <h2>${title}</h2>
-                    <p>${description}</p>
-                </div>
-            `;
-        }
-
-        // Открытие модального окна
-        function openModal() {
-            generateQrCode();
-            elements.qrModal.style.display = 'flex';
-            setTimeout(() => elements.qrModal.classList.add('show'), 10);
-        }
-
-        // Закрытие модального окна
-        function closeModal() {
-            elements.qrModal.classList.remove('show');
-            setTimeout(() => elements.qrModal.style.display = 'none', 300);
-        }
-
-        // Утилита для задержки
-        function sleep(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-
-        // Обработчики событий
-        elements.qrButton.addEventListener('click', openModal);
-        elements.qrModal.addEventListener('click', (e) => {
-            if (e.target === elements.qrModal) closeModal();
         });
 
-        // Инициализация
-        fetchCustomerData();
+        // Show gift history
+        function showGiftHistory() {
+            if (!customerId) {
+                alert('ID клиента не найден');
+                return;
+            }
+            
+            // Show modal with gift coffee history
+            const modal = document.getElementById('qr-modal');
+            const content = modal.querySelector('.qr-content');
+            
+            content.innerHTML = `
+                <div class="qr-title">История подарков</div>
+                <div style="color: #e2e8f0; margin-bottom: 20px;">
+                    <div style="font-size: 16px; margin-bottom: 12px;">🎁 <strong>Подарочные кофе</strong></div>
+                    <div style="font-size: 14px; line-height: 1.6;">
+                        Здесь будет отображаться история ваших бесплатных кофе.<br>
+                        После каждых 6 покупок вы получаете 1 бесплатный кофе!
+                    </div>
+                </div>
+                <button class="close-btn" onclick="hideQR()">Закрыть</button>
+            `;
+            
+            modal.style.display = 'flex';
+        }
+        
+        // Initialize
+        setCurrentDate();
+        loadCustomerData();
+        loadAdminPhone();
     </script>
 </body>
 </html>

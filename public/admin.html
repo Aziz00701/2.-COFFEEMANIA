@@ -4,579 +4,572 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>COFFEEMANIA - Панель Бариста</title>
-    <script src="https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <style>
-        :root {
-            --bg-primary: #0a0e27;
-            --bg-secondary: rgba(15, 23, 42, 0.9);
-            --bg-card: rgba(30, 41, 59, 0.7);
-            --text-primary: #e2e8f0;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-            --border-color: rgba(148, 163, 184, 0.2);
-            --accent-primary: #667eea;
-            --accent-secondary: #764ba2;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --info: #3b82f6;
-        }
-
-        [data-theme="light"] {
-            --bg-primary: #f8fafc;
-            --bg-secondary: rgba(255, 255, 255, 0.95);
-            --bg-card: rgba(248, 250, 252, 0.9);
-            --text-primary: #1e293b;
-            --text-secondary: #475569;
-            --text-muted: #64748b;
-            --border-color: rgba(148, 163, 184, 0.3);
-        }
-
+        @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700;800;900&display=swap');
+        
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--bg-primary);
-            background-image: 
-                radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.15) 0%, transparent 50%);
             min-height: 100vh;
-            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
             color: var(--text-primary);
             transition: all 0.3s ease;
         }
-
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 40% 60%, rgba(120, 219, 226, 0.08) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        
         .container {
+            position: relative;
+            z-index: 1;
             max-width: 1400px;
             margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
         }
-
+        
         .header {
-            text-align: center;
-            margin-bottom: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            padding: 24px 32px;
+            margin-bottom: 32px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             position: relative;
+            overflow: hidden;
         }
-
-        .header h1 {
-            font-size: 3rem;
-            margin-bottom: 15px;
-            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            flex-direction: column;
-        }
-
-        .coffee-icon {
-            width: 80px;
-            height: 80px;
-            margin-bottom: 10px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
-        }
-
-        .coffee-icon svg {
-            width: 50px;
-            height: 50px;
-            fill: white;
-        }
-
-        .theme-switcher {
+        
+        .header::before {
+            content: '';
             position: absolute;
             top: 0;
+            left: 0;
             right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        }
+        
+        .brand-section {
             display: flex;
             align-items: center;
-            gap: 10px;
-            background: var(--bg-secondary);
-            backdrop-filter: blur(20px);
-            padding: 12px 20px;
-            border-radius: 50px;
-            border: 1px solid var(--border-color);
+            gap: 16px;
         }
-
+        
+        .brand-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #8B4513 0%, #D2691E 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 8px 24px rgba(139, 69, 19, 0.3);
+        }
+        
+        .brand-text h1 {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 4px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .brand-text p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        .theme-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .admin-phone-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .admin-phone-input {
+            width: 180px;
+            padding: 8px 12px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            font-size: 14px;
+            color: var(--text-primary);
+            font-family: inherit;
+        }
+        
+        .admin-phone-input::placeholder {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+        
+        .current-time {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+        }
+        
         .theme-toggle {
-            background: var(--bg-card);
-            border: 2px solid var(--border-color);
-            width: 60px;
-            height: 30px;
-            border-radius: 30px;
+            width: 64px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 32px;
             position: relative;
             cursor: pointer;
             transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
         }
-
+        
         .theme-toggle::before {
             content: '🌙';
             position: absolute;
             top: 2px;
             left: 4px;
-            width: 22px;
-            height: 22px;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            width: 24px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.9);
             border-radius: 50%;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
-
-        [data-theme="light"] .theme-toggle::before {
+        
+        .theme-toggle.light::before {
             content: '☀️';
-            transform: translateX(28px);
-            background: linear-gradient(135deg, #F59E0B, #EAB308);
+            transform: translateX(30px);
         }
-
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.6s;
+        }
+        
+        .stat-card:hover::before {
+            left: 100%;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+        }
+        
+        .stat-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+            opacity: 0.9;
+        }
+        
+        .stat-number {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
         .main-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 50px;
-            margin-bottom: 40px;
-            max-width: 1400px;
-            margin-left: auto;
-            margin-right: auto;
+            grid-template-columns: 1fr;
+            gap: 24px;
         }
-
-        @media (max-width: 768px) {
-            body {
-                padding: 15px;
-            }
-
-            .main-grid {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-
-            .customer-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .action-buttons {
-                flex-direction: column;
-                gap: 12px;
-            }
-
-            .action-buttons .btn-small {
-                flex: none;
-                width: 100%;
-                min-width: auto;
-                margin: 0;
-                padding: 12px 16px;
-                font-size: 14px;
-            }
-
-            .header h1 {
-                font-size: 2rem;
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .theme-switcher {
-                position: relative;
-                margin-top: 20px;
-            }
-
-            .customers-container-full {
-                grid-template-columns: 1fr;
-                gap: 15px;
-            }
-
-            .customer-item {
-                padding: 15px;
-            }
-
-            .section {
-                padding: 20px;
-                min-height: auto;
-            }
-
-            .modal-content {
-                margin: 10% auto;
-                padding: 20px;
-                width: 95%;
-            }
-        }
-
-        @media (max-width: 480px) {
-            body {
-                padding: 10px;
-            }
-
-            .header h1 {
-                font-size: 1.8rem;
-            }
-
-            .coffee-icon {
-                width: 60px;
-                height: 60px;
-            }
-
-            .coffee-icon svg {
-                width: 35px;
-                height: 35px;
-            }
-
-            .section {
-                padding: 15px;
-            }
-
-            .customers-full-width {
-                padding: 20px;
-            }
-
-            .customer-item {
-                padding: 12px;
-            }
-
-            .action-buttons {
-                gap: 10px;
-            }
-
-            .action-buttons .btn-small {
-                padding: 10px 12px;
-                font-size: 13px;
-            }
-
-            .stats-grid {
-                gap: 8px;
-            }
-
-            .stat-card {
-                padding: 15px;
-            }
-
-            .stat-number {
-                font-size: 1.5rem;
-            }
-        }
-
-        .customers-full-width {
-            width: 100%;
-            max-width: 1600px;
-            margin: 0 auto;
-            background: var(--bg-secondary);
-            backdrop-filter: blur(20px);
-            border-radius: 20px;
-            padding: 30px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(30px);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
-            min-height: auto;
-            display: flex;
-            flex-direction: column;
+            position: relative;
+            overflow: hidden;
         }
-
-        .customers-full-width:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--card-border), transparent);
         }
-
-        .customers-container-full {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-            gap: 25px;
-            margin-top: 20px;
+        
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.15);
+            background: var(--card-hover);
         }
-
-        @media (max-width: 768px) {
-            .customers-container-full {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .section {
-            background: var(--bg-secondary);
-            backdrop-filter: blur(20px);
-            border-radius: 20px;
-            padding: 30px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            min-height: 500px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .section:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
-        }
-
-        .section h2 {
-            color: var(--text-primary);
-            margin-bottom: 25px;
-            font-size: 1.4rem;
-            font-weight: 600;
+        
+        .card-header {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 16px;
+            margin-bottom: 24px;
         }
-
-        .section-icon {
-            width: 36px;
-            height: 36px;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #8B4513 0%, #D2691E 100%);
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
+            font-size: 20px;
+            box-shadow: 0 6px 16px rgba(139, 69, 19, 0.3);
         }
-
-        .section-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+        
+        .card-title {
+            font-size: 24px;
+            font-weight: 700;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
-
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        
         .form-group {
             margin-bottom: 20px;
         }
-
-        .form-group label {
+        
+        .form-label {
             display: block;
             margin-bottom: 8px;
-            color: var(--text-secondary);
-            font-weight: 500;
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
         }
-
-        .form-group input {
+        
+        .form-input {
             width: 100%;
             padding: 16px 20px;
-            background: var(--bg-card);
-            border: 2px solid var(--border-color);
-            border-radius: 12px;
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
+            border-radius: 16px;
             font-size: 16px;
             color: var(--text-primary);
+            backdrop-filter: blur(10px);
             transition: all 0.3s ease;
+            font-family: inherit;
         }
-
-        .form-group input:focus {
+        
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+        
+        .form-input:focus {
             outline: none;
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+            border-color: #8B4513;
+            box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.2);
+            background: var(--card-hover);
         }
-
+        
         .btn {
-            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
-            color: white;
+            padding: 16px 32px;
             border: none;
-            padding: 16px 28px;
-            border-radius: 12px;
-            cursor: pointer;
+            border-radius: 16px;
             font-size: 16px;
             font-weight: 600;
+            cursor: pointer;
             transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+            font-family: inherit;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
             width: 100%;
-            margin-top: auto;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s;
         }
-
-        .btn:hover {
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #8B4513 0%, #D2691E 100%);
+            color: white;
+            box-shadow: 0 8px 24px rgba(139, 69, 19, 0.3);
+            width: 100%;
+        }
+        
+        .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 12px 32px rgba(139, 69, 19, 0.4);
         }
-
+        
         .btn-small {
             padding: 8px 16px;
             font-size: 14px;
-            width: auto;
             margin: 4px;
-            min-width: 120px;
+            width: auto;
         }
-
+        
         .btn-success {
-            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
         }
-
+        
         .btn-danger {
-            background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
         }
-
-        .btn-info {
-            background: linear-gradient(135deg, var(--info) 0%, #2563eb 100%);
-        }
-
+        
         .btn-warning {
-            background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
         }
-
-        /* Статистика */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
+        
+        .customer-list {
+            max-height: 600px;
+            overflow-y: auto;
+            margin-top: 20px;
         }
-
-        .stat-card {
-            background: var(--bg-card);
-            padding: 20px;
-            border-radius: 16px;
-            text-align: center;
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
+        
+        .customer-list::-webkit-scrollbar {
+            width: 8px;
         }
-
-        .stat-card:hover {
-            transform: translateY(-3px);
+        
+        .customer-list::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
         }
-
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 8px;
+        
+        .customer-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
         }
-
-        .stat-label {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-
-        /* Клиенты */
-        .customers-container::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .customers-container::-webkit-scrollbar-track {
-            background: var(--bg-card);
-            border-radius: 3px;
-        }
-
-        .customers-container::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-            border-radius: 3px;
-        }
-
+        
         .customer-item {
-            background: var(--bg-card);
-            padding: 20px;
-            border-radius: 16px;
-            margin-bottom: 15px;
-            border: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 16px;
             transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
-
+        
+        .customer-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        }
+        
         .customer-item:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+            background: rgba(255, 255, 255, 0.15);
         }
-
+        
         .customer-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-            gap: 10px;
+            margin-bottom: 16px;
         }
-
-        .customer-details h3 {
-            color: var(--text-primary);
-            margin-bottom: 8px;
-            font-size: 1.1rem;
+        
+        .customer-info h4 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
-
-        .customer-details p {
-            color: var(--text-secondary);
-            margin: 4px 0;
-            font-size: 0.9rem;
+        
+        .customer-info p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            font-weight: 500;
         }
-
-        .customer-badge {
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-            color: white;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-
-        .progress-container {
-            margin: 15px 0;
-        }
-
-        .progress-label {
+        
+        .coffee-progress {
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 12px 16px;
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
         }
-
-        .progress-bar {
-            background: var(--bg-card);
-            border-radius: 10px;
-            height: 12px;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
+        
+        .coffee-progress.ready {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            animation: pulse 2s infinite;
         }
-
-        .progress-fill {
-            background: linear-gradient(90deg, var(--success), #059669);
-            height: 100%;
-            transition: width 0.8s ease;
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
-
+        
+        .progress-dots {
+            display: flex;
+            gap: 4px;
+            margin: 12px 0;
+        }
+        
+        .progress-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .progress-dot.filled {
+            background: #8B4513;
+            box-shadow: 0 0 8px rgba(139, 69, 19, 0.5);
+        }
+        
         .action-buttons {
             display: flex;
-            flex-wrap: wrap;
             gap: 8px;
-            margin-top: 15px;
+            flex-wrap: wrap;
+            margin-top: 16px;
         }
-
-        .action-buttons .btn-small {
-            flex: 1;
-            min-width: 100px;
-            margin: 0;
-        }
-
-        /* QR Scanner */
-        #video-container {
-            position: relative;
+        
+        .scanner-preview {
             width: 100%;
-            max-width: 280px;
-            margin: 0 auto 20px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 16px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(20px);
+            transition: all 0.3s ease;
+        }
+        
+        .scanner-active {
+            border-color: #10b981;
+            border-style: solid;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+            animation: scannerGlow 2s infinite;
+        }
+        
+        @keyframes scannerGlow {
+            0%, 100% { box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2); }
+            50% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.3), 0 0 20px rgba(16, 185, 129, 0.2); }
+        }
+        
+        .success-message, .error-message {
+            padding: 16px 24px;
             border-radius: 16px;
-            overflow: hidden;
-            background: #000;
-            aspect-ratio: 1;
+            margin-bottom: 24px;
+            font-weight: 600;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: slideIn 0.5s ease;
         }
-
-        #qr-video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        
+        .success-message {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10f2c5;
+            border-color: rgba(16, 185, 129, 0.3);
         }
-
-        /* Модальные окна */
+        
+        .error-message {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
         .modal {
             display: none;
             position: fixed;
@@ -585,331 +578,501 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(10px);
         }
-
+        
         .modal-content {
-            background: var(--bg-secondary);
-            backdrop-filter: blur(20px);
-            margin: 3% auto;
+            background: var(--modal-bg);
+            backdrop-filter: blur(30px);
+            margin: 5% auto;
             padding: 40px;
             border-radius: 24px;
             width: 90%;
-            max-width: 600px;
-            max-height: 85vh;
-            overflow-y: auto;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
+            max-width: 500px;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 32px 64px rgba(0, 0, 0, 0.2);
             position: relative;
+            overflow: hidden;
+            color: var(--modal-text);
         }
-
-        .close {
+        
+        .modal-content::before {
+            content: '';
             position: absolute;
-            right: 20px;
-            top: 20px;
-            color: var(--text-muted);
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 40px;
-            height: 40px;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--card-border), transparent);
+        }
+        
+        .loading {
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: 12px;
+            padding: 40px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
             border-radius: 50%;
-            transition: all 0.3s ease;
+            animation: spin 1s linear infinite;
         }
-
-        .close:hover {
-            background: rgba(239, 68, 68, 0.2);
-            color: var(--danger);
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-
-        .whatsapp-section {
-            background: rgba(16, 185, 129, 0.1);
-            padding: 20px;
-            border-radius: 16px;
-            margin: 20px 0;
-            border: 2px solid rgba(16, 185, 129, 0.3);
-        }
-
-        .link-display {
-            background: var(--bg-card);
-            padding: 15px;
-            border-radius: 12px;
-            border: 2px solid var(--border-color);
-            margin: 15px 0;
-            word-break: break-all;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-        }
-
-        /* Уведомления */
-        .notification {
-            position: fixed;
-            top: 30px;
-            right: 30px;
-            background: linear-gradient(135deg, var(--success), #059669);
-            color: white;
-            padding: 18px 28px;
-            border-radius: 15px;
-            box-shadow: 0 15px 35px rgba(16, 185, 129, 0.4);
-            z-index: 2000;
-            transform: translateX(100%);
-            transition: transform 0.4s ease;
-            max-width: 350px;
-            font-weight: 500;
-        }
-
-        .notification.show {
-            transform: translateX(0);
-        }
-
-        /* Адаптивность */
-        @media (max-width: 768px) {
-            body {
-                padding: 15px;
-            }
-
+        
+        /* Desktop Layout */
+        @media (min-width: 1024px) {
             .main-grid {
-                grid-template-columns: 1fr;
-                gap: 20px;
+                grid-template-columns: 400px 1fr;
+                gap: 32px;
             }
-
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        /* Tablet Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 16px;
+                padding: 20px;
+                text-align: center;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
             .stats-grid {
                 grid-template-columns: 1fr;
-                gap: 10px;
+                gap: 16px;
             }
-
+            
+            .main-grid {
+                gap: 20px;
+            }
+            
+            .glass-card {
+                padding: 24px;
+            }
+            
             .customer-header {
                 flex-direction: column;
+                gap: 12px;
                 align-items: flex-start;
             }
-
+            
             .action-buttons {
-                flex-direction: column;
-                gap: 12px;
-            }
-
-            .action-buttons .btn-small {
-                flex: none;
-                width: 100%;
-                min-width: auto;
-                margin: 0;
-                padding: 12px 16px;
-                font-size: 14px;
-            }
-
-            .header h1 {
-                font-size: 2rem;
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .theme-switcher {
-                position: relative;
-                margin-top: 20px;
-            }
-
-            .customers-container-full {
-                grid-template-columns: 1fr;
-                gap: 15px;
-            }
-
-            .customer-item {
-                padding: 15px;
-            }
-
-            .section {
-                padding: 20px;
-                min-height: auto;
-            }
-
-            .modal-content {
-                margin: 10% auto;
-                padding: 20px;
-                width: 95%;
+                justify-content: flex-start;
             }
         }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--text-secondary);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 200px;
+        
+        :root {
+            /* Default Dark Theme */
+            --bg-primary: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%);
+            --text-primary: white;
+            --text-secondary: rgba(255, 255, 255, 0.9);
+            --text-muted: rgba(255, 255, 255, 0.8);
+            --card-bg: rgba(255, 255, 255, 0.15);
+            --card-border: rgba(255, 255, 255, 0.25);
+            --card-hover: rgba(255, 255, 255, 0.2);
+            --modal-bg: rgba(255, 255, 255, 0.15);
+            --modal-text: white;
         }
-
-        .empty-state h3 {
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-            color: var(--text-primary);
+        
+        body.light-theme {
+            /* Light Theme */
+            --bg-primary: linear-gradient(135deg, #a8e6cf 0%, #dcedc1 25%, #ffd3a5 50%, #ffa8a8 75%, #a8c8ec 100%);
+            --text-primary: #1a202c;
+            --text-secondary: #2d3748;
+            --text-muted: #4a5568;
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --card-border: rgba(0, 0, 0, 0.2);
+            --card-hover: rgba(255, 255, 255, 0.98);
+            --modal-bg: rgba(255, 255, 255, 0.98);
+            --modal-text: #1a202c;
         }
-
-        .empty-coffee-icon {
-            width: 80px;
-            height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 60px;
-            margin-bottom: 20px;
-            margin-left: auto;
-            margin-right: auto;
+        
+        body.light-theme::before {
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(0, 0, 0, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 0, 0, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 40% 60%, rgba(168, 230, 207, 0.1) 0%, transparent 50%);
+        }
+        
+        /* Light theme specific fixes */
+        body.light-theme .btn {
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            color: #1a202c;
+        }
+        
+        body.light-theme .btn-small {
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        body.light-theme .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border-color: #059669;
+        }
+        
+        body.light-theme .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border-color: #dc2626;
+        }
+        
+        body.light-theme .btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            border-color: #d97706;
+        }
+        
+        body.light-theme .btn-primary {
+            background: linear-gradient(135deg, #8B4513 0%, #D2691E 100%);
+            color: white;
+            border-color: #8B4513;
+        }
+        
+        body.light-theme .scanner-preview {
+            background: rgba(255, 255, 255, 0.8);
+            border: 3px dashed rgba(0, 0, 0, 0.3);
+            color: #4a5568;
+        }
+        
+        body.light-theme .scanner-active {
+            border-color: #10b981;
+            border-style: solid;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+        }
+        
+        body.light-theme .form-input {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            color: #1a202c;
+        }
+        
+        body.light-theme .form-input:focus {
+            border-color: #8B4513;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.2);
+        }
+        
+        body.light-theme .admin-phone-input {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            color: #1a202c;
+        }
+        
+        body.light-theme .admin-phone-input:focus {
+            border-color: #8B4513;
+            box-shadow: 0 0 0 2px rgba(139, 69, 19, 0.2);
+        }
+        
+        /* Add animation for new purchases */
+        @keyframes newPurchase {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 0 6px 16px rgba(139, 69, 19, 0.3);
+            }
+            50% { 
+                transform: scale(1.1);
+                box-shadow: 0 8px 24px rgba(245, 158, 11, 0.6);
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <div class="theme-switcher">
-                <span style="font-size: 14px; color: var(--text-secondary);">Тема</span>
-                <button class="theme-toggle" onclick="toggleTheme()"></button>
-            </div>
-            <h1>
-                <div class="coffee-icon">
-                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M20 3H4c-1.103 0-2 .897-2 2v2c0 2.206 1.794 4 4 4v9c0 1.103.897 2 2 2h8c1.103 0 2-.897 2-2v-9c2.206 0 4-1.794 4-4V5c0-1.103-.897-2-2-2zM18 9c-1.103 0-2-.897-2-2V5h2v4zM4 5v2c0 1.103.897 2 2 2V5H4zm12 15H8v-8h8v8z"/>
-                        <circle cx="12" cy="15" r="1"/>
-                    </svg>
+        <header class="header">
+            <div class="brand-section">
+                <div class="brand-icon">☕</div>
+                <div class="brand-text">
+                    <h1>COFFEEMANIA</h1>
+                    <p>Панель управления бариста</p>
                 </div>
-                COFFEEMANIA
-            </h1>
-            <p style="font-size: 1.2rem; opacity: 0.8; color: var(--text-secondary);">Панель управления бариста</p>
+            </div>
+            <div class="theme-controls">
+                <div class="admin-phone-section">
+                    <input type="text" class="admin-phone-input" id="admin-phone" placeholder="+7 (XXX) XXX-XX-XX">
+                    <button onclick="syncBaristaPhone()" class="btn btn-small btn-success" style="padding: 8px 12px; margin-left: 8px; font-size: 12px; white-space: nowrap;">
+                        📞 Синхронизация
+                    </button>
+                </div>
+                <div class="current-time" id="current-time"></div>
+            </div>
+        </header>
+
+        <!-- Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-number" id="total-customers">-</div>
+                <div class="stat-label">Всего клиентов</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">☕</div>
+                <div class="stat-number" id="total-purchases">-</div>
+                <div class="stat-label">Общие покупки</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎁</div>
+                <div class="stat-number" id="ready-customers">-</div>
+                <div class="stat-label">Готовы к подарку</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-number" id="avg-purchases">-</div>
+                <div class="stat-label">Среднее покупок</div>
+            </div>
         </div>
+
+        <!-- Success/Error Messages -->
+        <div id="success-message" class="success-message hidden"></div>
+        <div id="error-message" class="error-message hidden"></div>
 
         <div class="main-grid">
-            <!-- Регистрация -->
-            <div class="section">
-                <h2><span class="section-icon">☕</span>Регистрация клиента</h2>
-                <div class="section-content">
-                    <form id="registerForm">
+            <!-- Sidebar Controls -->
+            <div>
+                <!-- Registration Section -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-icon">👤</div>
+                        <div class="card-title">Регистрация клиента</div>
+                    </div>
+                    <div class="form-grid">
                         <div class="form-group">
-                            <label for="customerName">Имя клиента:</label>
-                            <input type="text" id="customerName" required>
+                            <label class="form-label">Имя клиента</label>
+                            <input type="text" class="form-input" id="customer-name" placeholder="Введите имя">
                         </div>
                         <div class="form-group">
-                            <label for="customerPhone">Телефон:</label>
-                            <input type="tel" id="customerPhone" placeholder="+7 (___) ___ __ __" required>
+                            <label class="form-label">Номер телефона</label>
+                            <input type="tel" class="form-input" id="customer-phone" placeholder="+7 (XXX) XXX-XX-XX">
                         </div>
-                        <button type="submit" class="btn">☕ Зарегистрировать</button>
-                    </form>
+                    </div>
+                    <button class="btn btn-primary" onclick="registerCustomer()">
+                        Зарегистрировать клиента
+                    </button>
+                </div>
+
+                <!-- QR Scanner Section -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-icon">📱</div>
+                        <div class="card-title">QR Сканер</div>
+                    </div>
+                    <div class="scanner-preview" id="scanner-preview">
+                        Нажмите "Запустить сканер" для начала работы
+                    </div>
+                    <button class="btn btn-success" id="scanner-btn" onclick="toggleScanner()">
+                        Запустить сканер
+                    </button>
                 </div>
             </div>
 
-            <!-- QR сканирование -->
-            <div class="section">
-                <h2><span class="section-icon">📱</span>QR Сканирование</h2>
-                <div class="section-content">
-                    <div id="video-container">
-                        <video id="qr-video"></video>
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: auto;">
-                        <button id="startScan" class="btn">📸 Начать сканирование</button>
-                        <button id="stopScan" class="btn btn-danger" style="display: none;">⏹️ Остановить</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- База клиентов на всю ширину -->
-        <div class="customers-full-width">
-            <h2><span class="section-icon">💾</span>База клиентов</h2>
-            <div class="section-content">
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-number" id="totalCustomers">0</div>
-                        <div class="stat-label">Всего клиентов</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="totalPurchases">0</div>
-                        <div class="stat-label">Всего покупок</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="readyForFree">0</div>
-                        <div class="stat-label">Готовы к бесплатному</div>
-                    </div>
+            <!-- Main Content -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <div class="card-icon">📋</div>
+                    <div class="card-title">База клиентов</div>
                 </div>
                 <div class="form-group">
-                    <input type="text" id="filterInput" placeholder="🔍 Поиск по имени или телефону...">
+                    <input type="text" class="form-input" id="search-input" placeholder="🔍 Поиск по имени или телефону">
                 </div>
-                <div class="customers-container-full" id="allCustomers"></div>
+                <div class="customer-list" id="customer-list">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        Загрузка клиентов...
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Модальные окна -->
-    <div id="historyModal" class="modal">
+    <!-- Purchase Modal -->
+    <div id="purchase-modal" class="modal">
         <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>История покупок</h2>
-            <div id="historyContent"></div>
+            <div class="card-header">
+                <div class="card-icon">☕</div>
+                <div class="card-title">Добавить покупку</div>
+                <button style="margin-left: auto; background: none; border: none; font-size: 24px; cursor: pointer; color: rgba(255,255,255,0.8);" onclick="closePurchaseModal()">&times;</button>
+            </div>
+            <div id="modal-customer-info"></div>
+            <div id="modal-progress" style="display: flex; gap: 8px; justify-content: center; margin: 20px 0;"></div>
+            <button class="btn btn-primary" id="confirm-purchase-btn" onclick="confirmPurchase()">
+                Добавить покупку
+            </button>
         </div>
     </div>
 
-    <div id="shareModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Отправить клиенту</h2>
-            <div id="shareContent"></div>
+    <!-- Purchase History Modal -->
+    <div id="history-modal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="card-header">
+                <div class="card-icon">📋</div>
+                <div class="card-title">История покупок</div>
+                <button style="margin-left: auto; background: none; border: none; font-size: 24px; cursor: pointer; color: rgba(255,255,255,0.8);" onclick="closeHistoryModal()">&times;</button>
+            </div>
+            <div id="history-customer-info"></div>
+            <div id="history-content" style="max-height: 500px; overflow-y: auto;">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Загрузка истории...
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        let scanner = null;
+        let currentCustomers = [];
+        let selectedCustomer = null;
+        let isScanning = false;
 
-        // Инициализация темы
-        function initTheme() {
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'light') {
-                document.documentElement.setAttribute('data-theme', 'light');
+        // Update current time
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('ru-RU', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            document.getElementById('current-time').textContent = timeString;
+        }
+
+        // Load initial data
+        async function loadData() {
+            await Promise.all([
+                loadStats(),
+                loadCustomers()
+            ]);
+        }
+
+        // Load statistics
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const stats = await response.json();
+                
+                document.getElementById('total-customers').textContent = stats.totalCustomers;
+                document.getElementById('total-purchases').textContent = stats.totalPurchases;
+                document.getElementById('ready-customers').textContent = stats.readyForFreeCoffee;
+                
+                const avgPurchases = stats.totalCustomers > 0 
+                    ? (stats.totalPurchases / stats.totalCustomers).toFixed(1)
+                    : '0';
+                document.getElementById('avg-purchases').textContent = avgPurchases;
+            } catch (error) {
+                console.error('Error loading stats:', error);
             }
         }
 
-        // Переключение темы
-        function toggleTheme() {
-            const html = document.documentElement;
-            const currentTheme = html.getAttribute('data-theme');
-            
-            if (currentTheme === 'light') {
-                html.removeAttribute('data-theme');
-                localStorage.removeItem('theme');
-            } else {
-                html.setAttribute('data-theme', 'light');
-                localStorage.setItem('theme', 'light');
+        // Load customers
+        async function loadCustomers() {
+            try {
+                const response = await fetch('/api/customers');
+                currentCustomers = await response.json();
+                displayCustomers(currentCustomers);
+            } catch (error) {
+                console.error('Error loading customers:', error);
+                document.getElementById('customer-list').innerHTML = 
+                    '<div style="text-align: center; color: rgba(255,255,255,0.8); padding: 40px;">Ошибка загрузки клиентов</div>';
             }
         }
 
-        // Форматирование телефона
-        document.getElementById('customerPhone').addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.startsWith('8')) value = '7' + value.slice(1);
-            if (value.startsWith('7')) value = value.slice(1);
+        // Display customers
+        function displayCustomers(customers) {
+            const customerList = document.getElementById('customer-list');
             
-            let formatted = '+7';
-            if (value.length > 0) formatted += ' (' + value.substring(0, 3);
-            if (value.length > 3) formatted += ') ' + value.substring(3, 6);
-            if (value.length > 6) formatted += ' ' + value.substring(6, 8);
-            if (value.length > 8) formatted += ' ' + value.substring(8, 10);
+            if (customers.length === 0) {
+                customerList.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.8); padding: 40px;">Клиенты не найдены</div>';
+                return;
+            }
+
+            customerList.innerHTML = customers.map(customer => {
+                const progressDots = Array.from({ length: 6 }, (_, i) => 
+                    `<div class="progress-dot ${i < customer.purchases ? 'filled' : ''}"></div>`
+                ).join('');
+
+                return `
+                    <div class="customer-item">
+                        <div class="customer-header">
+                            <div class="customer-info">
+                                <h4>${customer.name}</h4>
+                                <p>${customer.phone}</p>
+                            </div>
+                            <div class="coffee-progress ${customer.purchases >= 6 ? 'ready' : ''}">
+                                ☕ ${customer.purchases}/6
+                            </div>
+                        </div>
+                        <div class="progress-dots">
+                            ${progressDots}
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn btn-small btn-success" onclick="openPurchaseModal('${customer.id}')">
+                                Добавить покупку
+                            </button>
+                            <button class="btn btn-small btn-primary" onclick="showCustomerQR('${customer.id}')">
+                                Поделиться QR
+                            </button>
+                            <button class="btn btn-small btn-warning" onclick="showPurchaseHistory('${customer.id}')">
+                                История покупок
+                            </button>
+                            <button class="btn btn-small btn-danger" onclick="deleteCustomer('${customer.id}')">
+                                Удалить
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Search customers
+        document.getElementById('search-input').addEventListener('input', async (e) => {
+            const query = e.target.value.trim();
             
-            e.target.value = formatted;
+            if (query.length < 2) {
+                displayCustomers(currentCustomers);
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                const searchResults = await response.json();
+                displayCustomers(searchResults);
+            } catch (error) {
+                console.error('Search error:', error);
+            }
         });
 
-        // Регистрация клиента
-        document.getElementById('registerForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const name = document.getElementById('customerName').value.trim();
-            const phone = document.getElementById('customerPhone').value;
+        // Register customer
+        async function registerCustomer() {
+            const name = document.getElementById('customer-name').value.trim();
+            const phone = document.getElementById('customer-phone').value.trim();
 
             if (!name || !phone) {
-                alert('Заполните все поля');
+                showError('Заполните все поля');
                 return;
             }
 
@@ -922,479 +1085,825 @@
 
                 const result = await response.json();
 
-                if (response.ok) {
-                    showNotification(`Клиент ${name} зарегистрирован!`);
-                    document.getElementById('registerForm').reset();
-                    loadAllCustomers();
-                    
-                    // Сразу предлагаем отправить клиенту его данные
-                    setTimeout(() => {
-                        shareWithCustomer(result.customerId);
-                    }, 500);
-                } else {
-                    alert('Ошибка: ' + result.error);
-                }
-            } catch (error) {
-                console.error('Ошибка регистрации:', error);
-                alert('Ошибка сети');
-            }
-        });
-
-        // QR сканирование
-        document.getElementById('startScan').addEventListener('click', async function() {
-            try {
-                console.log('Запуск QR сканера...');
-                
-                const videoElement = document.getElementById('qr-video');
-                
-                scanner = new QrScanner(videoElement, result => {
-                    console.log('QR результат:', result);
-                    // Правильная обработка результата - result может быть строкой или объектом
-                    const qrData = typeof result === 'string' ? result : result.data;
-                    console.log('QR данные:', qrData);
-                    handleQRResult(qrData);
-                });
-                
-                await scanner.start();
-                console.log('QR сканер запущен');
-                
-                document.getElementById('startScan').style.display = 'none';
-                document.getElementById('stopScan').style.display = 'block';
-                
-            } catch (error) {
-                console.error('Ошибка запуска сканера:', error);
-                alert('Ошибка камеры: ' + error.message);
-            }
-        });
-
-        document.getElementById('stopScan').addEventListener('click', function() {
-            if (scanner) {
-                scanner.stop();
-                scanner = null;
-                console.log('QR сканер остановлен');
-            }
-            document.getElementById('startScan').style.display = 'block';
-            document.getElementById('stopScan').style.display = 'none';
-        });
-
-        async function handleQRResult(qrData) {
-            try {
-                console.log('Обработка QR:', qrData);
-                
-                // Останавливаем сканер
-                if (scanner) {
-                    scanner.stop();
-                    scanner = null;
-                    document.getElementById('startScan').style.display = 'block';
-                    document.getElementById('stopScan').style.display = 'none';
-                }
-                
-                // Извлекаем ID клиента
-                let customerId;
-                
-                if (qrData.includes('card.html?id=')) {
-                    // Полный URL: https://...card.html?id=abc123
-                    customerId = qrData.split('card.html?id=')[1];
-                } else if (qrData.includes('id=')) {
-                    // Параметр: id=abc123
-                    customerId = qrData.split('id=')[1];
-                } else {
-                    // Просто ID: abc123
-                    customerId = qrData;
-                }
-                
-                console.log('ID клиента:', customerId);
-                
-                if (!customerId || customerId.trim() === '') {
-                    throw new Error('Не удалось извлечь ID клиента из QR кода');
-                }
-                
-                const response = await fetch(`/api/purchase/${customerId}`, {
-                    method: 'POST'
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok) {
-                    const { customer, newPurchases, isComplete } = result;
-                    
-                    if (isComplete) {
-                        showNotification(`🎉 ${customer.name} получает БЕСПЛАТНЫЙ кофе!`);
-                    } else {
-                        showNotification(`☕ ${customer.name}: ${newPurchases}/6 кофе куплено`);
-                    }
-                    
-                    loadAllCustomers();
-                } else {
-                    throw new Error(result.error || 'Ошибка сервера');
-                }
-            } catch (error) {
-                console.error('Ошибка обработки QR:', error);
-                alert('Ошибка обработки QR: ' + error.message);
-            }
-        }
-
-        // Поиск клиентов
-        document.getElementById('filterInput').addEventListener('input', filterAllCustomers);
-
-        async function loadAllCustomers() {
-            try {
-                const response = await fetch('/api/customers');
-                
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error(result.error);
                 }
-                
-                const customers = await response.json();
-                
-                // Обновляем статистику
-                const totalPurchases = customers.reduce((sum, customer) => sum + customer.purchases, 0);
-                const readyForFree = customers.filter(customer => customer.purchases >= 6).length;
-                
-                // Обновляем основную статистику
-                document.getElementById('totalCustomers').textContent = customers.length;
-                document.getElementById('totalPurchases').textContent = totalPurchases;
-                document.getElementById('readyForFree').textContent = readyForFree;
-                
-                displayCustomers(customers, 'allCustomers');
-            } catch (error) {
-                console.error('Ошибка загрузки клиентов:', error);
-                document.getElementById('allCustomers').innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-coffee-icon">☕</div>
-                        <h3>Ошибка загрузки</h3>
-                        <p>${error.message}</p>
-                        <button class="btn" onclick="loadAllCustomers()">Попробовать снова</button>
-                    </div>
-                `;
-            }
-        }
 
-        function filterAllCustomers() {
-            const filter = document.getElementById('filterInput').value.toLowerCase();
-            const customerItems = document.querySelectorAll('#allCustomers .customer-item');
-            
-            customerItems.forEach(item => {
-                const text = item.textContent.toLowerCase();
-                item.style.display = text.includes(filter) ? 'block' : 'none';
-            });
-        }
-
-        function displayCustomers(customers, containerId) {
-            const container = document.getElementById(containerId);
-            
-            if (customers.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-coffee-icon">☕</div>
-                        <h3>Клиенты не найдены</h3>
-                        <p>Начните с регистрации первого клиента</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            container.innerHTML = customers.map(customer => {
-                const currentCyclePurchases = customer.purchases % 6;
-                const completedCycles = Math.floor(customer.purchases / 6);
-                const progressPercent = (currentCyclePurchases / 6) * 100;
+                // Show success with links
+                const customerCardUrl = `${window.location.origin}/card.html?id=${result.customerId}`;
+                const qrUrl = `${window.location.origin}/api/qr/${result.customerId}`;
                 
-                let statusBadge = '';
-                if (customer.purchases >= 6) {
-                    statusBadge = `<span class="customer-badge">🎁 Готов к бесплатному</span>`;
-                } else if (customer.purchases >= 3) {
-                    statusBadge = `<span class="customer-badge" style="background: linear-gradient(135deg, #ed8936, #dd6b20);">⚡ Активный</span>`;
-                } else {
-                    statusBadge = `<span class="customer-badge" style="background: linear-gradient(135deg, #4299e1, #3182ce);">🆕 Новичок</span>`;
-                }
-                
-                return `
-                    <div class="customer-item">
-                        <div class="customer-header">
-                            <div class="customer-details">
-                                <h3>👤 ${customer.name}</h3>
-                                <p>📞 ${customer.phone}</p>
-                                <p>📅 ${new Date(customer.created_at).toLocaleDateString('ru-RU')}</p>
-                                <p>🏆 Завершенных циклов: ${completedCycles}</p>
-                            </div>
-                            ${statusBadge}
+                showSuccess(`
+                    <div style="text-align: left;">
+                        <div style="font-size: 18px; margin-bottom: 12px;">✅ Клиент ${name} зарегистрирован!</div>
+                        <div style="margin-bottom: 8px;">
+                            <strong>Карта клиента:</strong><br>
+                            <a href="${customerCardUrl}" target="_blank" style="color: #10f2c5; text-decoration: underline;">
+                                ${customerCardUrl}
+                            </a>
                         </div>
-                        
-                        <div class="progress-container">
-                            <div class="progress-label">
-                                <span>☕ Прогресс текущего цикла</span>
-                                <span><strong>${currentCyclePurchases}/6</strong></span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: ${progressPercent}%"></div>
-                            </div>
+                        <div style="margin-bottom: 8px;">
+                            <strong>QR код:</strong><br>
+                            <a href="${qrUrl}" target="_blank" style="color: #10f2c5; text-decoration: underline;">
+                                Показать QR код
+                            </a>
                         </div>
-                        
-                        <div class="action-buttons">
-                            <button class="btn btn-success btn-small" onclick="addPurchase('${customer.id}')">
-                                ☕ +1 покупка
-                            </button>
-                            <button class="btn btn-info btn-small" onclick="showHistory('${customer.id}')">
-                                📊 История
-                            </button>
-                            <button class="btn btn-warning btn-small" onclick="shareWithCustomer('${customer.id}')">
-                                📱 Отправить
-                            </button>
-                            <button class="btn btn-danger btn-small" onclick="deleteCustomer('${customer.id}', '${customer.name.replace(/'/g, "\\'")}')">
-                                🗑️ Удалить
-                            </button>
+                        <div style="margin-top: 12px; font-size: 14px; opacity: 0.8;">
+                            ID клиента: ${result.customerId}
                         </div>
                     </div>
-                `;
-            }).join('');
-        }
-
-        async function addPurchase(customerId) {
-            console.log('addPurchase вызвана для клиента:', customerId);
-            try {
-                const response = await fetch(`/api/purchase/${customerId}`, {
-                    method: 'POST'
-                });
+                `);
                 
-                const result = await response.json();
+                document.getElementById('customer-name').value = '';
+                document.getElementById('customer-phone').value = '';
                 
-                if (response.ok) {
-                    const { customer, newPurchases, isComplete } = result;
-                    
-                    if (isComplete) {
-                        showNotification(`🎉 ${customer.name} получает БЕСПЛАТНЫЙ кофе!`);
-                    } else {
-                        showNotification(`☕ ${customer.name}: ${newPurchases}/6 кофе куплено`);
-                    }
-                    
-                    loadAllCustomers();
-                } else {
-                    console.error('Ошибка покупки:', result);
-                    alert('Ошибка: ' + result.error);
-                }
+                await loadData();
+                
             } catch (error) {
-                console.error('Ошибка добавления покупки:', error);
-                alert('Ошибка сети: ' + error.message);
+                showError(error.message);
             }
         }
 
-        async function showHistory(customerId) {
-            console.log('showHistory вызвана для клиента:', customerId);
-            try {
-                const response = await fetch(`/api/history/${customerId}`);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-                const { customer, history } = data;
-                
-                let historyHTML = `
-                    <h3>${customer.name} (${customer.phone})</h3>
-                    <p><strong>Всего покупок:</strong> ${history.length}</p>
-                    <p><strong>Завершенных циклов:</strong> ${Math.floor(history.length / 6)}</p>
-                    <hr style="margin: 20px 0;">
-                `;
-                
-                if (history.length > 0) {
-                    historyHTML += history.map((purchase, index) => `
-                        <div style="padding: 10px; margin: 5px 0; background: var(--bg-card); border-radius: 8px;">
-                            <strong>Покупка ${index + 1}:</strong> ${new Date(purchase.created_at).toLocaleString('ru-RU')}
-                        </div>
-                    `).join('');
-                } else {
-                    historyHTML += '<p>Покупок пока нет</p>';
-                }
-                
-                document.getElementById('historyContent').innerHTML = historyHTML;
-                document.getElementById('historyModal').style.display = 'block';
-                
-            } catch (error) {
-                console.error('Ошибка загрузки истории:', error);
-                alert('Ошибка загрузки истории: ' + error.message);
-            }
-        }
-
-        async function shareWithCustomer(customerId) {
-            console.log('shareWithCustomer вызвана для клиента:', customerId);
+        // Open purchase modal
+        async function openPurchaseModal(customerId) {
             try {
                 const response = await fetch(`/api/customer/${customerId}`);
+                selectedCustomer = await response.json();
                 
+                document.getElementById('modal-customer-info').innerHTML = `
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h3 style="margin-bottom: 8px;">${selectedCustomer.name}</h3>
+                        <p style="color: rgba(255,255,255,0.8);">${selectedCustomer.phone}</p>
+                    </div>
+                `;
+
+                // Show coffee progress
+                const progressDiv = document.getElementById('modal-progress');
+                progressDiv.innerHTML = '';
+                
+                for (let i = 1; i <= 6; i++) {
+                    const dot = document.createElement('div');
+                    dot.style.cssText = `
+                        width: 32px; height: 32px; border-radius: 50%; 
+                        display: flex; align-items: center; justify-content: center;
+                        font-size: 16px; transition: all 0.3s ease;
+                        background: ${i <= selectedCustomer.purchases ? 'linear-gradient(135deg, #8B4513 0%, #D2691E 100%)' : 'rgba(255,255,255,0.1)'};
+                        color: ${i <= selectedCustomer.purchases ? 'white' : 'rgba(255,255,255,0.5)'};
+                        border: 2px solid ${i === selectedCustomer.purchases + 1 ? '#f59e0b' : 'rgba(255,255,255,0.2)'};
+                    `;
+                    dot.textContent = '☕';
+                    progressDiv.appendChild(dot);
+                }
+
+                const btn = document.getElementById('confirm-purchase-btn');
+                if (selectedCustomer.purchases >= 6) {
+                    btn.innerHTML = '🎉 Выдать бесплатный кофе';
+                    btn.className = 'btn btn-warning';
+                } else {
+                    btn.innerHTML = '☕ Добавить покупку';
+                    btn.className = 'btn btn-primary';
+                }
+
+                document.getElementById('purchase-modal').style.display = 'block';
+                
+            } catch (error) {
+                showError('Ошибка загрузки данных клиента');
+            }
+        }
+
+        // Close purchase modal
+        function closePurchaseModal() {
+            document.getElementById('purchase-modal').style.display = 'none';
+            selectedCustomer = null;
+        }
+
+        // Confirm purchase
+        async function confirmPurchase() {
+            if (!selectedCustomer) return;
+
+            try {
+                const response = await fetch(`/api/purchase/${selectedCustomer.id}`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: Не удалось загрузить данные клиента`);
+                    throw new Error(result.error);
                 }
-                
-                const customer = await response.json();
-                
-                const customerUrl = `${window.location.origin}/card.html?id=${customerId}`;
-                
-                // Правильное извлечение номера для WhatsApp
-                let cleanPhone = customer.phone.replace(/\D/g, '');
-                if (cleanPhone.startsWith('8')) {
-                    cleanPhone = '7' + cleanPhone.slice(1);
+
+                if (result.isComplete) {
+                    showSuccess(`🎉 ${selectedCustomer.name} получает бесплатный кофе!`);
+                } else {
+                    showSuccess(`Покупка добавлена! ${selectedCustomer.name}: ${result.newPurchases}/6`);
                 }
-                if (!cleanPhone.startsWith('7')) {
-                    cleanPhone = '7' + cleanPhone;
-                }
-                
-                const whatsappMessage = encodeURIComponent(
-                    `Спасибо, что посетили нашу кофейню! ☕\n\n` +
-                    `${customer.name}, ваша карточка клиента: ${customerUrl}\n\n` +
-                    `Рады будем видеть вас снова! 😊`
-                );
-                
-                const whatsappUrl = `https://wa.me/${cleanPhone}?text=${whatsappMessage}`;
-                
-                document.getElementById('shareContent').innerHTML = `
-                    <h3>📱 Отправить ${customer.name}</h3>
-                    <p><strong>Телефон:</strong> ${customer.phone}</p>
-                    <p><strong>WhatsApp:</strong> +${cleanPhone}</p>
-                    <p><strong>Покупки:</strong> ${customer.purchases}/6</p>
+
+                closePurchaseModal();
+                await loadData();
+
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        // Show customer QR
+        function showCustomerQR(customerId) {
+            const customerCardUrl = `${window.location.origin}/card.html?id=${customerId}`;
+            const qrUrl = `${window.location.origin}/api/qr/${customerId}`;
+            
+            // Find customer name
+            const customer = currentCustomers.find(c => c.id === customerId);
+            const customerName = customer ? customer.name : 'клиента';
+            
+            const modal = document.getElementById('history-modal');
+            const modalContent = modal.querySelector('.modal-content');
+            
+            document.getElementById('history-customer-info').innerHTML = `
+                <div style="text-align: center; margin-bottom: 20px; padding: 16px; background: var(--card-bg); border-radius: 16px; border: 1px solid var(--card-border);">
+                    <h3 style="margin-bottom: 16px; color: var(--text-primary);">📱 Поделиться с ${customerName}</h3>
                     
-                    <div class="whatsapp-section">
-                        <h4>☕ Сообщение клиенту:</h4>
-                        <div style="background: var(--bg-card); padding: 20px; border-radius: 12px; margin: 15px 0; border: 2px solid var(--border-color);">
-                            <p style="margin: 0; color: var(--text-primary); line-height: 1.5;">
-                                Спасибо, что посетили нашу кофейню! ☕<br><br>
-                                ${customer.name}, ваша карточка клиента:<br>
-                                <span style="color: var(--accent-primary); word-break: break-all;">${customerUrl}</span><br><br>
-                                Рады будем видеть вас снова! 😊
-                            </p>
+                    <div style="margin-bottom: 20px;">
+                        <div style="color: var(--text-secondary); font-size: 16px; font-weight: 600; margin-bottom: 12px;">QR код клиента:</div>
+                        <div style="background: white; padding: 20px; border-radius: 16px; display: inline-block; box-shadow: 0 8px 24px rgba(0,0,0,0.1);">
+                            <img src="${qrUrl}" alt="QR код" style="width: 200px; height: 200px;">
                         </div>
-                        <a href="${whatsappUrl}" target="_blank" class="btn btn-success" style="margin-bottom: 15px;">
-                            📱 Отправить в WhatsApp
-                        </a>
                     </div>
                     
-                    <div style="margin-top: 25px;">
-                        <h4>📋 Ссылка на карту:</h4>
-                        <div class="link-display">${customerUrl}</div>
-                        <button class="btn btn-info" onclick="copyToClipboard('${customerUrl}')">
+                    <div style="margin-bottom: 20px;">
+                        <div style="color: var(--text-secondary); font-size: 16px; font-weight: 600; margin-bottom: 8px;">Ссылка на карту клиента:</div>
+                        <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; word-break: break-all; font-size: 14px; color: var(--text-primary);">
+                            ${customerCardUrl}
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                        <button onclick="window.open('${qrUrl}', '_blank')" class="btn btn-small btn-primary" style="margin: 4px;">
+                            🖼️ Открыть QR
+                        </button>
+                        <button onclick="window.open('${customerCardUrl}', '_blank')" class="btn btn-small btn-success" style="margin: 4px;">
+                            🔗 Открыть карту
+                        </button>
+                        <button onclick="copyToClipboard('${customerCardUrl}')" class="btn btn-small btn-warning" style="margin: 4px;">
                             📋 Копировать ссылку
                         </button>
                     </div>
-                `;
-                
-                document.getElementById('shareModal').style.display = 'block';
-                
-            } catch (error) {
-                console.error('Ошибка подготовки данных для отправки:', error);
-                alert(`Ошибка: ${error.message}`);
-            }
+                </div>
+            `;
+
+            document.getElementById('history-content').innerHTML = `
+                <div style="text-align: center; padding: 20px; color: var(--text-muted);">
+                    <div style="font-size: 18px; margin-bottom: 8px;">📱</div>
+                    <div>Отправьте QR код или ссылку клиенту</div>
+                </div>
+            `;
+            
+            modal.style.display = 'block';
         }
 
+        // Copy to clipboard function
         function copyToClipboard(text) {
-            console.log('copyToClipboard вызвана с текстом:', text);
-            
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text).then(() => {
-                    showNotification('Ссылка скопирована в буфер обмена!');
-                }).catch((err) => {
-                    console.error('Ошибка копирования через navigator.clipboard:', err);
-                    fallbackCopyTextToClipboard(text);
-                });
-            } else {
-                fallbackCopyTextToClipboard(text);
-            }
-        }
-
-        function fallbackCopyTextToClipboard(text) {
-            try {
-                const textArea = document.createElement("textarea");
+            navigator.clipboard.writeText(text).then(() => {
+                showSuccess('Ссылка скопирована в буфер обмена!');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
                 textArea.value = text;
-                textArea.style.position = "fixed";
-                textArea.style.left = "-999999px";
-                textArea.style.top = "-999999px";
                 document.body.appendChild(textArea);
-                textArea.focus();
                 textArea.select();
-                
-                const successful = document.execCommand('copy');
+                document.execCommand('copy');
                 document.body.removeChild(textArea);
-                
-                if (successful) {
-                    showNotification('Ссылка скопирована в буфер обмена!');
-                } else {
-                    throw new Error('execCommand не поддерживается');
-                }
-            } catch (err) {
-                console.error('Fallback копирование не работает:', err);
-                showNotification('Не удалось скопировать. Скопируйте ссылку вручную.');
-            }
+                showSuccess('Ссылка скопирована в буфер обмена!');
+            });
         }
 
-        async function deleteCustomer(customerId, customerName) {
-            console.log('deleteCustomer вызвана для клиента:', customerId, customerName);
-            
-            if (!confirm(`Вы уверены, что хотите удалить клиента "${customerName}"?\nЭто действие нельзя отменить.`)) {
+        // Delete customer
+        async function deleteCustomer(customerId) {
+            if (!confirm('Вы уверены, что хотите удалить этого клиента?')) {
                 return;
             }
-            
+
             try {
                 const response = await fetch(`/api/customer/${customerId}`, {
                     method: 'DELETE'
                 });
-                
-                if (response.ok) {
-                    showNotification(`Клиент ${customerName} удален`);
-                    loadAllCustomers();
-                } else {
-                    const result = await response.json();
-                    console.error('Ошибка удаления:', result);
-                    alert('Ошибка: ' + result.error);
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error);
                 }
+
+                showSuccess('Клиент успешно удален');
+                await loadData();
+
             } catch (error) {
-                console.error('Ошибка удаления:', error);
-                alert('Ошибка сети: ' + error.message);
+                showError(error.message);
             }
         }
 
-        function showNotification(message) {
-            const notification = document.createElement('div');
-            notification.className = 'notification';
-            notification.textContent = message;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => notification.classList.add('show'), 100);
-            setTimeout(() => {
-                notification.classList.remove('show');
-                setTimeout(() => document.body.removeChild(notification), 300);
-            }, 3000);
+        // QR Scanner functions
+        function toggleScanner() {
+            if (isScanning) {
+                stopScanner();
+            } else {
+                startScanner();
+            }
         }
 
-        // Модальные окна
-        document.querySelectorAll('.close').forEach(closeBtn => {
-            closeBtn.addEventListener('click', function() {
-                this.closest('.modal').style.display = 'none';
-            });
-        });
+        async function startScanner() {
+            try {
+                const video = document.createElement('video');
+                video.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 16px;';
+                
+                const preview = document.getElementById('scanner-preview');
+                preview.innerHTML = '';
+                preview.appendChild(video);
+                preview.classList.add('scanner-active');
 
-        window.addEventListener('click', function(event) {
-            const modals = document.querySelectorAll('.modal');
-            modals.forEach(modal => {
-                if (event.target === modal) {
-                    modal.style.display = 'none';
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' } 
+                });
+                
+                video.srcObject = stream;
+                video.play();
+
+                document.getElementById('scanner-btn').textContent = 'Остановить сканер';
+                isScanning = true;
+
+                // Simulate QR detection
+                setTimeout(() => {
+                    if (isScanning) {
+                        showSuccess('QR сканирование активно...');
+                    }
+                }, 2000);
+
+            } catch (error) {
+                showError('Не удалось запустить камеру');
+                console.error('Camera error:', error);
+            }
+        }
+
+        function stopScanner() {
+            const preview = document.getElementById('scanner-preview');
+            const video = preview.querySelector('video');
+            
+            if (video && video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+            }
+            
+            preview.innerHTML = 'Нажмите "Запустить сканер" для начала работы';
+            preview.classList.remove('scanner-active');
+            document.getElementById('scanner-btn').textContent = 'Запустить сканер';
+            isScanning = false;
+        }
+
+        // Show messages
+        function showSuccess(message) {
+            const el = document.getElementById('success-message');
+            el.innerHTML = message;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 4000);
+        }
+
+        function showError(message) {
+            const el = document.getElementById('error-message');
+            el.innerHTML = message;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 4000);
+        }
+
+        // Show purchase history
+        async function showPurchaseHistory(customerId) {
+            try {
+                // Load customer data
+                const customerResponse = await fetch(`/api/customer/${customerId}`);
+                const customer = await customerResponse.json();
+                
+                // Load purchase history
+                const historyResponse = await fetch(`/api/history/${customerId}`);
+                const history = await historyResponse.json();
+                
+                // Show customer info
+                document.getElementById('history-customer-info').innerHTML = `
+                    <div style="text-align: center; margin-bottom: 20px; padding: 16px; background: var(--card-bg); border-radius: 16px; border: 1px solid var(--card-border);">
+                        <h3 style="margin-bottom: 8px; color: var(--text-primary);">${customer.name}</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 8px;">${customer.phone}</p>
+                        <div style="color: var(--text-primary); font-weight: 600;">
+                            Всего покупок: ${customer.purchases} | Статус: ${customer.purchases >= 6 ? '🎁 Готов к подарку' : `${6 - customer.purchases} до подарка`}
+                        </div>
+                    </div>
+                `;
+
+                // Show purchase history
+                const historyContent = document.getElementById('history-content');
+                
+                if (history.length === 0) {
+                    historyContent.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                            <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;">📝</div>
+                            <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">История покупок пуста</div>
+                            <div style="font-size: 14px;">Покупки будут отображаться здесь после их добавления</div>
+                        </div>
+                    `;
+                } else {
+                    // Group purchases into cycles (each cycle = 6 purchases + 1 free coffee)
+                    const cycles = [];
+                    let currentCycle = [];
+                    
+                    // Sort history by date (oldest first for grouping)
+                    const sortedHistory = history.sort((a, b) => new Date(a.purchase_date) - new Date(b.purchase_date));
+                    
+                    sortedHistory.forEach(record => {
+                        currentCycle.push(record);
+                        
+                        // If this is a free coffee or we reached 6 purchases, complete the cycle
+                        if (record.action === 'free_coffee' || currentCycle.length >= 6) {
+                            cycles.push([...currentCycle]);
+                            currentCycle = [];
+                        }
+                    });
+                    
+                    // Add any remaining purchases as an incomplete cycle
+                    if (currentCycle.length > 0) {
+                        cycles.push(currentCycle);
+                    }
+                    
+                    // Reverse cycles to show newest first
+                    cycles.reverse();
+                    
+                    historyContent.innerHTML = cycles.map((cycle, cycleIndex) => {
+                        const cycleNumber = cycles.length - cycleIndex;
+                        const isCompleteCycle = cycle.some(record => record.action === 'free_coffee');
+                        const purchaseCount = cycle.filter(record => record.action !== 'free_coffee').length;
+                        
+                        // Find the oldest and newest dates in the cycle
+                        const dates = cycle.map(record => new Date(record.purchase_date));
+                        const startDate = new Date(Math.min(...dates));
+                        const endDate = new Date(Math.max(...dates));
+                        
+                        const formatDate = (date) => date.toLocaleDateString('ru-RU', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                        });
+                        
+                        // Create progress dots for the cycle
+                        let progressDots = '';
+                        for (let i = 1; i <= 6; i++) {
+                            const isFilled = i <= purchaseCount;
+                            progressDots += `
+                                <div style="
+                                    width: 60px; height: 60px; border-radius: 20px;
+                                    display: flex; align-items: center; justify-content: center;
+                                    font-size: 20px; margin: 6px;
+                                    background: ${isFilled ? 'linear-gradient(135deg, #8B4513 0%, #D2691E 100%)' : 'var(--card-bg)'};
+                                    color: ${isFilled ? 'white' : 'var(--text-muted)'};
+                                    border: 3px solid ${isFilled ? 'rgba(139, 69, 19, 0.4)' : 'var(--card-border)'};
+                                    box-shadow: ${isFilled ? '0 10px 25px rgba(139, 69, 19, 0.4)' : '0 4px 12px rgba(0,0,0,0.1)'};
+                                    transition: all 0.3s ease;
+                                    position: relative;
+                                    font-weight: 700;
+                                ">
+                                    <div style="display: flex; flex-direction: column; align-items: center; line-height: 1;">
+                                        <div style="font-size: 16px;">☕</div>
+                                        <div style="font-size: 10px; font-weight: 900; margin-top: 2px; color: ${isFilled ? 'rgba(255,255,255,0.9)' : 'var(--text-muted)'};">${i}</div>
+                                    </div>
+                                    ${isFilled ? `
+                                        <div style="
+                                            position: absolute;
+                                            top: -6px;
+                                            right: -6px;
+                                            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                                            color: white;
+                                            border-radius: 50%;
+                                            width: 22px;
+                                            height: 22px;
+                                            display: flex;
+                                            align-items: center;
+                                            justify-content: center;
+                                            font-size: 10px;
+                                            font-weight: 900;
+                                            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+                                            border: 2px solid white;
+                                        ">✓</div>
+                                    ` : ''}
+                                </div>
+                            `;
+                        }
+                        
+                        // Individual purchase times
+                        const purchasesList = cycle.filter(record => record.action !== 'free_coffee').map((record, index) => {
+                            const time = new Date(record.purchase_date).toLocaleTimeString('ru-RU', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                            return `
+                                <div style="
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 14px;
+                                    padding: 12px 16px;
+                                    background: var(--card-bg);
+                                    border-radius: 16px;
+                                    border: 2px solid var(--card-border);
+                                    margin-bottom: 10px;
+                                    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+                                ">
+                                    <div style="
+                                        background: linear-gradient(135deg, #8B4513 0%, #D2691E 100%);
+                                        color: white;
+                                        width: 32px;
+                                        height: 32px;
+                                        border-radius: 12px;
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        font-size: 14px;
+                                        font-weight: 900;
+                                        box-shadow: 0 4px 12px rgba(139, 69, 19, 0.3);
+                                    ">${index + 1}</div>
+                                    <div style="
+                                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                        color: white;
+                                        padding: 6px 12px;
+                                        border-radius: 12px;
+                                        font-size: 15px;
+                                        font-weight: 700;
+                                        font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+                                        letter-spacing: 0.5px;
+                                        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+                                    ">🕐 ${time}</div>
+                                    <div style="
+                                        color: var(--text-primary); 
+                                        font-size: 15px; 
+                                        font-weight: 600;
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 8px;
+                                    ">
+                                        ☕ Покупка кофе
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                        
+                        const freeCoffeeRecord = cycle.find(record => record.action === 'free_coffee');
+                        const freeCoffeeTime = freeCoffeeRecord ? new Date(freeCoffeeRecord.purchase_date).toLocaleTimeString('ru-RU', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        }) : null;
+                        
+                        return `
+                            <div style="
+                                background: var(--card-bg);
+                                border: 3px solid ${isCompleteCycle ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' : 'var(--card-border)'};
+                                border-image: ${isCompleteCycle ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%) 1' : 'none'};
+                                border-radius: 24px;
+                                padding: 32px;
+                                margin-bottom: 24px;
+                                transition: all 0.3s ease;
+                                position: relative;
+                                overflow: hidden;
+                                box-shadow: ${isCompleteCycle ? '0 16px 40px rgba(245, 158, 11, 0.2)' : '0 8px 24px rgba(0,0,0,0.1)'};
+                            " onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='translateY(0)'">
+                                
+                                <!-- Cycle Header -->
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                                    <div style="
+                                        background: ${isCompleteCycle ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'};
+                                        color: white;
+                                        padding: 12px 20px;
+                                        border-radius: 16px;
+                                        font-size: 18px;
+                                        font-weight: 700;
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 12px;
+                                        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+                                    ">
+                                        ${isCompleteCycle ? '🎁' : '☕'} Цикл #${cycleNumber}
+                                        ${isCompleteCycle ? 
+                                            '<span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 8px; font-size: 12px;">ЗАВЕРШЕН</span>' : 
+                                            '<span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 8px; font-size: 12px;">В ПРОЦЕССЕ</span>'
+                                        }
+                                    </div>
+                                    <div style="text-align: right; color: var(--text-secondary);">
+                                        <div style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">📅 Период цикла:</div>
+                                        <div style="
+                                            font-size: 16px; 
+                                            font-weight: 700; 
+                                            color: var(--text-primary);
+                                            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+                                        ">
+                                            ${formatDate(startDate)}${startDate.getTime() !== endDate.getTime() ? ` → ${formatDate(endDate)}` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Coffee Progress Visual -->
+                                <div style="
+                                    background: var(--modal-bg);
+                                    border: 2px solid var(--card-border);
+                                    border-radius: 20px;
+                                    padding: 24px;
+                                    margin-bottom: 24px;
+                                    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+                                ">
+                                    <div style="
+                                        color: var(--text-primary); 
+                                        font-size: 18px; 
+                                        font-weight: 700; 
+                                        margin-bottom: 20px; 
+                                        text-align: center;
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        gap: 10px;
+                                    ">
+                                        ☕ Прогресс цикла лояльности
+                                    </div>
+                                    <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;">
+                                        ${progressDots}
+                                    </div>
+                                    <div style="text-align: center;">
+                                        <div style="
+                                            color: var(--text-primary); 
+                                            font-weight: 900; 
+                                            font-size: 20px; 
+                                            margin-bottom: 12px;
+                                            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                                        ">
+                                            📊 ${purchaseCount}/6 покупок выполнено
+                                        </div>
+                                        ${isCompleteCycle ? `
+                                            <div style="
+                                                background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                                                color: white;
+                                                padding: 16px 24px;
+                                                border-radius: 20px;
+                                                font-size: 16px;
+                                                font-weight: 700;
+                                                display: inline-block;
+                                                box-shadow: 0 10px 25px rgba(245, 158, 11, 0.4);
+                                                border: 3px solid rgba(255,255,255,0.3);
+                                            ">🎉 БЕСПЛАТНЫЙ КОФЕ ПОЛУЧЕН!</div>
+                                        ` : `
+                                            <div style="
+                                                color: var(--text-primary); 
+                                                font-size: 16px;
+                                                font-weight: 600;
+                                                background: var(--card-bg);
+                                                padding: 12px 20px;
+                                                border-radius: 16px;
+                                                border: 2px solid var(--card-border);
+                                                display: inline-block;
+                                            ">
+                                                ⏳ Осталось ${6 - purchaseCount} покупок до подарка
+                                            </div>
+                                        `}
+                                    </div>
+                                </div>
+                                
+                                <!-- Purchase Details -->
+                                <div style="
+                                    background: var(--card-bg);
+                                    border: 2px solid var(--card-border);
+                                    border-radius: 20px;
+                                    padding: 24px;
+                                    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+                                ">
+                                    <div style="
+                                        color: var(--text-primary); 
+                                        font-size: 18px; 
+                                        font-weight: 700; 
+                                        margin-bottom: 20px;
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 10px;
+                                    ">
+                                        📋 Детали покупок цикла
+                                    </div>
+                                    
+                                    <div style="margin-bottom: 20px;">
+                                        <div style="
+                                            color: var(--text-primary); 
+                                            font-size: 16px; 
+                                            font-weight: 700; 
+                                            margin-bottom: 16px;
+                                            display: flex;
+                                            align-items: center;
+                                            gap: 8px;
+                                        ">
+                                            ☕ Покупки кофе:
+                                        </div>
+                                        ${purchasesList}
+                                    </div>
+                                    
+                                    ${freeCoffeeTime ? `
+                                        <div style="
+                                            border-top: 3px solid var(--card-border);
+                                            padding-top: 20px;
+                                        ">
+                                            <div style="
+                                                color: var(--text-primary); 
+                                                font-size: 16px; 
+                                                font-weight: 700; 
+                                                margin-bottom: 16px;
+                                                display: flex;
+                                                align-items: center;
+                                                gap: 8px;
+                                            ">
+                                                🎁 Бесплатный кофе:
+                                            </div>
+                                            <div style="
+                                                display: flex;
+                                                align-items: center;
+                                                gap: 16px;
+                                                padding: 16px 20px;
+                                                background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                                                border-radius: 20px;
+                                                color: white;
+                                                box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+                                            ">
+                                                <div style="
+                                                    background: rgba(255,255,255,0.25);
+                                                    width: 40px;
+                                                    height: 40px;
+                                                    border-radius: 15px;
+                                                    display: flex;
+                                                    align-items: center;
+                                                    justify-content: center;
+                                                    font-size: 18px;
+                                                ">🎁</div>
+                                                <div style="
+                                                    background: rgba(255,255,255,0.25);
+                                                    color: white;
+                                                    padding: 8px 16px;
+                                                    border-radius: 15px;
+                                                    font-size: 16px;
+                                                    font-weight: 700;
+                                                    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+                                                    letter-spacing: 0.5px;
+                                                ">🕐 ${freeCoffeeTime}</div>
+                                                <div style="font-size: 16px; font-weight: 600;">
+                                                    Получен бесплатный кофе
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                                
+                                <!-- Cycle Summary -->
+                                <div style="
+                                    margin-top: 24px;
+                                    padding-top: 20px;
+                                    border-top: 2px solid var(--card-border);
+                                    text-align: center;
+                                    color: var(--text-secondary);
+                                    font-size: 14px;
+                                    font-weight: 600;
+                                    background: var(--modal-bg);
+                                    padding: 16px;
+                                    border-radius: 16px;
+                                ">
+                                    📈 Цикл ${isCompleteCycle ? 'завершен' : 'в процессе'} • Покупок в цикле: ${purchaseCount} • 
+                                    ${isCompleteCycle ? `🎁 Подарок получен ${freeCoffeeTime}` : `⏳ До подарка: ${6 - purchaseCount} покупок`}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                document.getElementById('history-modal').style.display = 'block';
+                
+            } catch (error) {
+                showError('Ошибка загрузки истории покупок: ' + error.message);
+                console.error('History error:', error);
+            }
+        }
+
+        // Close history modal
+        function closeHistoryModal() {
+            document.getElementById('history-modal').style.display = 'none';
+        }
+
+        // Phone number formatting for admin
+        function formatAdminPhone(value) {
+            const phoneNumber = value.replace(/\D/g, '');
+            
+            if (phoneNumber.length === 0) return '';
+            if (phoneNumber.length <= 1) return phoneNumber;
+            if (phoneNumber.length <= 4) return `+${phoneNumber}`;
+            if (phoneNumber.length <= 7) return `+${phoneNumber.slice(0, 1)} (${phoneNumber.slice(1, 4)}) ${phoneNumber.slice(4)}`;
+            if (phoneNumber.length <= 9) return `+${phoneNumber.slice(0, 1)} (${phoneNumber.slice(1, 4)}) ${phoneNumber.slice(4, 7)}-${phoneNumber.slice(7)}`;
+            return `+${phoneNumber.slice(0, 1)} (${phoneNumber.slice(1, 4)}) ${phoneNumber.slice(4, 7)}-${phoneNumber.slice(7, 9)}-${phoneNumber.slice(9, 11)}`;
+        }
+
+        // Save admin phone to localStorage
+        function saveAdminPhone() {
+            const phone = document.getElementById('admin-phone').value;
+            if (phone) {
+                localStorage.setItem('adminPhone', phone);
+                // Update preorder links on customer cards
+                updatePreorderLinks(phone);
+            }
+        }
+
+        // Load admin phone from localStorage
+        function loadAdminPhone() {
+            const savedPhone = localStorage.getItem('adminPhone');
+            if (savedPhone) {
+                document.getElementById('admin-phone').value = savedPhone;
+                updatePreorderLinks(savedPhone);
+            }
+        }
+
+        // Update preorder links (for API endpoint)
+        function updatePreorderLinks(phone) {
+            // This will be used when sharing customer cards
+            window.adminPhone = phone;
+        }
+
+        // Phone input event listener
+        document.addEventListener('DOMContentLoaded', function() {
+            const phoneInput = document.getElementById('customer-phone');
+            const adminPhoneInput = document.getElementById('admin-phone');
+            
+            // Customer phone formatting
+            phoneInput.addEventListener('input', function(e) {
+                const formatted = formatAdminPhone(e.target.value);
+                e.target.value = formatted;
+            });
+            
+            // Admin phone formatting and saving
+            adminPhoneInput.addEventListener('input', function(e) {
+                const formatted = formatAdminPhone(e.target.value);
+                e.target.value = formatted;
+                saveAdminPhone();
+            });
+            
+            phoneInput.addEventListener('keydown', function(e) {
+                // Allow: backspace, delete, tab, escape, enter
+                if ([46, 8, 9, 27, 13].indexOf(e.keyCode) !== -1 ||
+                    // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                    (e.keyCode === 65 && e.ctrlKey === true) ||
+                    (e.keyCode === 67 && e.ctrlKey === true) ||
+                    (e.keyCode === 86 && e.ctrlKey === true) ||
+                    (e.keyCode === 88 && e.ctrlKey === true)) {
+                    return;
+                }
+                // Ensure that it is a number and stop the keypress
+                if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+                    e.preventDefault();
                 }
             });
+            
+            // Load saved admin phone
+            loadAdminPhone();
         });
 
-        // Инициализация
-        document.addEventListener('DOMContentLoaded', function() {
-            initTheme();
-            loadAllCustomers();
-        });
+        // Sync barista phone with all customer cards
+        function syncBaristaPhone() {
+            const adminPhone = document.getElementById('admin-phone').value.trim();
+            
+            if (!adminPhone) {
+                showError('Пожалуйста, введите номер телефона бариста');
+                return;
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('adminPhone', adminPhone);
+            
+            // Show success message
+            showSuccess(`
+                <div style="text-align: left;">
+                    <div style="font-size: 18px; margin-bottom: 12px;">📞 Номер бариста синхронизирован!</div>
+                    <div style="margin-bottom: 8px;">
+                        <strong>Номер:</strong> ${adminPhone}
+                    </div>
+                    <div style="margin-bottom: 8px;">
+                        <strong>Действие:</strong> Номер автоматически появится в кнопке "Предзаказ" на всех карточках клиентов
+                    </div>
+                    <div style="margin-top: 12px; font-size: 14px; opacity: 0.8;">
+                        💡 Клиенты также могут сохранить ваш номер индивидуально через кнопку "Сохранить бариста"
+                    </div>
+                </div>
+            `);
+            
+            // Update window variable for immediate use
+            window.adminPhone = adminPhone;
+            
+            console.log('Номер бариста синхронизирован:', adminPhone);
+        }
 
-        // Загрузка при старте
-        initTheme();
-        loadAllCustomers();
+        // Initialize
+        updateTime();
+        loadData();
 
-        // Делаю функции глобальными
-        window.addPurchase = addPurchase;
-        window.showHistory = showHistory;
-        window.shareWithCustomer = shareWithCustomer;
-        window.deleteCustomer = deleteCustomer;
-        window.copyToClipboard = copyToClipboard;
+        // Update time every minute
+        setInterval(updateTime, 60000);
+
+        // Auto-refresh every 30 seconds
+        setInterval(loadData, 30000);
     </script>
 </body>
-</html> 
+</html>
