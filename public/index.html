@@ -72,6 +72,7 @@
             justify-content: center;
             overflow-x: hidden;
             position: relative;
+            padding: 20px;
         }
         
         body::before {
@@ -99,8 +100,8 @@
             text-align: center;
             box-shadow: var(--shadow-glass);
             border: 1px solid var(--border-glass);
-            max-width: 500px;
-            width: 90%;
+            max-width: 600px;
+            width: 100%;
             transition: all 0.3s ease;
         }
         
@@ -115,403 +116,223 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 2px;
+            height: 3px;
             background: var(--gradient-gold);
             border-radius: var(--border-radius) var(--border-radius) 0 0;
         }
 
+        .brand-icon {
+            width: 100px;
+            height: 100px;
+            background: var(--gradient-orange);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            margin: 0 auto 24px;
+            box-shadow: 0 12px 32px rgba(255, 107, 53, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .brand-icon:hover {
+            transform: scale(1.05) rotate(5deg);
+            box-shadow: 0 16px 40px rgba(255, 107, 53, 0.4);
+        }
+
         .logo {
-            font-size: 3rem;
+            font-size: 3.5rem;
             font-weight: 800;
             margin-bottom: 16px;
             background: var(--gradient-gold);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            letter-spacing: -1px;
+            letter-spacing: -2px;
         }
 
         .subtitle {
-            font-size: 1.2rem;
-            margin-bottom: 40px;
+            font-size: 1.3rem;
+            margin-bottom: 32px;
             color: var(--text-secondary);
             font-weight: 500;
+            line-height: 1.4;
         }
 
-        .btn {
-            display: block;
-            width: 100%;
-            padding: 18px 24px;
-            margin: 16px 0;
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            margin: 32px 0;
+        }
+
+        .feature {
             background: var(--bg-glass);
             border: 1px solid var(--border-glass);
             border-radius: var(--border-radius-small);
-            color: var(--text-primary);
-            text-decoration: none;
-            font-size: 1.1rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
+            padding: 24px;
             backdrop-filter: var(--blur);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-        }
-        
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-            transition: left 0.6s;
-        }
-        
-        .btn:hover::before {
-            left: 100%;
+            transition: all 0.3s ease;
         }
 
-        .btn:hover {
-            background: var(--bg-glass-hover);
+        .feature:hover {
             transform: translateY(-2px);
-            box-shadow: var(--shadow-glass);
+            background: var(--bg-glass-hover);
         }
 
-        .btn.admin {
-            background: var(--gradient-orange);
-            border-color: var(--accent-orange);
-            box-shadow: 0 4px 16px rgba(255, 107, 53, 0.3);
-        }
-        
-        .btn.admin:hover {
-            box-shadow: 0 8px 24px rgba(255, 107, 53, 0.4);
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+            display: block;
         }
 
-        .btn.customer {
-            background: var(--gradient-blue);
-            border-color: var(--accent-blue);
-            box-shadow: 0 4px 16px rgba(55, 66, 250, 0.3);
-        }
-        
-        .btn.customer:hover {
-            box-shadow: 0 8px 24px rgba(55, 66, 250, 0.4);
+        .feature-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-primary);
         }
 
-        .btn-icon {
-            font-size: 1.5rem;
-        }
-
-        .loading {
-            display: none;
-            font-size: 1.2rem;
-            margin-top: 20px;
+        .feature-text {
+            font-size: 0.9rem;
             color: var(--text-secondary);
+            line-height: 1.4;
         }
 
-        .spinner {
-            border: 3px solid var(--border-glass);
-            border-radius: 50%;
-            border-top: 3px solid var(--accent-orange);
-            width: 32px;
-            height: 32px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
+        .info-text {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--border-radius-small);
+            padding: 24px;
+            margin-top: 32px;
+            backdrop-filter: var(--blur);
+            text-align: left;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .info-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+            text-align: center;
         }
-        
-        .features {
+
+        .info-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .info-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .info-list li:before {
+            content: '✅';
+            font-size: 1rem;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .footer {
             margin-top: 32px;
             padding-top: 24px;
             border-top: 1px solid var(--border-glass);
-        }
-        
-        .features-title {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 16px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .features-list {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            font-size: 0.9rem;
             color: var(--text-muted);
-        }
-        
-        .feature-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .feature-icon {
-            font-size: 1rem;
-        }
-        
-        .install-prompt {
-            margin-top: 24px;
-            padding: 20px;
-            background: var(--bg-glass);
-            border: 1px solid var(--border-glass);
-            border-radius: var(--border-radius-small);
             font-size: 0.9rem;
-            color: var(--text-secondary);
-            display: none;
-            text-align: center;
-            backdrop-filter: var(--blur);
-        }
-        
-        .install-btn {
-            background: var(--gradient-green);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: var(--border-radius-small);
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 12px;
-            transition: all 0.3s ease;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            box-shadow: 0 4px 16px rgba(0, 212, 170, 0.3);
-        }
-        
-        .install-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0, 212, 170, 0.4);
-        }
-        
-        .install-icon {
-            font-size: 1.2rem;
-        }
-        
-        /* PWA Install Section */
-        .pwa-section {
-            margin-top: 32px;
-            padding: 24px;
-            background: var(--bg-glass);
-            border: 1px solid var(--border-glass);
-            border-radius: var(--border-radius);
-            backdrop-filter: var(--blur);
-            text-align: center;
-        }
-        
-        .pwa-title {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        
-        .pwa-description {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            line-height: 1.5;
-            margin-bottom: 20px;
-        }
-        
-        .pwa-benefits {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 20px;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-        }
-        
-        .pwa-benefit {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .manual-install-btn {
-            background: var(--gradient-blue);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: var(--border-radius-small);
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            box-shadow: 0 4px 16px rgba(55, 66, 250, 0.3);
-        }
-        
-        .manual-install-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(55, 66, 250, 0.4);
         }
 
-        /* Responsive Design */
         @media (max-width: 768px) {
             .container {
                 padding: 32px 24px;
-                margin: 20px;
             }
             
             .logo {
-                font-size: 2.5rem;
+                font-size: 2.8rem;
             }
             
             .subtitle {
                 font-size: 1.1rem;
             }
             
-            .btn {
-                padding: 16px 20px;
-                font-size: 1rem;
-            }
-            
-            .features-list {
+            .features {
                 grid-template-columns: 1fr;
-                gap: 8px;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .container {
-                padding: 24px 20px;
+                gap: 16px;
             }
             
-            .logo {
-                font-size: 2rem;
+            .brand-icon {
+                width: 80px;
+                height: 80px;
+                font-size: 40px;
+                margin-bottom: 20px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="logo">☕ COFFEEMANIA</div>
-        <div class="subtitle">Система лояльности</div>
-        
-        <div id="menu">
-            <a href="/card.html" class="btn customer">
-                <span class="btn-icon">👤</span>
-                Карточка клиента
-            </a>
-            <a href="/admin.html" class="btn admin">
-                <span class="btn-icon">⚙️</span>
-                Панель бариста
-            </a>
-        </div>
-
-        <div id="loading" class="loading">
-            <div class="spinner"></div>
-            Загрузка карточки...
-        </div>
+        <div class="brand-icon">☕</div>
+        <h1 class="logo">COFFEEMANIA</h1>
+        <p class="subtitle">Система лояльности - каждая 7-я чашка кофе БЕСПЛАТНО!</p>
         
         <div class="features">
-            <div class="features-title">Возможности</div>
-            <div class="features-list">
-                <div class="feature-item">
-                    <span class="feature-icon">📱</span>
-                    <span>QR-коды</span>
-                </div>
-                <div class="feature-item">
-                    <span class="feature-icon">🎁</span>
-                    <span>Подарки</span>
-                </div>
-                <div class="feature-item">
-                    <span class="feature-icon">📊</span>
-                    <span>Статистика</span>
-                </div>
-                <div class="feature-item">
-                    <span class="feature-icon">💎</span>
-                    <span>Премиум дизайн</span>
-                </div>
+            <div class="feature">
+                <div class="feature-icon">📱</div>
+                <div class="feature-title">Цифровая карта</div>
+                <div class="feature-text">Больше никаких бумажных карточек - все в вашем телефоне</div>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">🎁</div>
+                <div class="feature-title">Простая система</div>
+                <div class="feature-text">6 покупок = 1 бесплатный кофе. Быстро и понятно</div>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">⚡</div>
+                <div class="feature-title">Мгновенно</div>
+                <div class="feature-text">QR-код сканируется за секунду, никаких задержек</div>
             </div>
         </div>
-        
-        <div class="install-prompt" id="install-prompt">
-            📲 Установите COFFEEMANIA как приложение для быстрого доступа!
-            <br>
-            <button class="install-btn" onclick="installApp()">Установить</button>
+
+        <div class="info-text">
+            <div class="info-title">🎯 Как это работает</div>
+            <ul class="info-list">
+                <li>Приходите в COFFEEMANIA и покупаете кофе</li>
+                <li>Бариста сканирует QR-код или регистрирует вас в системе</li>
+                <li>Каждая покупка засчитывается автоматически</li>
+                <li>После 6 покупок получаете 7-ю чашку БЕСПЛАТНО</li>
+                <li>Цикл повторяется - экономьте на каждом 7-м кофе!</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p><strong>COFFEEMANIA</strong> - лучший кофе в городе! ☕</p>
+            <p>Свяжитесь с нашим бариста для получения вашей персональной карты лояльности</p>
         </div>
     </div>
 
     <script>
-        // Проверяем есть ли параметр id в URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const customerId = urlParams.get('id');
+        // Блокируем прямую навигацию
+        console.log('🏠 COFFEEMANIA - Информационная страница');
+        console.log('📱 Для получения карты лояльности обратитесь к бариста');
+        console.log('🔒 Система безопасности активна');
         
-        if (customerId) {
-            // Если есть ID клиента - автоматически перенаправляем на карточку
-            document.getElementById('menu').style.display = 'none';
-            document.getElementById('loading').style.display = 'block';
+        // Анимация при загрузке
+        window.addEventListener('load', () => {
+            document.querySelector('.container').style.opacity = '0';
+            document.querySelector('.container').style.transform = 'translateY(20px)';
             
-            // Небольшая задержка для показа загрузки
             setTimeout(() => {
-                window.location.href = `/card.html?id=${customerId}`;
-            }, 800);
-        }
-
-        // PWA Install prompt
-        let deferredPrompt;
-        
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            
-            // Показываем кнопку установки
-            document.getElementById('install-prompt').style.display = 'block';
-        });
-        
-        function installApp() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        console.log('COFFEEMANIA: Приложение установлено');
-                        document.getElementById('install-prompt').style.display = 'none';
-                    }
-                    deferredPrompt = null;
-                });
-            }
-        }
-
-        // Регистрация Service Worker для PWA
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then((registration) => {
-                        console.log('COFFEEMANIA SW registered: ', registration);
-                    })
-                    .catch((registrationError) => {
-                        console.log('COFFEEMANIA SW registration failed: ', registrationError);
-                    });
-            });
-        }
-        
-        // Проверяем, установлено ли приложение
-        window.addEventListener('appinstalled', () => {
-            console.log('COFFEEMANIA: Приложение успешно установлено');
-            document.getElementById('install-prompt').style.display = 'none';
+                document.querySelector('.container').style.transition = 'all 0.6s ease';
+                document.querySelector('.container').style.opacity = '1';
+                document.querySelector('.container').style.transform = 'translateY(0)';
+            }, 100);
         });
     </script>
 </body>

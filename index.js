@@ -580,6 +580,46 @@ app.get('/api/qr/:id', async (req, res) => {
     }
 });
 
+// Generate secure client app link
+app.get('/api/client-link/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Проверяем существование клиента
+        let customer;
+        if (global.sqliteDB) {
+            customer = await new Promise((resolve, reject) => {
+                global.sqliteDB.get(
+                    'SELECT * FROM customers WHERE id = ?',
+                    [id],
+                    (err, row) => {
+                        if (err) reject(err);
+                        else resolve(row);
+                    }
+                );
+            });
+        } else {
+            const result = await client.query('SELECT * FROM customers WHERE id = $1', [id]);
+            customer = result.rows[0];
+        }
+        
+        if (!customer) {
+            return res.status(404).json({ error: 'Customer not found' });
+        }
+        
+        const clientAppUrl = `${req.protocol}://${req.get('host')}/client-app.html?id=${id}`;
+        
+        res.json({ 
+            url: clientAppUrl,
+            customer: customer,
+            message: 'Secure client app link generated' 
+        });
+    } catch (error) {
+        console.error('Client link generation error:', error);
+        res.status(500).json({ error: 'Failed to generate client link' });
+    }
+});
+
 // Get barista phone
 app.get('/api/barista-phone', async (req, res) => {
     try {

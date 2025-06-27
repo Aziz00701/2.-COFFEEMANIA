@@ -1937,10 +1937,10 @@
                     console.log('Использую дефолтный номер бариста');
                 }
                 
-                const customerCardUrl = `${window.location.origin}/card.html?id=${customerId}`;
+                const customerCardUrl = `${window.location.origin}/client-app.html?id=${customerId}`;
                 const cleanPhone = customer.phone.replace(/\D/g, '');
                 
-                const message = `🎉 Спасибо, что посетили COFFEEMANIA! ☕\n\n💎 Ваша личная карта лояльности готова:\n${customerCardUrl}\n\n🎁 Каждая 7-я чашка кофе - БЕСПЛАТНО!\n\n☕ COFFEEMANIA - лучший кофе в городе!`;
+                const message = `🎉 Спасибо, что посетили COFFEEMANIA! ☕\n\n💎 Ваша личная карта лояльности готова:\n${customerCardUrl}\n\n🎁 Каждая 7-я чашка кофе - БЕСПЛАТНО!\n📱 Установите как приложение на телефон!\n\n☕ COFFEEMANIA - лучший кофе в городе!`;
                 
                 const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
                 
