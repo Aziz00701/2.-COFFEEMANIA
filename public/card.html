@@ -594,7 +594,14 @@
         /* Error State */
         .error-state {
             text-align: center;
-            padding: 60px 20px;
+            padding: 48px 24px;
+            max-width: 400px;
+            margin: 0 auto;
+            background: var(--bg-glass);
+            backdrop-filter: var(--blur);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-glass);
+            box-shadow: var(--shadow-glass);
         }
         
         .error-icon {
@@ -606,20 +613,74 @@
             font-size: 24px;
             font-weight: 700;
             color: var(--text-primary);
-            margin-bottom: 8px;
+            margin-bottom: 16px;
         }
         
         .error-message {
-            color: var(--text-secondary);
             font-size: 16px;
-            line-height: 1.5;
+            color: var(--text-secondary);
+            line-height: 1.6;
             margin-bottom: 24px;
         }
         
-        .error-link {
-            color: var(--accent-orange);
-            text-decoration: underline;
+        .error-btn {
+            display: inline-block;
+            background: var(--gradient-orange);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            text-decoration: none;
             font-weight: 600;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .error-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(255, 107, 53, 0.3);
+        }
+        
+        .error-btn.retry {
+            background: var(--gradient-blue);
+        }
+        
+        /* Loading State */
+        .loading-state {
+            text-align: center;
+            padding: 48px 24px;
+            max-width: 400px;
+            margin: 0 auto;
+            background: var(--bg-glass);
+            backdrop-filter: var(--blur);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-glass);
+            box-shadow: var(--shadow-glass);
+        }
+        
+        .loading-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .loading-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+        
+        .loading-message {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
         }
         
         /* Order History Cards - ВАУ ЭФФЕКТ! */
@@ -1359,35 +1420,57 @@
                 return;
             }
 
+            // Show loading state
+            document.querySelector('.container').innerHTML = `
+                <div class="loading-state">
+                    <div class="loading-icon">⏳</div>
+                    <div class="loading-title">Загрузка карты...</div>
+                    <div class="loading-message">ID клиента: ${customerId}</div>
+                </div>
+            `;
+
             try {
+                console.log('🔍 Загружаем данные клиента:', customerId);
                 const response = await fetch(`/api/customer/${customerId}`);
                 
+                console.log('📡 Ответ сервера:', response.status, response.statusText);
+                
                 if (!response.ok) {
-                    throw new Error('Клиент не найден');
+                    if (response.status === 404) {
+                        throw new Error('Клиент не найден в базе данных');
+                    } else {
+                        throw new Error(`Ошибка сервера: ${response.status}`);
+                    }
                 }
                 
                 customerData = await response.json();
+                console.log('✅ Данные клиента загружены:', customerData);
                 updateUI();
                 
             } catch (error) {
-                console.error('Error loading customer:', error);
-                showErrorState();
+                console.error('❌ Ошибка загрузки клиента:', error);
+                showErrorState(error.message);
             }
         }
 
         // Show error state
-        function showErrorState() {
+        function showErrorState(errorMessage = null) {
+            const defaultMessage = !customerId ? 
+                'Для доступа к карточке клиента необходимо получить персональную ссылку от бариста COFFEEMANIA.' :
+                'Данные клиента временно недоступны. Это может происходить из-за перезапуска сервера. Попробуйте зарегистрироваться заново в админ панели.';
+                
             document.querySelector('.container').innerHTML = `
                 <div class="error-state">
-                    <div class="error-icon">🔒</div>
-                    <div class="error-title">Доступ запрещен</div>
+                    <div class="error-icon">⚠️</div>
+                    <div class="error-title">Доступ ограничен</div>
                     <div class="error-message">
-                        ${!customerId ? 
-                            'Для доступа к карточке клиента необходимо получить персональную ссылку от бариста COFFEEMANIA.' :
-                            'Клиент с этим ID не существует. Проверьте правильность ссылки или обратитесь к бариста COFFEEMANIA для получения новой карточки.'
-                        }
+                        ${errorMessage || defaultMessage}
+                        ${customerId ? `<br><br><small style="color: var(--text-muted);">ID: ${customerId}</small>` : ''}
                     </div>
-                    <a href="/admin.html" class="error-link">Панель бариста</a>
+                    <div style="margin-top: 20px;">
+                        <button onclick="loadCustomerData()" class="error-btn retry" style="margin-right: 12px;">🔄 Попробовать снова</button>
+                        <a href="/admin.html" class="error-btn">👩‍💼 Админ панель</a>
+                    </div>
                 </div>
             `;
         }

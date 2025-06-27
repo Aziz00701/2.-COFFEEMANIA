@@ -67,6 +67,35 @@ async function initializeDatabase() {
         console.log('❌ Database connection error:', error.message);
         console.log('🔄 Using in-memory storage...');
         useMemory = true;
+        
+        // Add test customers for demo
+        console.log('📝 Creating test customers...');
+        memoryStorage.customers.set('demo123', {
+            id: 'demo123',
+            name: 'Тестовый клиент',
+            phone: '+7 (777) 123-45-67',
+            purchases: 3,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        });
+        
+        memoryStorage.customers.set('test456', {
+            id: 'test456', 
+            name: 'Анна Иванова',
+            phone: '+7 (999) 888-77-66',
+            purchases: 6,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        });
+        
+        memoryStorage.settings.set('barista_phone', '+7 (777) 555-44-33');
+        
+        console.log('✅ Test customers created:');
+        console.log('   - demo123: Тестовый клиент (3 покупки)');
+        console.log('   - test456: Анна Иванова (6 покупок - готов к бесплатному кофе)');
+        console.log('🔗 Test links:');
+        console.log(`   - https://two-coffeemania.onrender.com/card.html?id=demo123`);
+        console.log(`   - https://two-coffeemania.onrender.com/card.html?id=test456`);
     }
 }
 
