@@ -1,507 +1,676 @@
 const express = require('express');
-const { Pool } = require('pg');
-const { nanoid } = require('nanoid');
-const QRCode = require('qrcode');
 const cors = require('cors');
+const { Client } = require('pg');
+const QRCode = require('qrcode');
+const { nanoid } = require('nanoid');
 const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 1000;
 
-// Подключение к PostgreSQL
-const connectionString = process.env.DATABASE_URL || 'postgresql://coffeemania_db_user:H9eKkNMYufnRZsMlfmc4NokQhMcGCE3K@dpg-d1c2soer433s7381rgfg-a.frankfurt-postgres.render.com/coffeemania_db';
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.static('public'));
 
-const pool = new Pool({
+// PostgreSQL connection
+const connectionString = process.env.DATABASE_URL || 'postgresql://username:password@localhost:5432/coffeemania';
+const client = new Client({
     connectionString: connectionString,
-    ssl: { rejectUnauthorized: false }
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// Логирование
-const log = {
-    info: (msg, ...args) => console.log(`ℹ️  ${new Date().toISOString()} - ${msg}`, ...args),
-    error: (msg, ...args) => console.error(`❌ ${new Date().toISOString()} - ${msg}`, ...args),
-    success: (msg, ...args) => console.log(`✅ ${new Date().toISOString()} - ${msg}`, ...args),
-    warn: (msg, ...args) => console.warn(`⚠️  ${new Date().toISOString()} - ${msg}`, ...args)
-};
-
-// Инициализация базы данных
-async function initializeDatabase() {
+// Connect to database
+async function connectDB() {
     try {
-        log.info('Подключение к PostgreSQL...');
-        
-        const client = await pool.connect();
-        log.success('Успешное подключение к PostgreSQL');
-        client.release();
+        await client.connect();
+        console.log('✅ Connected to PostgreSQL database');
+        await initDatabase();
+    } catch (error) {
+        console.error('❌ Database connection error:', error);
+        // Fallback to SQLite for development
+        console.log('🔄 Falling back to SQLite...');
+        await setupSQLite();
+    }
+}
 
-        // Создание таблицы клиентов (если не существует)
-        await pool.query(`
+// Initialize database tables
+async function initDatabase() {
+    try {
+        // Create customers table
+        await client.query(`
             CREATE TABLE IF NOT EXISTS customers (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                phone TEXT NOT NULL UNIQUE,
+                id VARCHAR(50) PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                phone VARCHAR(50) NOT NULL UNIQUE,
                 purchases INTEGER DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
-        log.info('Таблица customers проверена/создана');
 
-        // Создание таблицы истории покупок (если не существует)
-        await pool.query(`
+        // Create purchase history table
+        await client.query(`
             CREATE TABLE IF NOT EXISTS purchase_history (
-                id SERIAL PRIMARY KEY,
-                customer_id TEXT NOT NULL,
-                action TEXT NOT NULL DEFAULT 'purchase',
-                purchases_before INTEGER NOT NULL DEFAULT 0,
-                purchases_after INTEGER NOT NULL DEFAULT 0,
-                notes TEXT,
+                purchase_id SERIAL PRIMARY KEY,
+                customer_id VARCHAR(50) REFERENCES customers(id) ON DELETE CASCADE,
                 purchase_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+                action VARCHAR(50) DEFAULT 'purchase'
             )
         `);
-        
-        // Добавляем недостающие столбцы если они не существуют
-        try {
-            await pool.query(`ALTER TABLE purchase_history ADD COLUMN IF NOT EXISTS action TEXT NOT NULL DEFAULT 'purchase'`);
-            await pool.query(`ALTER TABLE purchase_history ADD COLUMN IF NOT EXISTS purchases_before INTEGER NOT NULL DEFAULT 0`);
-            await pool.query(`ALTER TABLE purchase_history ADD COLUMN IF NOT EXISTS purchases_after INTEGER NOT NULL DEFAULT 0`);
-            await pool.query(`ALTER TABLE purchase_history ADD COLUMN IF NOT EXISTS notes TEXT`);
-            // Переименовываем created_at в purchase_date если нужно
-            await pool.query(`ALTER TABLE purchase_history RENAME COLUMN created_at TO purchase_date`);
-        } catch (error) {
-            // Игнорируем ошибки если столбцы уже существуют
-        }
-        
-        log.info('Таблица purchase_history проверена/создана');
 
-        const result = await pool.query('SELECT COUNT(*) as count FROM customers');
-        log.info(`В базе зарегистрировано клиентов: ${result.rows[0].count}`);
+        // Create settings table for barista phone
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS settings (
+                key VARCHAR(100) PRIMARY KEY,
+                value TEXT NOT NULL,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
 
+        // Set default barista phone if not exists
+        await client.query(`
+            INSERT INTO settings (key, value) VALUES ('barista_phone', '+7 (999) 123-45-67')
+            ON CONFLICT (key) DO NOTHING
+        `);
+
+        console.log('✅ Database tables initialized');
     } catch (error) {
-        log.error('Ошибка инициализации базы данных:', error.message);
-        process.exit(1);
+        console.error('❌ Database initialization error:', error);
     }
 }
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+// SQLite fallback for development
+async function setupSQLite() {
+    const sqlite3 = require('sqlite3').verbose();
+    const db = new sqlite3.Database(':memory:');
+    
+    db.serialize(() => {
+        db.run(`CREATE TABLE customers (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            phone TEXT NOT NULL UNIQUE,
+            purchases INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
 
-app.use((req, res, next) => {
-    if (req.path.startsWith('/api/')) {
-        log.info(`${req.method} ${req.path}`);
-    }
-    next();
-});
+        db.run(`CREATE TABLE purchase_history (
+            purchase_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            customer_id TEXT,
+            purchase_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+            action TEXT DEFAULT 'purchase',
+            FOREIGN KEY(customer_id) REFERENCES customers(id)
+        )`);
+
+        db.run(`CREATE TABLE settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
+
+        db.run(`INSERT INTO settings (key, value) VALUES ('barista_phone', '+7 (999) 123-45-67')`);
+    });
+
+    global.sqliteDB = db;
+    console.log('✅ SQLite database initialized');
+}
 
 // API Routes
 
-// 1. Регистрация клиента (только для админ панели)
+// Get statistics
+app.get('/api/stats', async (req, res) => {
+    try {
+        let totalCustomers, totalPurchases, readyForFreeCoffee;
+        
+        if (global.sqliteDB) {
+            // SQLite queries
+            totalCustomers = await new Promise((resolve, reject) => {
+                global.sqliteDB.get('SELECT COUNT(*) as count FROM customers', (err, row) => {
+                    if (err) reject(err);
+                    else resolve(row.count);
+                });
+            });
+
+            totalPurchases = await new Promise((resolve, reject) => {
+                global.sqliteDB.get('SELECT SUM(purchases) as total FROM customers', (err, row) => {
+                    if (err) reject(err);
+                    else resolve(row.total || 0);
+                });
+            });
+
+            readyForFreeCoffee = await new Promise((resolve, reject) => {
+                global.sqliteDB.get('SELECT COUNT(*) as count FROM customers WHERE purchases >= 6', (err, row) => {
+                    if (err) reject(err);
+                    else resolve(row.count);
+                });
+            });
+        } else {
+            // PostgreSQL queries
+            const totalCustomersResult = await client.query('SELECT COUNT(*) FROM customers');
+            totalCustomers = parseInt(totalCustomersResult.rows[0].count);
+
+            const totalPurchasesResult = await client.query('SELECT SUM(purchases) FROM customers');
+            totalPurchases = parseInt(totalPurchasesResult.rows[0].sum) || 0;
+
+            const readyResult = await client.query('SELECT COUNT(*) FROM customers WHERE purchases >= 6');
+            readyForFreeCoffee = parseInt(readyResult.rows[0].count);
+        }
+
+        res.json({
+            totalCustomers,
+            totalPurchases,
+            readyForFreeCoffee
+        });
+    } catch (error) {
+        console.error('Stats error:', error);
+        res.status(500).json({ error: 'Failed to get statistics' });
+    }
+});
+
+// Register new customer
 app.post('/api/register', async (req, res) => {
     try {
-        // Проверяем, что запрос идет от админ панели
-        const referer = req.get('Referer') || '';
-        
-        if (!referer.includes('/admin.html') && !referer.includes('/admin')) {
-            return res.status(403).json({ error: 'Доступ запрещен' });
-        }
-        
         const { name, phone } = req.body;
-
+        
         if (!name || !phone) {
-            return res.status(400).json({ error: 'Имя и телефон обязательны' });
-        }
-
-        const existingCustomer = await pool.query(
-            'SELECT id FROM customers WHERE phone = $1',
-            [phone]
-        );
-
-        if (existingCustomer.rows.length > 0) {
-            return res.status(400).json({ error: 'Клиент с таким номером уже существует' });
+            return res.status(400).json({ error: 'Name and phone are required' });
         }
 
         const customerId = nanoid(10);
         
-        await pool.query(
-            'INSERT INTO customers (id, name, phone, purchases) VALUES ($1, $2, $3, $4)',
-            [customerId, name, phone, 0]
-        );
-        
-        log.success(`Новый клиент: ${name} (${phone}) - ID: ${customerId}`);
-        
-        res.json({ 
-            success: true, 
-            customerId,
-            message: 'Клиент успешно зарегистрирован' 
-        });
-        
+        if (global.sqliteDB) {
+            // SQLite
+            global.sqliteDB.run(
+                'INSERT INTO customers (id, name, phone) VALUES (?, ?, ?)',
+                [customerId, name, phone],
+                function(err) {
+                    if (err) {
+                        if (err.message.includes('UNIQUE constraint failed')) {
+                            return res.status(400).json({ error: 'Клиент с таким номером уже существует' });
+                        }
+                        return res.status(500).json({ error: 'Failed to register customer' });
+                    }
+                    res.json({ 
+                        success: true, 
+                        customerId,
+                        message: 'Customer registered successfully' 
+                    });
+                }
+            );
+        } else {
+            // PostgreSQL
+            await client.query(
+                'INSERT INTO customers (id, name, phone) VALUES ($1, $2, $3)',
+                [customerId, name, phone]
+            );
+            
+            res.json({ 
+                success: true, 
+                customerId,
+                message: 'Customer registered successfully' 
+            });
+        }
     } catch (error) {
-        log.error("Ошибка регистрации:", error.message);
-        res.status(500).json({ error: 'Ошибка при регистрации клиента' });
+        console.error('Registration error:', error);
+        if (error.code === '23505') { // PostgreSQL unique constraint
+            res.status(400).json({ error: 'Клиент с таким номером уже существует' });
+        } else {
+            res.status(500).json({ error: 'Failed to register customer' });
+        }
     }
 });
 
-// 2. Поиск клиентов (только для админ панели)
+// Search customers
 app.get('/api/search', async (req, res) => {
     try {
-        // Проверяем, что запрос идет от админ панели
-        const referer = req.get('Referer') || '';
-        const userAgent = req.get('User-Agent') || '';
-        
-        // Если запрос не от админ панели - блокируем
-        if (!referer.includes('/admin.html') && !referer.includes('/admin')) {
-            return res.status(403).json({ error: 'Доступ запрещен' });
-        }
-        
         const { q } = req.query;
         
         if (!q || q.length < 2) {
             return res.json([]);
         }
 
-        const result = await pool.query(
-            'SELECT id, name, phone, purchases, created_at FROM customers WHERE name ILIKE $1 OR phone LIKE $2 ORDER BY name ASC LIMIT 20',
-            [`%${q}%`, `%${q}%`]
-        );
+        let customers;
         
-        res.json(result.rows);
-        
+        if (global.sqliteDB) {
+            // SQLite
+            customers = await new Promise((resolve, reject) => {
+                global.sqliteDB.all(
+                    'SELECT * FROM customers WHERE name LIKE ? OR phone LIKE ? ORDER BY created_at DESC',
+                    [`%${q}%`, `%${q}%`],
+                    (err, rows) => {
+                        if (err) reject(err);
+                        else resolve(rows);
+                    }
+                );
+            });
+        } else {
+            // PostgreSQL
+            const result = await client.query(
+                'SELECT * FROM customers WHERE name ILIKE $1 OR phone ILIKE $1 ORDER BY created_at DESC',
+                [`%${q}%`]
+            );
+            customers = result.rows;
+        }
+
+        res.json(customers);
     } catch (error) {
-        log.error("Ошибка поиска:", error.message);
-        res.status(500).json({ error: 'Ошибка поиска' });
+        console.error('Search error:', error);
+        res.status(500).json({ error: 'Search failed' });
     }
 });
 
-// 3. Получение всех клиентов (только для админ панели)
+// Get all customers
 app.get('/api/customers', async (req, res) => {
     try {
-        // Проверяем, что запрос идет от админ панели
-        const referer = req.get('Referer') || '';
+        let customers;
         
-        // Если запрос не от админ панели - блокируем
-        if (!referer.includes('/admin.html') && !referer.includes('/admin')) {
-            return res.status(403).json({ error: 'Доступ запрещен' });
+        if (global.sqliteDB) {
+            // SQLite
+            customers = await new Promise((resolve, reject) => {
+                global.sqliteDB.all(
+                    'SELECT * FROM customers ORDER BY created_at DESC',
+                    (err, rows) => {
+                        if (err) reject(err);
+                        else resolve(rows);
+                    }
+                );
+            });
+        } else {
+            // PostgreSQL
+            const result = await client.query('SELECT * FROM customers ORDER BY created_at DESC');
+            customers = result.rows;
         }
-        
-        const result = await pool.query(
-            'SELECT id, name, phone, purchases, created_at FROM customers ORDER BY created_at DESC'
-        );
-        
-        res.json(result.rows);
-        
+
+        res.json(customers);
     } catch (error) {
-        log.error("Ошибка загрузки клиентов:", error.message);
-        res.status(500).json({ error: 'Ошибка загрузки клиентов' });
+        console.error('Get customers error:', error);
+        res.status(500).json({ error: 'Failed to get customers' });
     }
 });
 
-// 4. Получение данных клиента
+// Get customer by ID
 app.get('/api/customer/:id', async (req, res) => {
     try {
         const { id } = req.params;
+        let customer;
         
-        const result = await pool.query(
-            'SELECT id, name, phone, purchases, created_at FROM customers WHERE id = $1',
-            [id]
-        );
-        
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Клиент не найден' });
-        }
-        
-        res.json(result.rows[0]);
-        
-            } catch (error) {
-        log.error("Ошибка получения клиента:", error.message);
-        res.status(500).json({ error: 'Ошибка получения данных клиента' });
-    }
-});
-
-// 5. Добавление покупки (только для админ панели)
-app.post('/api/purchase/:customerId', async (req, res) => {
-    // Проверяем, что запрос идет от админ панели
-    const referer = req.get('Referer') || '';
-    
-    if (!referer.includes('/admin.html') && !referer.includes('/admin')) {
-        return res.status(403).json({ error: 'Доступ запрещен' });
-    }
-    
-    const client = await pool.connect();
-    try {
-        const { customerId } = req.params;
-        
-        if (!customerId) {
-            return res.status(400).json({ error: 'ID клиента обязателен' });
-        }
-
-        await client.query('BEGIN');
-
-        const customerResult = await client.query(
-            'SELECT id, name, phone, purchases FROM customers WHERE id = $1',
-            [customerId]
-        );
-
-        if (customerResult.rows.length === 0) {
-            await client.query('ROLLBACK');
-            return res.status(404).json({ error: 'Клиент не найден' });
-        }
-
-        const customer = customerResult.rows[0];
-        let currentPurchases = customer.purchases;
-        let newPurchases;
-        let isComplete = false;
-        let action = 'purchase';
-
-        if (currentPurchases >= 6) {
-            // Выдача бесплатного кофе и сброс счетчика
-            newPurchases = 0;
-            isComplete = true;
-            action = 'free_coffee';
-            
-            // Добавляем запись о выдаче бесплатного кофе
-            await client.query(
-                'INSERT INTO purchase_history (customer_id, action, purchases_before, purchases_after, notes) VALUES ($1, $2, $3, $4, $5)',
-                [customerId, 'free_coffee', currentPurchases, newPurchases, 'Бесплатный кофе выдан, счетчик сброшен']
-            );
+        if (global.sqliteDB) {
+            // SQLite
+            customer = await new Promise((resolve, reject) => {
+                global.sqliteDB.get(
+                    'SELECT * FROM customers WHERE id = ?',
+                    [id],
+                    (err, row) => {
+                        if (err) reject(err);
+                        else resolve(row);
+                    }
+                );
+            });
         } else {
-            newPurchases = currentPurchases + 1;
-            if (newPurchases >= 6) {
-                isComplete = true;
-            }
-            
-            // Добавляем запись о покупке
-            await client.query(
-                'INSERT INTO purchase_history (customer_id, action, purchases_before, purchases_after, notes) VALUES ($1, $2, $3, $4, $5)',
-                [customerId, 'purchase', currentPurchases, newPurchases, newPurchases >= 6 ? 'Клиент готов к получению бесплатного кофе' : null]
-            );
+            // PostgreSQL
+            const result = await client.query('SELECT * FROM customers WHERE id = $1', [id]);
+            customer = result.rows[0];
         }
-        
-        await client.query(
-            'UPDATE customers SET purchases = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-            [newPurchases, customerId]
-        );
-        
-        await client.query('COMMIT');
-        
-        log.success(`Покупка: ${customer.name} (${currentPurchases} → ${newPurchases})`);
-        
-        res.json({ 
-            customer: { ...customer, purchases: newPurchases },
-            newPurchases,
-            isComplete
-        });
-        
+
+        if (!customer) {
+            return res.status(404).json({ error: 'Customer not found' });
+        }
+
+        res.json(customer);
     } catch (error) {
-        await client.query('ROLLBACK');
-        log.error("Ошибка добавления покупки:", error.message);
-        res.status(500).json({ error: 'Не удалось добавить покупку' });
-    } finally {
-        client.release();
+        console.error('Get customer error:', error);
+        res.status(500).json({ error: 'Failed to get customer' });
     }
 });
 
-// 6. История покупок (только для админ панели)
-app.get('/api/history/:id', async (req, res) => {
+// Add purchase
+app.post('/api/purchase/:id', async (req, res) => {
     try {
-        // Проверяем, что запрос идет от админ панели
-        const referer = req.get('Referer') || '';
-        
-        if (!referer.includes('/admin.html') && !referer.includes('/admin')) {
-            return res.status(403).json({ error: 'Доступ запрещен' });
-        }
-        
         const { id } = req.params;
         
-        const result = await pool.query(
-            'SELECT id, customer_id, action, purchases_before, purchases_after, notes, purchase_date FROM purchase_history WHERE customer_id = $1 ORDER BY purchase_date DESC',
-            [id]
-        );
+        // Сначала получаем текущее количество покупок
+        let customer;
+        if (global.sqliteDB) {
+            customer = await new Promise((resolve, reject) => {
+                global.sqliteDB.get(
+                    'SELECT * FROM customers WHERE id = ?',
+                    [id],
+                    (err, row) => {
+                        if (err) reject(err);
+                        else resolve(row);
+                    }
+                );
+            });
+        } else {
+            const result = await client.query('SELECT * FROM customers WHERE id = $1', [id]);
+            customer = result.rows[0];
+        }
         
-        res.json(result.rows);
+        if (!customer) {
+            return res.status(404).json({ error: 'Customer not found' });
+        }
         
+        const currentPurchases = customer.purchases;
+        let newPurchases;
+        let isComplete = false;
+        
+        // ИСПРАВЛЕНО: Логика счетчика покупок
+        if (currentPurchases >= 6) {
+            // После 6 покупок - выдаем бесплатный кофе и сбрасываем на 1
+            newPurchases = 1;
+            isComplete = true;
+        } else {
+            // Увеличиваем счетчик
+            newPurchases = currentPurchases + 1;
+            if (newPurchases === 6) {
+                isComplete = true;
+            }
+        }
+        
+        if (global.sqliteDB) {
+            // SQLite
+            global.sqliteDB.serialize(() => {
+                global.sqliteDB.run('BEGIN TRANSACTION');
+                
+                global.sqliteDB.run(
+                    'UPDATE customers SET purchases = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                    [newPurchases, id],
+                    function(err) {
+                        if (err) {
+                            global.sqliteDB.run('ROLLBACK');
+                            return res.status(500).json({ error: 'Failed to add purchase' });
+                        }
+                        
+                        global.sqliteDB.run(
+                            'INSERT INTO purchase_history (customer_id) VALUES (?)',
+                            [id],
+                            function(err) {
+                                if (err) {
+                                    global.sqliteDB.run('ROLLBACK');
+                                    return res.status(500).json({ error: 'Failed to add purchase' });
+                                }
+                                
+                                global.sqliteDB.run('COMMIT');
+                                res.json({ 
+                                    success: true, 
+                                    message: 'Purchase added successfully',
+                                    newPurchases: newPurchases,
+                                    isComplete: isComplete
+                                });
+                            }
+                        );
+                    }
+                );
+            });
+        } else {
+            // PostgreSQL
+            await client.query('BEGIN');
+            
+            await client.query(
+                'UPDATE customers SET purchases = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+                [newPurchases, id]
+            );
+            
+            await client.query(
+                'INSERT INTO purchase_history (customer_id) VALUES ($1)',
+                [id]
+            );
+            
+            await client.query('COMMIT');
+            
+            res.json({ 
+                success: true, 
+                message: 'Purchase added successfully',
+                newPurchases: newPurchases,
+                isComplete: isComplete
+            });
+        }
     } catch (error) {
-        log.error("Ошибка получения истории:", error.message);
-        res.status(500).json({ error: 'Ошибка получения истории' });
+        console.error('Add purchase error:', error);
+        if (!global.sqliteDB) {
+            await client.query('ROLLBACK');
+        }
+        res.status(500).json({ error: 'Failed to add purchase' });
     }
 });
 
-// 7. QR код клиента
+// Update customer
+app.put('/api/customer/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, phone } = req.body;
+        
+        if (global.sqliteDB) {
+            // SQLite
+            global.sqliteDB.run(
+                'UPDATE customers SET name = ?, phone = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                [name, phone, id],
+                function(err) {
+                    if (err) {
+                        return res.status(500).json({ error: 'Failed to update customer' });
+                    }
+                    res.json({ success: true, message: 'Customer updated successfully' });
+                }
+            );
+        } else {
+            // PostgreSQL
+            await client.query(
+                'UPDATE customers SET name = $1, phone = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
+                [name, phone, id]
+            );
+            
+            res.json({ success: true, message: 'Customer updated successfully' });
+        }
+    } catch (error) {
+        console.error('Update customer error:', error);
+        res.status(500).json({ error: 'Failed to update customer' });
+    }
+});
+
+// Delete customer
+app.delete('/api/customer/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        if (global.sqliteDB) {
+            // SQLite
+            global.sqliteDB.run('DELETE FROM customers WHERE id = ?', [id], function(err) {
+                if (err) {
+                    return res.status(500).json({ error: 'Failed to delete customer' });
+                }
+                res.json({ success: true, message: 'Customer deleted successfully' });
+            });
+        } else {
+            // PostgreSQL
+            await client.query('DELETE FROM customers WHERE id = $1', [id]);
+            res.json({ success: true, message: 'Customer deleted successfully' });
+        }
+    } catch (error) {
+        console.error('Delete customer error:', error);
+        res.status(500).json({ error: 'Failed to delete customer' });
+    }
+});
+
+// Get purchase history
+app.get('/api/history/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        let history;
+        
+        if (global.sqliteDB) {
+            // SQLite
+            history = await new Promise((resolve, reject) => {
+                global.sqliteDB.all(
+                    'SELECT * FROM purchase_history WHERE customer_id = ? ORDER BY purchase_date DESC',
+                    [id],
+                    (err, rows) => {
+                        if (err) reject(err);
+                        else resolve(rows);
+                    }
+                );
+            });
+        } else {
+            // PostgreSQL
+            const result = await client.query(
+                'SELECT * FROM purchase_history WHERE customer_id = $1 ORDER BY purchase_date DESC',
+                [id]
+            );
+            history = result.rows;
+        }
+
+        res.json(history);
+    } catch (error) {
+        console.error('Get history error:', error);
+        res.status(500).json({ error: 'Failed to get purchase history' });
+    }
+});
+
+// Reset customer purchases
+app.post('/api/customer/:id/reset', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        if (global.sqliteDB) {
+            // SQLite
+            global.sqliteDB.run(
+                'UPDATE customers SET purchases = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                [id],
+                function(err) {
+                    if (err) {
+                        return res.status(500).json({ error: 'Failed to reset customer purchases' });
+                    }
+                    res.json({ success: true, message: 'Customer purchases reset successfully' });
+                }
+            );
+        } else {
+            // PostgreSQL
+            await client.query(
+                'UPDATE customers SET purchases = 0, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
+                [id]
+            );
+            
+            res.json({ success: true, message: 'Customer purchases reset successfully' });
+        }
+    } catch (error) {
+        console.error('Reset customer error:', error);
+        res.status(500).json({ error: 'Failed to reset customer purchases' });
+    }
+});
+
+// Generate QR code
 app.get('/api/qr/:id', async (req, res) => {
     try {
         const { id } = req.params;
+        const cardUrl = `${req.protocol}://${req.get('host')}/card.html?id=${id}`;
         
-        const result = await pool.query('SELECT id FROM customers WHERE id = $1', [id]);
-        
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Клиент не найден' });
-        }
-        
-        const customerUrl = `${req.protocol}://${req.get('host')}/card.html?id=${id}`;
-        const qrCodeBuffer = await QRCode.toBuffer(customerUrl, {
-            type: 'png',
-            width: 256,
-            margin: 1
+        const qrCode = await QRCode.toDataURL(cardUrl, {
+            width: 300,
+            margin: 2,
+            color: {
+                dark: '#000000',
+                light: '#FFFFFF'
+            }
         });
         
-        res.setHeader('Content-Type', 'image/png');
-        res.send(qrCodeBuffer);
-        
+        res.json({ qrCode, url: cardUrl });
     } catch (error) {
-        log.error('Ошибка QR:', error);
-        res.status(500).json({ error: 'Ошибка генерации QR' });
+        console.error('QR generation error:', error);
+        res.status(500).json({ error: 'Failed to generate QR code' });
     }
 });
 
-// 8. Удаление клиента (только для админ панели)
-app.delete('/api/customer/:id', async (req, res) => {
-    // Проверяем, что запрос идет от админ панели
-    const referer = req.get('Referer') || '';
-    
-    if (!referer.includes('/admin.html') && !referer.includes('/admin')) {
-        return res.status(403).json({ error: 'Доступ запрещен' });
-    }
-    
-    const client = await pool.connect();
-    try {
-        const { id } = req.params;
-
-        await client.query('BEGIN');
-
-        const customerResult = await client.query('SELECT name FROM customers WHERE id = $1', [id]);
-
-        if (customerResult.rows.length === 0) {
-            await client.query('ROLLBACK');
-            return res.status(404).json({ error: 'Клиент не найден' });
-        }
-
-        const customerName = customerResult.rows[0].name;
-
-        await client.query('DELETE FROM purchase_history WHERE customer_id = $1', [id]);
-        await client.query('DELETE FROM customers WHERE id = $1', [id]);
-
-        await client.query('COMMIT');
-        
-        log.info(`Клиент удален: ${customerName} (ID: ${id})`);
-        
-        res.json({ message: 'Клиент успешно удален' });
-        
-    } catch (error) {
-        await client.query('ROLLBACK');
-        log.error("Ошибка удаления клиента:", error.message);
-        res.status(500).json({ error: 'Не удалось удалить клиента' });
-    } finally {
-        client.release();
-    }
-});
-
-// 9. Получение номера бариста
+// Get barista phone
 app.get('/api/barista-phone', async (req, res) => {
     try {
-        // Возвращаем номер бариста из переменной окружения или дефолтный
-        const baristaPhone = process.env.BARISTA_PHONE || '+77754555570';
-        res.json({ phone: baristaPhone });
+        let phone;
+        
+        if (global.sqliteDB) {
+            // SQLite
+            phone = await new Promise((resolve, reject) => {
+                global.sqliteDB.get(
+                    'SELECT value FROM settings WHERE key = ?',
+                    ['barista_phone'],
+                    (err, row) => {
+                        if (err) reject(err);
+                        else resolve(row ? row.value : '+7 (999) 123-45-67');
+                    }
+                );
+            });
+        } else {
+            // PostgreSQL
+            const result = await client.query('SELECT value FROM settings WHERE key = $1', ['barista_phone']);
+            phone = result.rows[0]?.value || '+7 (999) 123-45-67';
+        }
+
+        res.json({ phone });
     } catch (error) {
-        log.error('Ошибка получения номера бариста:', error);
-        res.status(500).json({ error: 'Ошибка получения номера бариста' });
+        console.error('Get barista phone error:', error);
+        res.json({ phone: '+7 (999) 123-45-67' });
     }
 });
 
-// 10. Установка номера бариста (только для админ панели)
+// Update barista phone
 app.post('/api/barista-phone', async (req, res) => {
     try {
-        // Проверяем, что запрос идет от админ панели
-        const referer = req.get('Referer') || '';
-        
-        if (!referer.includes('/admin.html') && !referer.includes('/admin')) {
-            return res.status(403).json({ error: 'Доступ запрещен' });
-        }
-        
         const { phone } = req.body;
         
-        if (!phone) {
-            return res.status(400).json({ error: 'Номер телефона обязателен' });
+        if (global.sqliteDB) {
+            // SQLite
+            global.sqliteDB.run(
+                'INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
+                ['barista_phone', phone],
+                function(err) {
+                    if (err) {
+                        return res.status(500).json({ error: 'Failed to update phone' });
+                    }
+                    res.json({ success: true, message: 'Phone updated successfully' });
+                }
+            );
+        } else {
+            // PostgreSQL
+            await client.query(
+                'INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = CURRENT_TIMESTAMP',
+                ['barista_phone', phone]
+            );
+            
+            res.json({ success: true, message: 'Phone updated successfully' });
         }
-        
-        // В данной реализации сохраняем в переменную окружения (временно)
-        process.env.BARISTA_PHONE = phone;
-        
-        log.success(`Номер бариста обновлен: ${phone}`);
-        res.json({ message: 'Номер бариста обновлен', phone });
-        
     } catch (error) {
-        log.error('Ошибка установки номера бариста:', error);
-        res.status(500).json({ error: 'Ошибка установки номера бариста' });
+        console.error('Update barista phone error:', error);
+        res.status(500).json({ error: 'Failed to update phone' });
     }
 });
 
-// 11. Статистика (только для админ панели)
-app.get('/api/stats', async (req, res) => {
-    try {
-        // Проверяем, что запрос идет от админ панели
-        const referer = req.get('Referer') || '';
-        
-        if (!referer.includes('/admin.html') && !referer.includes('/admin')) {
-            return res.status(403).json({ error: 'Доступ запрещен' });
-        }
-        
-        const [customersResult, purchasesResult, readyResult] = await Promise.all([
-            pool.query('SELECT COUNT(*) as total FROM customers'),
-            pool.query('SELECT COUNT(*) as total FROM purchase_history'),
-            pool.query('SELECT COUNT(*) as ready FROM customers WHERE purchases >= 6')
-        ]);
-
-        const stats = {
-            totalCustomers: parseInt(customersResult.rows[0].total),
-            totalPurchases: parseInt(purchasesResult.rows[0].total),
-            readyForFreeCoffee: parseInt(readyResult.rows[0].ready)
-        };
-
-        res.json(stats);
-        
-    } catch (error) {
-        log.error('Ошибка получения статистики:', error);
-        res.status(500).json({ error: 'Ошибка получения статистики' });
-    }
-});
-
-// Главная страница - редирект на админ панель
+// Serve main page
 app.get('/', (req, res) => {
-    res.redirect('/admin.html');
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Обработка ошибок
+// Error handling middleware
 app.use((err, req, res, next) => {
-    log.error('Ошибка:', err);
-    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+    console.error('Server error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+});
+
+// Start server
+app.listen(PORT, async () => {
+    console.log(`🚀 COFFEEMANIA server running on port ${PORT}`);
+    console.log(`📱 Admin panel: http://localhost:${PORT}/admin.html`);
+    console.log(`☕ Main page: http://localhost:${PORT}`);
+    console.log(`📷 Для работы камеры используйте LOCALHOST: http://localhost:${PORT}/admin.html`);
+    
+    await connectDB();
 });
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
-    log.info('Закрытие сервера...');
-    try {
-        await pool.end();
-        log.success('База данных закрыта');
-    } catch (error) {
-        log.error('Ошибка закрытия:', error.message);
+    console.log('\n👋 Shutting down server...');
+    if (client.end) {
+        await client.end();
+    }
+    if (global.sqliteDB) {
+        global.sqliteDB.close();
     }
     process.exit(0);
-});
-
-// Запуск сервера
-async function startServer() {
-    try {
-        await initializeDatabase();
-        
-        app.listen(PORT, () => {
-            log.success(`🚀 COFFEEMANIA сервер запущен на порту ${PORT}`);
-            log.info(`📱 Админ панель: http://localhost:${PORT}/admin.html`);
-        });
-    } catch (error) {
-        log.error('Ошибка запуска:', error);
-        process.exit(1);
-    }
-}
-
-startServer(); 
+}); 

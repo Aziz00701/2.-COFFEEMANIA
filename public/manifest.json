@@ -1,13 +1,13 @@
 {
   "name": "COFFEEMANIA - Система лояльности",
   "short_name": "COFFEEMANIA",
-  "description": "Программа лояльности кофейни - каждая 7-я чашка БЕСПЛАТНО!",
+  "description": "Программа лояльности кофейни COFFEEMANIA - каждая 7-я чашка бесплатно! Современная система с QR-кодами и красивым дизайном.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#2d1b69",
-  "theme_color": "#2d1b69",
+  "background_color": "#0F0C29",
+  "theme_color": "#0F0C29",
   "orientation": "portrait-primary",
-  "categories": ["food", "lifestyle", "business"],
+  "categories": ["food", "lifestyle", "business", "productivity"],
   "lang": "ru",
   "scope": "/",
   "icons": [
@@ -32,9 +32,21 @@
   ],
   "shortcuts": [
     {
-      "name": "Моя карта",
-      "short_name": "Карта",
-      "description": "Открыть карту лояльности",
+      "name": "Панель бариста",
+      "short_name": "ADMINCOFFEE",
+      "description": "Панель управления для бариста - ADMINCOFFEE",
+      "url": "/admin.html",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Карта клиента",
+      "short_name": "COFFEEMANIA",
+      "description": "Карта лояльности клиента - COFFEEMANIA",
       "url": "/card.html",
       "icons": [
         {
@@ -44,10 +56,10 @@
       ]
     },
     {
-      "name": "Панель бариста",
-      "short_name": "Админ",
-      "description": "Панель управления для бариста",
-      "url": "/admin.html",
+      "name": "Установить PWA",
+      "short_name": "Установить",
+      "description": "Установить приложение на устройство",
+      "url": "/?install=true",
       "icons": [
         {
           "src": "/icon-192.png",
@@ -55,5 +67,33 @@
         }
       ]
     }
+  ],
+  "screenshots": [
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "COFFEEMANIA - Главная страница"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512", 
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "COFFEEMANIA - Панель управления"
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "display_override": ["window-controls-overlay", "standalone"],
+  "protocol_handlers": [
+    {
+      "protocol": "web+coffeemania",
+      "url": "/card.html?id=%s"
+    }
   ]
-} 
+}
