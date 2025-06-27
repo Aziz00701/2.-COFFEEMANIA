@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { Client } = require('pg');
+const { Pool } = require('pg');
 const QRCode = require('qrcode');
 const { nanoid } = require('nanoid');
 const path = require('path');
@@ -14,106 +14,60 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // PostgreSQL connection
-const connectionString = process.env.DATABASE_URL || 'postgresql://username:password@localhost:5432/coffeemania';
-const client = new Client({
-    connectionString: connectionString,
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL || 'postgresql://database_nnzy_user:aZfYtJkSb0f3wULFIzrYaWE6J6dV96ck@dpg-cthjaq3tq21c73f7uoag-a.oregon-postgres.render.com/database_nnzy',
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// Connect to database
-async function connectDB() {
-    try {
-        await client.connect();
-        console.log('✅ Connected to PostgreSQL database');
-        await initDatabase();
-    } catch (error) {
-        console.error('❌ Database connection error:', error);
-        // Fallback to SQLite for development
-        console.log('🔄 Falling back to SQLite...');
-        await setupSQLite();
-    }
-}
+// In-memory storage fallback
+let memoryStorage = {
+    customers: new Map(),
+    purchases: new Map(),
+    settings: new Map()
+};
 
-// Initialize database tables
-async function initDatabase() {
+let useMemory = false;
+
+// Database connection check and table creation
+async function initializeDatabase() {
     try {
-        // Create customers table
-        await client.query(`
+        await pool.query('SELECT NOW()');
+        console.log('✅ PostgreSQL connected successfully');
+        
+        // Create tables if they don't exist
+        await pool.query(`
             CREATE TABLE IF NOT EXISTS customers (
                 id VARCHAR(50) PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
-                phone VARCHAR(50) NOT NULL UNIQUE,
+                phone VARCHAR(20) NOT NULL,
                 purchases INTEGER DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
-
-        // Create purchase history table
-        await client.query(`
+        
+        await pool.query(`
             CREATE TABLE IF NOT EXISTS purchase_history (
                 purchase_id SERIAL PRIMARY KEY,
-                customer_id VARCHAR(50) REFERENCES customers(id) ON DELETE CASCADE,
-                purchase_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                action VARCHAR(50) DEFAULT 'purchase'
+                customer_id VARCHAR(50) REFERENCES customers(id),
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
-
-        // Create settings table for barista phone
-        await client.query(`
+        
+        await pool.query(`
             CREATE TABLE IF NOT EXISTS settings (
-                key VARCHAR(100) PRIMARY KEY,
-                value TEXT NOT NULL,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                key VARCHAR(50) PRIMARY KEY,
+                value TEXT
             )
         `);
-
-        // Set default barista phone if not exists
-        await client.query(`
-            INSERT INTO settings (key, value) VALUES ('barista_phone', '+7 (999) 123-45-67')
-            ON CONFLICT (key) DO NOTHING
-        `);
-
-        console.log('✅ Database tables initialized');
+        
+        console.log('✅ Database tables ready');
+        useMemory = false;
     } catch (error) {
-        console.error('❌ Database initialization error:', error);
+        console.log('❌ Database connection error:', error.message);
+        console.log('🔄 Using in-memory storage...');
+        useMemory = true;
     }
-}
-
-// SQLite fallback for development
-async function setupSQLite() {
-    const sqlite3 = require('sqlite3').verbose();
-    const db = new sqlite3.Database(':memory:');
-    
-    db.serialize(() => {
-        db.run(`CREATE TABLE customers (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            phone TEXT NOT NULL UNIQUE,
-            purchases INTEGER DEFAULT 0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`);
-
-        db.run(`CREATE TABLE purchase_history (
-            purchase_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            customer_id TEXT,
-            purchase_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-            action TEXT DEFAULT 'purchase',
-            FOREIGN KEY(customer_id) REFERENCES customers(id)
-        )`);
-
-        db.run(`CREATE TABLE settings (
-            key TEXT PRIMARY KEY,
-            value TEXT NOT NULL,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`);
-
-        db.run(`INSERT INTO settings (key, value) VALUES ('barista_phone', '+7 (999) 123-45-67')`);
-    });
-
-    global.sqliteDB = db;
-    console.log('✅ SQLite database initialized');
 }
 
 // API Routes
@@ -123,37 +77,20 @@ app.get('/api/stats', async (req, res) => {
     try {
         let totalCustomers, totalPurchases, readyForFreeCoffee;
         
-        if (global.sqliteDB) {
-            // SQLite queries
-            totalCustomers = await new Promise((resolve, reject) => {
-                global.sqliteDB.get('SELECT COUNT(*) as count FROM customers', (err, row) => {
-                    if (err) reject(err);
-                    else resolve(row.count);
-                });
-            });
-
-            totalPurchases = await new Promise((resolve, reject) => {
-                global.sqliteDB.get('SELECT SUM(purchases) as total FROM customers', (err, row) => {
-                    if (err) reject(err);
-                    else resolve(row.total || 0);
-                });
-            });
-
-            readyForFreeCoffee = await new Promise((resolve, reject) => {
-                global.sqliteDB.get('SELECT COUNT(*) as count FROM customers WHERE purchases >= 6', (err, row) => {
-                    if (err) reject(err);
-                    else resolve(row.count);
-                });
-            });
+        if (useMemory) {
+            // In-memory storage queries
+            totalCustomers = memoryStorage.customers.size;
+            totalPurchases = memoryStorage.purchases.size;
+            readyForFreeCoffee = 0;
         } else {
             // PostgreSQL queries
-            const totalCustomersResult = await client.query('SELECT COUNT(*) FROM customers');
+            const totalCustomersResult = await pool.query('SELECT COUNT(*) FROM customers');
             totalCustomers = parseInt(totalCustomersResult.rows[0].count);
 
-            const totalPurchasesResult = await client.query('SELECT SUM(purchases) FROM customers');
+            const totalPurchasesResult = await pool.query('SELECT SUM(purchases) FROM customers');
             totalPurchases = parseInt(totalPurchasesResult.rows[0].sum) || 0;
 
-            const readyResult = await client.query('SELECT COUNT(*) FROM customers WHERE purchases >= 6');
+            const readyResult = await pool.query('SELECT COUNT(*) FROM customers WHERE purchases >= 6');
             readyForFreeCoffee = parseInt(readyResult.rows[0].count);
         }
 
@@ -179,28 +116,17 @@ app.post('/api/register', async (req, res) => {
 
         const customerId = nanoid(10);
         
-        if (global.sqliteDB) {
-            // SQLite
-            global.sqliteDB.run(
-                'INSERT INTO customers (id, name, phone) VALUES (?, ?, ?)',
-                [customerId, name, phone],
-                function(err) {
-                    if (err) {
-                        if (err.message.includes('UNIQUE constraint failed')) {
-                            return res.status(400).json({ error: 'Клиент с таким номером уже существует' });
-                        }
-                        return res.status(500).json({ error: 'Failed to register customer' });
-                    }
-                    res.json({ 
-                        success: true, 
-                        customerId,
-                        message: 'Customer registered successfully' 
-                    });
-                }
-            );
+        if (useMemory) {
+            // In-memory storage
+            memoryStorage.customers.set(customerId, { id: customerId, name, phone, purchases: 0 });
+            res.json({ 
+                success: true, 
+                customerId,
+                message: 'Customer registered successfully' 
+            });
         } else {
             // PostgreSQL
-            await client.query(
+            await pool.query(
                 'INSERT INTO customers (id, name, phone) VALUES ($1, $2, $3)',
                 [customerId, name, phone]
             );
@@ -232,21 +158,12 @@ app.get('/api/search', async (req, res) => {
 
         let customers;
         
-        if (global.sqliteDB) {
-            // SQLite
-            customers = await new Promise((resolve, reject) => {
-                global.sqliteDB.all(
-                    'SELECT * FROM customers WHERE name LIKE ? OR phone LIKE ? ORDER BY created_at DESC',
-                    [`%${q}%`, `%${q}%`],
-                    (err, rows) => {
-                        if (err) reject(err);
-                        else resolve(rows);
-                    }
-                );
-            });
+        if (useMemory) {
+            // In-memory storage
+            customers = Array.from(memoryStorage.customers.values()).filter(c => c.name.toLowerCase().includes(q.toLowerCase()) || c.phone.includes(q));
         } else {
             // PostgreSQL
-            const result = await client.query(
+            const result = await pool.query(
                 'SELECT * FROM customers WHERE name ILIKE $1 OR phone ILIKE $1 ORDER BY created_at DESC',
                 [`%${q}%`]
             );
@@ -265,20 +182,12 @@ app.get('/api/customers', async (req, res) => {
     try {
         let customers;
         
-        if (global.sqliteDB) {
-            // SQLite
-            customers = await new Promise((resolve, reject) => {
-                global.sqliteDB.all(
-                    'SELECT * FROM customers ORDER BY created_at DESC',
-                    (err, rows) => {
-                        if (err) reject(err);
-                        else resolve(rows);
-                    }
-                );
-            });
+        if (useMemory) {
+            // In-memory storage
+            customers = Array.from(memoryStorage.customers.values());
         } else {
             // PostgreSQL
-            const result = await client.query('SELECT * FROM customers ORDER BY created_at DESC');
+            const result = await pool.query('SELECT * FROM customers ORDER BY created_at DESC');
             customers = result.rows;
         }
 
@@ -295,21 +204,12 @@ app.get('/api/customer/:id', async (req, res) => {
         const { id } = req.params;
         let customer;
         
-        if (global.sqliteDB) {
-            // SQLite
-            customer = await new Promise((resolve, reject) => {
-                global.sqliteDB.get(
-                    'SELECT * FROM customers WHERE id = ?',
-                    [id],
-                    (err, row) => {
-                        if (err) reject(err);
-                        else resolve(row);
-                    }
-                );
-            });
+        if (useMemory) {
+            // In-memory storage
+            customer = memoryStorage.customers.get(id);
         } else {
             // PostgreSQL
-            const result = await client.query('SELECT * FROM customers WHERE id = $1', [id]);
+            const result = await pool.query('SELECT * FROM customers WHERE id = $1', [id]);
             customer = result.rows[0];
         }
 
@@ -331,19 +231,10 @@ app.post('/api/purchase/:id', async (req, res) => {
         
         // Сначала получаем текущее количество покупок
         let customer;
-        if (global.sqliteDB) {
-            customer = await new Promise((resolve, reject) => {
-                global.sqliteDB.get(
-                    'SELECT * FROM customers WHERE id = ?',
-                    [id],
-                    (err, row) => {
-                        if (err) reject(err);
-                        else resolve(row);
-                    }
-                );
-            });
+        if (useMemory) {
+            customer = memoryStorage.customers.get(id);
         } else {
-            const result = await client.query('SELECT * FROM customers WHERE id = $1', [id]);
+            const result = await pool.query('SELECT * FROM customers WHERE id = $1', [id]);
             customer = result.rows[0];
         }
         
@@ -368,56 +259,31 @@ app.post('/api/purchase/:id', async (req, res) => {
             }
         }
         
-        if (global.sqliteDB) {
-            // SQLite
-            global.sqliteDB.serialize(() => {
-                global.sqliteDB.run('BEGIN TRANSACTION');
-                
-                global.sqliteDB.run(
-                    'UPDATE customers SET purchases = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-                    [newPurchases, id],
-                    function(err) {
-                        if (err) {
-                            global.sqliteDB.run('ROLLBACK');
-                            return res.status(500).json({ error: 'Failed to add purchase' });
-                        }
-                        
-                        global.sqliteDB.run(
-                            'INSERT INTO purchase_history (customer_id) VALUES (?)',
-                            [id],
-                            function(err) {
-                                if (err) {
-                                    global.sqliteDB.run('ROLLBACK');
-                                    return res.status(500).json({ error: 'Failed to add purchase' });
-                                }
-                                
-                                global.sqliteDB.run('COMMIT');
-                                res.json({ 
-                                    success: true, 
-                                    message: 'Purchase added successfully',
-                                    newPurchases: newPurchases,
-                                    isComplete: isComplete
-                                });
-                            }
-                        );
-                    }
-                );
+        if (useMemory) {
+            // In-memory storage
+            memoryStorage.customers.set(id, { ...customer, purchases: newPurchases });
+            memoryStorage.purchases.set(id, { customer_id: id, timestamp: new Date() });
+            res.json({ 
+                success: true, 
+                message: 'Purchase added successfully',
+                newPurchases: newPurchases,
+                isComplete: isComplete
             });
         } else {
             // PostgreSQL
-            await client.query('BEGIN');
+            await pool.query('BEGIN');
             
-            await client.query(
+            await pool.query(
                 'UPDATE customers SET purchases = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
                 [newPurchases, id]
             );
             
-            await client.query(
+            await pool.query(
                 'INSERT INTO purchase_history (customer_id) VALUES ($1)',
                 [id]
             );
             
-            await client.query('COMMIT');
+            await pool.query('COMMIT');
             
             res.json({ 
                 success: true, 
@@ -428,8 +294,8 @@ app.post('/api/purchase/:id', async (req, res) => {
         }
     } catch (error) {
         console.error('Add purchase error:', error);
-        if (!global.sqliteDB) {
-            await client.query('ROLLBACK');
+        if (!useMemory) {
+            await pool.query('ROLLBACK');
         }
         res.status(500).json({ error: 'Failed to add purchase' });
     }
@@ -441,21 +307,13 @@ app.put('/api/customer/:id', async (req, res) => {
         const { id } = req.params;
         const { name, phone } = req.body;
         
-        if (global.sqliteDB) {
-            // SQLite
-            global.sqliteDB.run(
-                'UPDATE customers SET name = ?, phone = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-                [name, phone, id],
-                function(err) {
-                    if (err) {
-                        return res.status(500).json({ error: 'Failed to update customer' });
-                    }
-                    res.json({ success: true, message: 'Customer updated successfully' });
-                }
-            );
+        if (useMemory) {
+            // In-memory storage
+            memoryStorage.customers.set(id, { ...memoryStorage.customers.get(id), name, phone });
+            res.json({ success: true, message: 'Customer updated successfully' });
         } else {
             // PostgreSQL
-            await client.query(
+            await pool.query(
                 'UPDATE customers SET name = $1, phone = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
                 [name, phone, id]
             );
@@ -473,17 +331,13 @@ app.delete('/api/customer/:id', async (req, res) => {
     try {
         const { id } = req.params;
         
-        if (global.sqliteDB) {
-            // SQLite
-            global.sqliteDB.run('DELETE FROM customers WHERE id = ?', [id], function(err) {
-                if (err) {
-                    return res.status(500).json({ error: 'Failed to delete customer' });
-                }
-                res.json({ success: true, message: 'Customer deleted successfully' });
-            });
+        if (useMemory) {
+            // In-memory storage
+            memoryStorage.customers.delete(id);
+            res.json({ success: true, message: 'Customer deleted successfully' });
         } else {
             // PostgreSQL
-            await client.query('DELETE FROM customers WHERE id = $1', [id]);
+            await pool.query('DELETE FROM customers WHERE id = $1', [id]);
             res.json({ success: true, message: 'Customer deleted successfully' });
         }
     } catch (error) {
@@ -498,22 +352,13 @@ app.get('/api/history/:id', async (req, res) => {
         const { id } = req.params;
         let history;
         
-        if (global.sqliteDB) {
-            // SQLite
-            history = await new Promise((resolve, reject) => {
-                global.sqliteDB.all(
-                    'SELECT * FROM purchase_history WHERE customer_id = ? ORDER BY purchase_date DESC',
-                    [id],
-                    (err, rows) => {
-                        if (err) reject(err);
-                        else resolve(rows);
-                    }
-                );
-            });
+        if (useMemory) {
+            // In-memory storage
+            history = Array.from(memoryStorage.purchases.values()).filter(p => p.customer_id === id);
         } else {
             // PostgreSQL
-            const result = await client.query(
-                'SELECT * FROM purchase_history WHERE customer_id = $1 ORDER BY purchase_date DESC',
+            const result = await pool.query(
+                'SELECT * FROM purchase_history WHERE customer_id = $1 ORDER BY timestamp DESC',
                 [id]
             );
             history = result.rows;
@@ -531,21 +376,13 @@ app.post('/api/customer/:id/reset', async (req, res) => {
     try {
         const { id } = req.params;
         
-        if (global.sqliteDB) {
-            // SQLite
-            global.sqliteDB.run(
-                'UPDATE customers SET purchases = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-                [id],
-                function(err) {
-                    if (err) {
-                        return res.status(500).json({ error: 'Failed to reset customer purchases' });
-                    }
-                    res.json({ success: true, message: 'Customer purchases reset successfully' });
-                }
-            );
+        if (useMemory) {
+            // In-memory storage
+            memoryStorage.customers.set(id, { ...memoryStorage.customers.get(id), purchases: 0 });
+            res.json({ success: true, message: 'Customer purchases reset successfully' });
         } else {
             // PostgreSQL
-            await client.query(
+            await pool.query(
                 'UPDATE customers SET purchases = 0, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
                 [id]
             );
@@ -587,19 +424,10 @@ app.get('/api/client-link/:id', async (req, res) => {
         
         // Проверяем существование клиента
         let customer;
-        if (global.sqliteDB) {
-            customer = await new Promise((resolve, reject) => {
-                global.sqliteDB.get(
-                    'SELECT * FROM customers WHERE id = ?',
-                    [id],
-                    (err, row) => {
-                        if (err) reject(err);
-                        else resolve(row);
-                    }
-                );
-            });
+        if (useMemory) {
+            customer = memoryStorage.customers.get(id);
         } else {
-            const result = await client.query('SELECT * FROM customers WHERE id = $1', [id]);
+            const result = await pool.query('SELECT * FROM customers WHERE id = $1', [id]);
             customer = result.rows[0];
         }
         
@@ -625,21 +453,12 @@ app.get('/api/barista-phone', async (req, res) => {
     try {
         let phone;
         
-        if (global.sqliteDB) {
-            // SQLite
-            phone = await new Promise((resolve, reject) => {
-                global.sqliteDB.get(
-                    'SELECT value FROM settings WHERE key = ?',
-                    ['barista_phone'],
-                    (err, row) => {
-                        if (err) reject(err);
-                        else resolve(row ? row.value : '+7 (999) 123-45-67');
-                    }
-                );
-            });
+        if (useMemory) {
+            // In-memory storage
+            phone = memoryStorage.settings.get('barista_phone') || '+7 (999) 123-45-67';
         } else {
             // PostgreSQL
-            const result = await client.query('SELECT value FROM settings WHERE key = $1', ['barista_phone']);
+            const result = await pool.query('SELECT value FROM settings WHERE key = $1', ['barista_phone']);
             phone = result.rows[0]?.value || '+7 (999) 123-45-67';
         }
 
@@ -655,22 +474,14 @@ app.post('/api/barista-phone', async (req, res) => {
     try {
         const { phone } = req.body;
         
-        if (global.sqliteDB) {
-            // SQLite
-            global.sqliteDB.run(
-                'INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
-                ['barista_phone', phone],
-                function(err) {
-                    if (err) {
-                        return res.status(500).json({ error: 'Failed to update phone' });
-                    }
-                    res.json({ success: true, message: 'Phone updated successfully' });
-                }
-            );
+        if (useMemory) {
+            // In-memory storage
+            memoryStorage.settings.set('barista_phone', phone);
+            res.json({ success: true, message: 'Phone updated successfully' });
         } else {
             // PostgreSQL
-            await client.query(
-                'INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = CURRENT_TIMESTAMP',
+            await pool.query(
+                'INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2',
                 ['barista_phone', phone]
             );
             
@@ -700,17 +511,17 @@ app.listen(PORT, async () => {
     console.log(`☕ Main page: http://localhost:${PORT}`);
     console.log(`📷 Для работы камеры используйте LOCALHOST: http://localhost:${PORT}/admin.html`);
     
-    await connectDB();
+    await initializeDatabase();
 });
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
     console.log('\n👋 Shutting down server...');
-    if (client.end) {
-        await client.end();
+    if (pool.end) {
+        await pool.end();
     }
-    if (global.sqliteDB) {
-        global.sqliteDB.close();
+    if (useMemory) {
+        console.log('👋 In-memory storage cleared');
     }
     process.exit(0);
 }); 
