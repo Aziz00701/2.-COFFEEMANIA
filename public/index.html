@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COFFEEMANIA - Система лояльности</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#0F0C29">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="COFFEEMANIA">
+    <meta name="description" content="Программа лояльности кофейни COFFEEMANIA - каждая 7-я чашка бесплатно!">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="/icon.svg">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Modern Color Palette */
+            --bg-primary: linear-gradient(135deg, #0F0C29 0%, #24243e 25%, #302b63 50%, #8B4513 75%, #DAA520 100%);
+            --bg-glass: rgba(255, 255, 255, 0.12);
+            --bg-glass-hover: rgba(255, 255, 255, 0.18);
+            --bg-input: rgba(255, 255, 255, 0.05);
+            
+            /* Text Colors */
+            --text-primary: #FFFFFF;
+            --text-secondary: rgba(255, 255, 255, 0.8);
+            --text-muted: rgba(255, 255, 255, 0.6);
+            
+            /* Accent Colors */
+            --accent-orange: #FF6B35;
+            --accent-green: #00D4AA;
+            --accent-blue: #3742FA;
+            --accent-gold: #DAA520;
+            
+            /* Effects */
+            --border-glass: rgba(255, 255, 255, 0.2);
+            --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.4);
+            --blur: blur(20px);
+            --border-radius: 20px;
+            --border-radius-small: 12px;
+            
+            /* Gradients */
+            --gradient-orange: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            --gradient-green: linear-gradient(135deg, #00D4AA 0%, #00B894 100%);
+            --gradient-blue: linear-gradient(135deg, #3742FA 0%, #2F3A8F 100%);
+            --gradient-gold: linear-gradient(135deg, #DAA520 0%, #B8860B 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            position: relative;
+            padding: 20px;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(218, 165, 32, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 107, 53, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 60%, rgba(0, 212, 170, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            background: var(--bg-glass);
+            backdrop-filter: var(--blur);
+            border-radius: var(--border-radius);
+            padding: 48px;
+            text-align: center;
+            box-shadow: var(--shadow-glass);
+            border: 1px solid var(--border-glass);
+            max-width: 600px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+        
+        .container:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-gold);
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+        }
+
+        .brand-icon {
+            width: 100px;
+            height: 100px;
+            background: var(--gradient-orange);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            margin: 0 auto 24px;
+            box-shadow: 0 12px 32px rgba(255, 107, 53, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .brand-icon:hover {
+            transform: scale(1.05) rotate(5deg);
+            box-shadow: 0 16px 40px rgba(255, 107, 53, 0.4);
+        }
+
+        .logo {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 16px;
+            background: var(--gradient-gold);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -2px;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            margin-bottom: 32px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            margin: 32px 0;
+        }
+
+        .feature {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--border-radius-small);
+            padding: 24px;
+            backdrop-filter: var(--blur);
+            transition: all 0.3s ease;
+        }
+
+        .feature:hover {
+            transform: translateY(-2px);
+            background: var(--bg-glass-hover);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .feature-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .feature-text {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .info-text {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--border-radius-small);
+            padding: 24px;
+            margin-top: 32px;
+            backdrop-filter: var(--blur);
+            text-align: left;
+        }
+
+        .info-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+            text-align: center;
+        }
+
+        .info-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .info-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .info-list li:before {
+            content: '✅';
+            font-size: 1rem;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .footer {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-glass);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 32px 24px;
+            }
+            
+            .logo {
+                font-size: 2.8rem;
+            }
+            
+            .subtitle {
+                font-size: 1.1rem;
+            }
+            
+            .features {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .brand-icon {
+                width: 80px;
+                height: 80px;
+                font-size: 40px;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="brand-icon">☕</div>
+        <h1 class="logo">COFFEEMANIA</h1>
+        <p class="subtitle">Система лояльности - каждая 7-я чашка кофе БЕСПЛАТНО!</p>
+        
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">📱</div>
+                <div class="feature-title">Цифровая карта</div>
+                <div class="feature-text">Больше никаких бумажных карточек - все в вашем телефоне</div>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">🎁</div>
+                <div class="feature-title">Простая система</div>
+                <div class="feature-text">6 покупок = 1 бесплатный кофе. Быстро и понятно</div>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">⚡</div>
+                <div class="feature-title">Мгновенно</div>
+                <div class="feature-text">QR-код сканируется за секунду, никаких задержек</div>
+            </div>
+        </div>
+
+        <div class="info-text">
+            <div class="info-title">🎯 Как это работает</div>
+            <ul class="info-list">
+                <li>Приходите в COFFEEMANIA и покупаете кофе</li>
+                <li>Бариста сканирует QR-код или регистрирует вас в системе</li>
+                <li>Каждая покупка засчитывается автоматически</li>
+                <li>После 6 покупок получаете 7-ю чашку БЕСПЛАТНО</li>
+                <li>Цикл повторяется - экономьте на каждом 7-м кофе!</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p><strong>COFFEEMANIA</strong> - лучший кофе в городе! ☕</p>
+            <p>Свяжитесь с нашим бариста для получения вашей персональной карты лояльности</p>
+        </div>
+    </div>
+
+    <script>
+        // Блокируем прямую навигацию
+        console.log('🏠 COFFEEMANIA - Информационная страница');
+        console.log('📱 Для получения карты лояльности обратитесь к бариста');
+        console.log('🔒 Система безопасности активна');
+        
+        // Анимация при загрузке
+        window.addEventListener('load', () => {
+            document.querySelector('.container').style.opacity = '0';
+            document.querySelector('.container').style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                document.querySelector('.container').style.transition = 'all 0.6s ease';
+                document.querySelector('.container').style.opacity = '1';
+                document.querySelector('.container').style.transform = 'translateY(0)';
+            }, 100);
+        });
+    </script>
+</body>
+</html>

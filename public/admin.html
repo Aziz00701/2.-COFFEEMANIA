@@ -1,0 +1,2505 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COFFEEMANIA - Панель Бариста</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#0F0C29">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="COFFEEMANIA">
+    <meta name="description" content="Панель управления бариста COFFEEMANIA">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Modern Color Palette */
+            --bg-primary: linear-gradient(135deg, #0F0C29 0%, #24243e 25%, #302b63 50%, #8B4513 75%, #DAA520 100%);
+            --bg-secondary: rgba(255, 255, 255, 0.08);
+            --bg-glass: rgba(255, 255, 255, 0.12);
+            --bg-glass-hover: rgba(255, 255, 255, 0.18);
+            --bg-card: rgba(255, 255, 255, 0.1);
+            --bg-input: rgba(255, 255, 255, 0.05);
+            
+            /* Text Colors */
+            --text-primary: #FFFFFF;
+            --text-secondary: rgba(255, 255, 255, 0.8);
+            --text-muted: rgba(255, 255, 255, 0.6);
+            
+            /* Accent Colors */
+            --accent-orange: #FF6B35;
+            --accent-green: #00D4AA;
+            --accent-red: #FF4757;
+            --accent-yellow: #FFA502;
+            --accent-blue: #3742FA;
+            --accent-gold: #DAA520;
+            
+            /* Effects */
+            --border-glass: rgba(255, 255, 255, 0.2);
+            --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.4);
+            --blur: blur(20px);
+            --border-radius: 20px;
+            --border-radius-small: 12px;
+            
+            /* Gradients */
+            --gradient-orange: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            --gradient-green: linear-gradient(135deg, #00D4AA 0%, #00B894 100%);
+            --gradient-red: linear-gradient(135deg, #FF4757 0%, #FF3742 100%);
+            --gradient-blue: linear-gradient(135deg, #3742FA 0%, #2F3A8F 100%);
+            --gradient-gold: linear-gradient(135deg, #DAA520 0%, #B8860B 100%);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(218, 165, 32, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 107, 53, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 60%, rgba(0, 212, 170, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        /* Header */
+        .header {
+            background: var(--bg-glass);
+            backdrop-filter: var(--blur);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--border-radius);
+            padding: 24px 32px;
+            margin-bottom: 32px;
+            box-shadow: var(--shadow-glass);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .header:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .brand-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .brand-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--gradient-orange);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 8px 24px rgba(255, 107, 53, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .brand-icon:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 32px rgba(255, 107, 53, 0.4);
+        }
+        
+        .brand-text h1 {
+            font-size: 32px;
+            font-weight: 800;
+            background: var(--gradient-gold);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 4px;
+            letter-spacing: -0.5px;
+        }
+        
+        .brand-text p {
+            color: var(--text-secondary);
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+        
+        .sync-btn {
+            background: var(--gradient-green);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: var(--border-radius-small);
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 16px rgba(0, 212, 170, 0.3);
+        }
+        
+        .sync-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 212, 170, 0.4);
+        }
+        
+        .phone-display {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--border-radius-small);
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            backdrop-filter: var(--blur);
+        }
+        
+        /* Statistics Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        
+        .stat-card {
+            background: var(--bg-glass);
+            backdrop-filter: var(--blur);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--border-radius);
+            padding: 32px 24px;
+            text-align: center;
+            box-shadow: var(--shadow-glass);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.6s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .stat-card:hover::before {
+            left: 100%;
+        }
+        
+        .stat-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+        
+        .stat-card:nth-child(1) .stat-icon {
+            background: var(--gradient-blue);
+        }
+        
+        .stat-card:nth-child(2) .stat-icon {
+            background: var(--gradient-orange);
+        }
+        
+        .stat-card:nth-child(3) .stat-icon {
+            background: var(--gradient-green);
+        }
+        
+        .stat-card:nth-child(4) .stat-icon {
+            background: var(--gradient-gold);
+        }
+        
+        .stat-number {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            line-height: 1;
+        }
+        
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 32px;
+            margin-bottom: 32px;
+        }
+        
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .glass-card {
+            background: var(--bg-glass);
+            backdrop-filter: var(--blur);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--border-radius);
+            padding: 32px;
+            box-shadow: var(--shadow-glass);
+            transition: all 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .card-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--gradient-orange);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: white;
+        }
+        
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 16px 20px;
+            background: var(--bg-input);
+            border: 2px solid var(--border-glass);
+            border-radius: var(--border-radius-small);
+            font-size: 16px;
+            color: var(--text-primary);
+            backdrop-filter: var(--blur);
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+        
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-orange);
+            background: var(--bg-glass);
+            box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.1);
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 16px 24px;
+            border: none;
+            border-radius: var(--border-radius-small);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        .btn-primary {
+            background: var(--gradient-orange);
+            color: white;
+            box-shadow: 0 4px 16px rgba(255, 107, 53, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(255, 107, 53, 0.4);
+        }
+        
+        .btn-success {
+            background: var(--gradient-green);
+            color: white;
+            box-shadow: 0 4px 16px rgba(0, 212, 170, 0.3);
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 212, 170, 0.4);
+        }
+        
+        .btn-danger {
+            background: var(--gradient-red);
+            color: white;
+            box-shadow: 0 4px 16px rgba(255, 71, 87, 0.3);
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(255, 71, 87, 0.4);
+        }
+        
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 14px;
+            width: auto;
+            margin: 4px;
+        }
+        
+        /* Scanner Section */
+        .scanner-preview {
+            width: 100%;
+            height: 300px;
+            background: var(--bg-input);
+            border: 2px dashed var(--border-glass);
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: 16px;
+            margin-bottom: 20px;
+            backdrop-filter: var(--blur);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .scanner-preview video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: calc(var(--border-radius) - 2px);
+        }
+        
+        .scanner-active {
+            border-color: var(--accent-green);
+            border-style: solid;
+            box-shadow: 0 0 0 4px rgba(0, 212, 170, 0.1);
+            animation: scannerGlow 2s infinite;
+        }
+        
+        @keyframes scannerGlow {
+            0%, 100% { 
+                box-shadow: 0 0 0 4px rgba(0, 212, 170, 0.1);
+            }
+            50% { 
+                box-shadow: 0 0 0 8px rgba(0, 212, 170, 0.2), 0 0 20px rgba(0, 212, 170, 0.1);
+            }
+        }
+        
+        /* Customer List */
+        .customer-list {
+            max-height: 600px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .customer-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .customer-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .customer-list::-webkit-scrollbar-track {
+            background: var(--bg-input);
+            border-radius: 4px;
+        }
+        
+        .customer-list::-webkit-scrollbar-thumb {
+            background: var(--border-glass);
+            border-radius: 4px;
+        }
+        
+        .customer-list::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+        
+        .customer-item {
+            background: var(--bg-glass);
+            backdrop-filter: var(--blur);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--border-radius);
+            padding: 24px;
+            margin-bottom: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .customer-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .customer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        
+        .customer-info h4 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        
+        .customer-info p {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+        
+        .purchases-badge {
+            background: var(--gradient-green);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 16px rgba(0, 212, 170, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .purchases-badge.ready {
+            background: var(--gradient-gold);
+            animation: pulse 2s infinite;
+            box-shadow: 0 4px 16px rgba(218, 165, 32, 0.3);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .action-buttons-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        
+        /* Messages */
+        .success-message, .error-message {
+            padding: 20px 24px;
+            border-radius: var(--border-radius);
+            margin-bottom: 24px;
+            font-weight: 600;
+            backdrop-filter: var(--blur);
+            border: 1px solid var(--border-glass);
+            animation: slideIn 0.5s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .success-message {
+            background: rgba(0, 212, 170, 0.15);
+            color: var(--accent-green);
+            border-color: rgba(0, 212, 170, 0.3);
+        }
+        
+        .error-message {
+            background: rgba(255, 71, 87, 0.15);
+            color: var(--accent-red);
+            border-color: rgba(255, 71, 87, 0.3);
+        }
+        
+        @keyframes slideIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(-20px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: var(--bg-glass);
+            backdrop-filter: var(--blur);
+            margin: 5% auto;
+            padding: 40px;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 600px;
+            border: 1px solid var(--border-glass);
+            box-shadow: var(--shadow-hover);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .modal-content::-webkit-scrollbar-track {
+            background: var(--bg-input);
+            border-radius: 4px;
+        }
+        
+        .modal-content::-webkit-scrollbar-thumb {
+            background: var(--border-glass);
+            border-radius: 4px;
+        }
+        
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 60px;
+            color: var(--text-secondary);
+        }
+        
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border-glass);
+            border-top: 3px solid var(--accent-orange);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Auth Container */
+        .auth-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+        
+        .auth-form {
+            background: var(--bg-glass);
+            backdrop-filter: var(--blur);
+            border-radius: var(--border-radius);
+            padding: 48px;
+            text-align: center;
+            box-shadow: var(--shadow-hover);
+            border: 1px solid var(--border-glass);
+            max-width: 450px;
+            width: 90%;
+        }
+        
+        .auth-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 12px;
+            background: var(--gradient-gold);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .auth-subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+            color: var(--text-secondary);
+        }
+        
+        .auth-btn {
+            width: 100%;
+            padding: 18px;
+            background: var(--gradient-orange);
+            border: none;
+            border-radius: var(--border-radius-small);
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 16px;
+            font-family: inherit;
+        }
+        
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(255, 107, 53, 0.4);
+        }
+        
+        .auth-error {
+            background: rgba(255, 71, 87, 0.15);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            border-radius: var(--border-radius-small);
+            padding: 16px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: var(--accent-red);
+            display: none;
+        }
+        
+        .main-interface {
+            display: none;
+        }
+        
+        /* Responsive Design */
+        @media (min-width: 768px) {
+            .container {
+                max-width: 900px;
+                padding: 30px;
+            }
+            
+            .header {
+                padding: 32px 40px;
+            }
+            
+            .brand-text h1 {
+                font-size: 36px;
+            }
+            
+            .brand-text p {
+                font-size: 18px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+            }
+            
+            .stat-number {
+                font-size: 52px;
+            }
+            
+            .stat-label {
+                font-size: 16px;
+            }
+            
+            .glass-card {
+                padding: 36px;
+            }
+            
+            .card-title {
+                font-size: 22px;
+            }
+            
+            .form-input {
+                padding: 18px 24px;
+                font-size: 18px;
+            }
+            
+            .btn {
+                padding: 18px 28px;
+                font-size: 18px;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            body {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 30px;
+            }
+            
+            .container {
+                max-width: 950px;
+                min-height: auto;
+                background: var(--bg-glass);
+                backdrop-filter: var(--blur);
+                border-radius: 28px;
+                border: 1px solid var(--border-glass);
+                box-shadow: var(--shadow-hover);
+                padding: 32px 28px;
+            }
+            
+            .brand-text h1 {
+                font-size: 24px;
+            }
+            
+            .brand-text p {
+                font-size: 13px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 16px;
+            }
+            
+            .stat-number {
+                font-size: 32px;
+            }
+            
+            .stat-label {
+                font-size: 11px;
+            }
+            
+            .card-title {
+                font-size: 14px;
+            }
+            
+            .form-input {
+                padding: 12px 16px;
+                font-size: 13px;
+            }
+            
+            .btn {
+                padding: 12px 18px;
+                font-size: 13px;
+            }
+            
+            .customer-info h4 {
+                font-size: 14px;
+            }
+            
+            .customer-info p {
+                font-size: 12px;
+            }
+        }
+        
+        @media (min-width: 1440px) {
+            .container {
+                max-width: 1100px;
+                padding: 40px 35px;
+            }
+            
+            .brand-text h1 {
+                font-size: 28px;
+            }
+            
+            .brand-text p {
+                font-size: 15px;
+            }
+            
+            .stat-number {
+                font-size: 36px;
+            }
+            
+            .stat-label {
+                font-size: 13px;
+            }
+            
+            .card-title {
+                font-size: 16px;
+            }
+            
+            .form-input {
+                padding: 14px 18px;
+                font-size: 15px;
+            }
+            
+            .btn {
+                padding: 14px 20px;
+                font-size: 15px;
+            }
+            
+            .customer-info h4 {
+                font-size: 16px;
+            }
+            
+            .customer-info p {
+                font-size: 14px;
+            }
+        }
+        
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+                padding: 24px;
+            }
+            
+            .header-controls {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .stat-card {
+                padding: 24px 20px;
+            }
+            
+            .glass-card {
+                padding: 24px;
+            }
+            
+            .brand-text h1 {
+                font-size: 28px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .btn-small {
+                width: 100%;
+                margin: 4px 0;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .auth-form {
+                padding: 32px 24px;
+            }
+            
+            .modal-content {
+                padding: 24px;
+                margin: 10px;
+                width: calc(100% - 20px);
+            }
+            
+            .customer-header {
+                flex-direction: column;
+                gap: 16px;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Auth Container -->
+    <div class="auth-container" id="auth-container">
+        <div class="auth-form">
+            <h2 class="auth-title">☕ COFFEEMANIA</h2>
+            <p class="auth-subtitle">Панель управления бариста</p>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username" class="form-label">Логин</label>
+                    <input type="text" id="username" name="username" class="form-input" placeholder="Введите логин" required>
+                </div>
+                <div class="form-group">
+                    <label for="password" class="form-label">Пароль</label>
+                    <input type="password" id="password" name="password" class="form-input" placeholder="Введите пароль" required>
+                </div>
+                <button type="submit" class="auth-btn">Войти в систему</button>
+                <div class="auth-error" id="login-error"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Interface -->
+    <div class="main-interface" id="main-interface">
+        <div class="container">
+            <!-- Header -->
+            <header class="header">
+                <div class="brand-section">
+                    <div class="brand-icon">☕</div>
+                    <div class="brand-text">
+                        <h1>COFFEEMANIA</h1>
+                        <p>Панель управления бариста</p>
+                    </div>
+                </div>
+                <div class="header-controls">
+                    <div class="phone-display" id="barista-phone">+7 (775) 455-55-70</div>
+                    <button class="sync-btn" onclick="installAdminApp()" id="install-admin-btn" style="display: none; background: var(--gradient-blue);">
+                        <span>📱</span>
+                        Установить ADMINCOFFEE
+                    </button>
+                    <button class="sync-btn" onclick="logout()" style="background: var(--gradient-red);">
+                        <span>🚪</span>
+                        Выйти
+                    </button>
+                </div>
+            </header>
+
+            <!-- Statistics -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-number" id="total-customers">-</div>
+                    <div class="stat-label">Всего клиентов</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">☕</div>
+                    <div class="stat-number" id="total-purchases">-</div>
+                    <div class="stat-label">Общие покупки</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🎁</div>
+                    <div class="stat-number" id="ready-customers">-</div>
+                    <div class="stat-label">Готовы к подарку</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-number" id="average-purchases">6.3</div>
+                    <div class="stat-label">Среднее покупок</div>
+                </div>
+            </div>
+
+            <!-- Success/Error Messages -->
+            <div id="success-message" class="success-message hidden"></div>
+            <div id="error-message" class="error-message hidden"></div>
+
+            <!-- Main Grid -->
+            <div class="main-grid">
+                <!-- Sidebar -->
+                <div class="sidebar">
+                    <!-- Registration Section -->
+                    <div class="glass-card">
+                        <div class="card-title">
+                            <div class="card-icon">👤</div>
+                            Регистрация клиента
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Имя клиента</label>
+                            <input type="text" class="form-input" id="customer-name" placeholder="Введите имя клиента">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Номер телефона</label>
+                            <input type="tel" class="form-input" id="customer-phone" placeholder="+7 (XXX) XXX-XX-XX">
+                        </div>
+                        <button class="btn btn-primary" onclick="registerCustomer()">
+                            Зарегистрировать клиента
+                        </button>
+                    </div>
+
+                    <!-- QR Scanner Section -->
+                    <div class="glass-card">
+                        <div class="card-title">
+                            <div class="card-icon">📱</div>
+                            QR Сканер
+                        </div>
+                        <div class="scanner-preview" id="scanner-preview">
+                            <div style="text-align: center;">
+                                <div style="font-size: 48px; margin-bottom: 16px;">📷</div>
+                                <div>Нажмите "Запустить сканер"</div>
+                                <div style="font-size: 14px; color: var(--text-muted); margin-top: 8px;">
+                                    Наведите камеру на QR-код клиента
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-success" id="scanner-btn" onclick="toggleScanner()">
+                            Запустить сканер
+                        </button>
+                    </div>
+
+                    <!-- Barista Phone Section -->
+                    <div class="glass-card">
+                        <div class="card-title">
+                            <div class="card-icon">📞</div>
+                            Номер бариста
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Рабочий номер</label>
+                            <input type="tel" class="form-input" id="barista-phone-input" placeholder="+7 (XXX) XXX-XX-XX">
+                        </div>
+                        <button class="btn btn-primary" onclick="updateBaristaPhone()">
+                            Обновить номер
+                        </button>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 12px; line-height: 1.4;">
+                            💡 Этот номер будет использоваться клиентами для предзаказа кофе
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Content -->
+                <div class="glass-card">
+                    <div class="card-title">
+                        <div class="card-icon">📋</div>
+                        База клиентов
+                    </div>
+                    <div class="form-group">
+                        <input type="text" class="form-input" id="search-input" placeholder="🔍 Поиск по имени или телефону">
+                    </div>
+                    <div class="customer-list" id="customer-list">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            Загрузка клиентов...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Purchase Modal -->
+    <div id="purchase-modal" class="modal">
+        <div class="modal-content">
+            <div class="card-title">
+                <div class="card-icon">☕</div>
+                Добавить покупку
+                <button style="margin-left: auto; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-secondary);" onclick="closePurchaseModal()">&times;</button>
+            </div>
+            <div id="modal-customer-info"></div>
+            <div style="display: flex; gap: 8px; justify-content: center; margin: 20px 0;" id="modal-progress"></div>
+            <div style="display: flex; gap: 12px; flex-direction: column;">
+                <button class="btn btn-primary" id="confirm-purchase-btn" onclick="confirmPurchase()">
+                    Добавить покупку
+                </button>
+                <button class="btn" id="reset-purchases-btn" onclick="resetCustomerPurchases()" style="background: var(--accent-red); color: white; font-size: 14px;">
+                    🔄 Сбросить счетчик
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="history-modal" class="modal">
+        <div class="modal-content">
+            <div class="card-title">
+                <div class="card-icon">📊</div>
+                История покупок
+                <button style="margin-left: auto; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-secondary);" onclick="closeHistoryModal()">&times;</button>
+            </div>
+            <div id="history-content"></div>
+        </div>
+    </div>
+
+    <!-- QR Scanner Library -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
+    <script>
+        let currentCustomers = [];
+        let selectedCustomer = null;
+        let isScanning = false;
+        let scannerStream = null;
+        let sessionTimeout = null;
+        let lastActivity = Date.now();
+
+        // Session management
+        function saveSession() {
+            localStorage.setItem('coffeemania_session', JSON.stringify({
+                authenticated: true,
+                timestamp: Date.now()
+            }));
+        }
+
+        function clearSession() {
+            localStorage.removeItem('coffeemania_session');
+        }
+
+        function checkSession() {
+            const session = localStorage.getItem('coffeemania_session');
+            if (session) {
+                try {
+                    const sessionData = JSON.parse(session);
+                    const now = Date.now();
+                    const sessionAge = now - sessionData.timestamp;
+                    
+                    // Сессия действительна 10 минут (600000 мс)
+                    if (sessionData.authenticated && sessionAge < 600000) {
+                        return true;
+                    } else {
+                        clearSession();
+                        return false;
+                    }
+                } catch (error) {
+                    clearSession();
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        function updateActivity() {
+            lastActivity = Date.now();
+            saveSession(); // Обновляем timestamp в сессии
+        }
+
+        function startSessionTimer() {
+            // Очищаем предыдущий таймер
+            if (sessionTimeout) {
+                clearTimeout(sessionTimeout);
+            }
+            
+            // Устанавливаем таймер на 10 минут
+            sessionTimeout = setTimeout(() => {
+                logout();
+                showError('⏰ Сессия истекла. Войдите заново.');
+            }, 600000); // 10 минут
+        }
+
+        function logout() {
+            clearSession();
+            if (sessionTimeout) {
+                clearTimeout(sessionTimeout);
+                sessionTimeout = null;
+            }
+            
+            // Останавливаем сканер если активен
+            if (isScanning) {
+                stopScanner();
+            }
+            
+            // Закрываем модальные окна
+            document.getElementById('purchase-modal').style.display = 'none';
+            document.getElementById('history-modal').style.display = 'none';
+            
+            // Показываем форму входа
+            document.getElementById('main-interface').style.display = 'none';
+            document.getElementById('auth-container').style.display = 'flex';
+            
+            showSuccess('👋 Вы успешно вышли из системы');
+        }
+
+        // Отслеживание активности пользователя
+        ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'].forEach(event => {
+            document.addEventListener(event, updateActivity, true);
+        });
+
+        // Authentication
+        document.getElementById('login-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('login-error');
+
+            if (username === 'coffemania' && password === '787898') {
+                errorDiv.style.display = 'none';
+                
+                // Сохраняем сессию
+                saveSession();
+                startSessionTimer();
+                
+                document.getElementById('auth-container').style.display = 'none';
+                document.getElementById('main-interface').style.display = 'block';
+                loadData();
+                showSuccess('🎉 Добро пожаловать в COFFEEMANIA!');
+            } else {
+                errorDiv.textContent = 'Неверный логин или пароль';
+                errorDiv.style.display = 'block';
+            }
+        });
+
+        // Проверка сессии при загрузке страницы
+        window.addEventListener('load', function() {
+            if (checkSession()) {
+                document.getElementById('auth-container').style.display = 'none';
+                document.getElementById('main-interface').style.display = 'block';
+                startSessionTimer();
+                loadData();
+                showSuccess('🔄 Сессия восстановлена');
+            }
+        });
+
+        // Load initial data
+        async function loadData() {
+            await Promise.all([
+                loadStats(),
+                loadCustomers(),
+                loadBaristaPhone()
+            ]);
+        }
+
+        // Load statistics
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const stats = await response.json();
+                
+                document.getElementById('total-customers').textContent = stats.totalCustomers;
+                document.getElementById('total-purchases').textContent = stats.totalPurchases;
+                document.getElementById('ready-customers').textContent = stats.readyForFreeCoffee;
+                
+                // Calculate average purchases
+                const avgPurchases = stats.totalCustomers > 0 ? 
+                    (stats.totalPurchases / stats.totalCustomers).toFixed(1) : '0.0';
+                document.getElementById('average-purchases').textContent = avgPurchases;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                showError('Ошибка загрузки статистики');
+            }
+        }
+
+        // Load customers
+        async function loadCustomers() {
+            try {
+                const response = await fetch('/api/customers');
+                currentCustomers = await response.json();
+                displayCustomers(currentCustomers);
+            } catch (error) {
+                console.error('Error loading customers:', error);
+                document.getElementById('customer-list').innerHTML = 
+                    '<div style="text-align: center; color: var(--text-secondary); padding: 40px;">❌ Ошибка загрузки клиентов</div>';
+            }
+        }
+
+        // Load barista phone
+        async function loadBaristaPhone() {
+            try {
+                const response = await fetch('/api/barista-phone');
+                const data = await response.json();
+                document.getElementById('barista-phone').textContent = data.phone;
+            } catch (error) {
+                console.error('Error loading barista phone:', error);
+            }
+        }
+
+        // Display customers
+        function displayCustomers(customers) {
+            const customerList = document.getElementById('customer-list');
+            
+            if (customers.length === 0) {
+                customerList.innerHTML = `
+                    <div style="text-align: center; color: var(--text-secondary); padding: 60px 20px;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">👥</div>
+                        <div style="font-size: 18px; margin-bottom: 8px;">Клиенты не найдены</div>
+                        <div style="font-size: 14px;">Зарегистрируйте первого клиента</div>
+                    </div>
+                `;
+                return;
+            }
+
+            customerList.innerHTML = customers.map(customer => `
+                <div class="customer-item">
+                    <div class="customer-header">
+                        <div class="customer-info">
+                            <h4>${customer.name}</h4>
+                            <p>${customer.phone}</p>
+                        </div>
+                        <div class="purchases-badge ${customer.purchases >= 6 ? 'ready' : ''}">
+                            ☕ ${customer.purchases}/6
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn btn-small btn-success" onclick="openPurchaseModal('${customer.id}')">
+                            ➕ Добавить покупку
+                        </button>
+                        <button class="btn btn-small btn-primary" onclick="sendToCustomer('${customer.id}')">
+                            📱 Отправить клиенту
+                        </button>
+                        <button class="btn btn-small" style="background: var(--gradient-gold);" onclick="showPurchaseHistory('${customer.id}')">
+                            📊 История покупок
+                        </button>
+                        <button class="btn btn-small btn-danger" onclick="deleteCustomer('${customer.id}')">
+                            🗑️ Удалить
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Search customers
+        document.getElementById('search-input').addEventListener('input', async (e) => {
+            const query = e.target.value.trim();
+            
+            if (query.length < 2) {
+                displayCustomers(currentCustomers);
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                const searchResults = await response.json();
+                displayCustomers(searchResults);
+            } catch (error) {
+                console.error('Search error:', error);
+                showError('Ошибка поиска');
+            }
+        });
+
+        // Register customer
+        async function registerCustomer() {
+            const name = document.getElementById('customer-name').value.trim();
+            const phone = document.getElementById('customer-phone').value.trim();
+
+            if (!name || !phone) {
+                showError('Заполните все поля');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, phone })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error);
+                }
+
+                showSuccess(`✅ Клиент ${name} успешно зарегистрирован!`);
+                document.getElementById('customer-name').value = '';
+                document.getElementById('customer-phone').value = '';
+                
+                await loadData();
+                
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        // QR Scanner functions
+        async function toggleScanner() {
+            if (isScanning) {
+                stopScanner();
+            } else {
+                await startScanner();
+            }
+        }
+
+        async function startScanner() {
+            try {
+                console.log('🔍 Запуск QR сканера...');
+                
+                // Очистка предыдущего состояния
+                stopScanner();
+                
+                // ИСПРАВЛЕНО: Проверка доступности API камеры
+                if (!navigator) {
+                    throw new Error('Navigator API недоступен');
+                }
+                
+                if (!navigator.mediaDevices) {
+                    throw new Error('MediaDevices API недоступен. Используйте HTTPS или обновите браузер');
+                }
+                
+                if (!navigator.mediaDevices.getUserMedia) {
+                    throw new Error('getUserMedia API недоступен. Обновите браузер');
+                }
+                
+                // Проверка на наличие jsQR
+                if (typeof jsQR === 'undefined') {
+                    throw new Error('Библиотека сканирования QR не загружена');
+                }
+                
+                const preview = document.getElementById('scanner-preview');
+                const video = document.createElement('video');
+                
+                // Простые стили для видео
+                video.style.width = '100%';
+                video.style.height = '100%';
+                video.style.objectFit = 'cover';
+                video.style.borderRadius = 'calc(var(--border-radius) - 2px)';
+                video.setAttribute('playsinline', '');
+                video.setAttribute('autoplay', '');
+                video.setAttribute('muted', '');
+                
+                preview.innerHTML = '';
+                preview.appendChild(video);
+                preview.classList.add('scanner-active');
+                
+                // Простые настройки камеры
+                const baseConstraints = {
+                    video: {
+                        width: { ideal: 640, max: 1280 },
+                        height: { ideal: 480, max: 720 },
+                        frameRate: { ideal: 15, max: 30 }
+                    }
+                };
+                
+                let stream = null;
+                
+                // Попытка 1: Задняя камера
+                try {
+                    console.log('📷 Пробуем заднюю камеру...');
+                    const backConstraints = {
+                        ...baseConstraints,
+                        video: {
+                            ...baseConstraints.video,
+                            facingMode: { exact: 'environment' }
+                        }
+                    };
+                    stream = await navigator.mediaDevices.getUserMedia(backConstraints);
+                    console.log('✅ Задняя камера подключена');
+                } catch (backError) {
+                    console.log('❌ Задняя камера недоступна:', backError.message);
+                    
+                    // Попытка 2: Передняя камера
+                    try {
+                        console.log('📷 Пробуем переднюю камеру...');
+                        const frontConstraints = {
+                            ...baseConstraints,
+                            video: {
+                                ...baseConstraints.video,
+                                facingMode: { exact: 'user' }
+                            }
+                        };
+                        stream = await navigator.mediaDevices.getUserMedia(frontConstraints);
+                        console.log('✅ Передняя камера подключена');
+                    } catch (frontError) {
+                        console.log('❌ Передняя камера недоступна:', frontError.message);
+                        
+                        // Попытка 3: Любая камера с facingMode как предпочтение
+                        try {
+                            console.log('📷 Пробуем любую камеру с предпочтением задней...');
+                            const anyBackConstraints = {
+                                ...baseConstraints,
+                                video: {
+                                    ...baseConstraints.video,
+                                    facingMode: 'environment'
+                                }
+                            };
+                            stream = await navigator.mediaDevices.getUserMedia(anyBackConstraints);
+                            console.log('✅ Камера подключена (задняя предпочтительная)');
+                        } catch (anyBackError) {
+                            console.log('❌ Камера с предпочтением задней недоступна:', anyBackError.message);
+                            
+                            // Попытка 4: Любая камера
+                            try {
+                                console.log('📷 Пробуем любую доступную камеру...');
+                                stream = await navigator.mediaDevices.getUserMedia(baseConstraints);
+                                console.log('✅ Любая камера подключена');
+                            } catch (anyError) {
+                                console.log('❌ Никакая камера не доступна:', anyError.message);
+                                
+                                // Попытка 5: Минимальные требования
+                                try {
+                                    console.log('📷 Последняя попытка с минимальными настройками...');
+                                    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                                    console.log('✅ Камера подключена с минимальными настройками');
+                                } catch (finalError) {
+                                    throw new Error(`Камера недоступна: ${finalError.message}`);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                if (!stream) {
+                    throw new Error('Не удалось получить поток с камеры');
+                }
+                
+                scannerStream = stream;
+                video.srcObject = stream;
+                
+                // Ждем загрузки видео с таймаутом
+                console.log('⏳ Ожидаем загрузки видео...');
+                await new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => {
+                        reject(new Error('Таймаут загрузки видео (10 сек)'));
+                    }, 10000);
+                    
+                    video.addEventListener('loadedmetadata', () => {
+                        clearTimeout(timeout);
+                        resolve();
+                    });
+                    
+                    video.addEventListener('error', (e) => {
+                        clearTimeout(timeout);
+                        reject(new Error('Ошибка загрузки видео: ' + e.message));
+                    });
+                });
+                
+                await video.play();
+                console.log('✅ Видео успешно запущено');
+                
+                document.getElementById('scanner-btn').textContent = '⏹️ Остановить сканер';
+                isScanning = true;
+                
+                // Создаем canvas для анализа
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                
+                let scanCount = 0; // Счетчик сканирований для отладки
+                
+                // Функция сканирования
+                function scanQR() {
+                    if (!isScanning || !video || video.readyState < 2) {
+                        if (isScanning) {
+                            requestAnimationFrame(scanQR);
+                        }
+                        return;
+                    }
+                    
+                    try {
+                        scanCount++;
+                        
+                        // Устанавливаем размеры canvas
+                        const videoWidth = video.videoWidth;
+                        const videoHeight = video.videoHeight;
+                        
+                        if (videoWidth > 0 && videoHeight > 0) {
+                            canvas.width = videoWidth;
+                            canvas.height = videoHeight;
+                            
+                            // Рисуем кадр
+                            context.drawImage(video, 0, 0, videoWidth, videoHeight);
+                            
+                            // Получаем данные изображения
+                            const imageData = context.getImageData(0, 0, videoWidth, videoHeight);
+                            
+                            // Сканируем QR код
+                            const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                                inversionAttempts: "dontInvert"
+                            });
+                            
+                            if (code && code.data && code.data.trim()) {
+                                console.log('🎯 QR код найден:', code.data);
+                                console.log('📊 Сканирований выполнено:', scanCount);
+                                stopScanner();
+                                processQRCode(code.data.trim());
+                                return;
+                            }
+                            
+                            // Лог каждые 30 кадров для отладки
+                            if (scanCount % 30 === 0) {
+                                console.log(`🔄 Сканирование активно... (${scanCount} кадров)`);
+                            }
+                        }
+                    } catch (scanError) {
+                        console.log('Ошибка сканирования кадра:', scanError.message);
+                    }
+                    
+                    // Продолжаем сканирование
+                    if (isScanning) {
+                        requestAnimationFrame(scanQR);
+                    }
+                }
+                
+                // Показываем успешный запуск
+                showSuccess('📷 QR сканер активирован. Наведите камеру на QR-код.');
+                
+                // Запускаем сканирование через 1.5 секунды
+                setTimeout(() => {
+                    if (isScanning) {
+                        console.log('🔄 Начинаем сканирование QR кодов...');
+                        scanQR();
+                    }
+                }, 1500);
+                
+            } catch (error) {
+                console.error('❌ Ошибка запуска камеры:', error);
+                
+                let errorMessage = 'Камера недоступна';
+                let suggestion = '';
+                
+                if (error.message.includes('getUserMedia')) {
+                    errorMessage = 'API камеры недоступен';
+                    suggestion = ' Используйте HTTPS или обновите браузер.';
+                } else if (error.message.includes('HTTPS')) {
+                    errorMessage = 'Требуется HTTPS для доступа к камере';
+                    suggestion = ' Откройте сайт через https:// или localhost.';
+                } else if (error.name === 'NotAllowedError' || error.message.includes('Permission')) {
+                    errorMessage = 'Доступ к камере запрещен';
+                    suggestion = ' Разрешите доступ в настройках браузера.';
+                } else if (error.name === 'NotFoundError' || error.message.includes('not found')) {
+                    errorMessage = 'Камера не найдена';
+                    suggestion = ' Подключите камеру к устройству.';
+                } else if (error.name === 'NotSupportedError') {
+                    errorMessage = 'Камера не поддерживается';
+                    suggestion = ' Обновите браузер или используйте другой.';
+                } else if (error.name === 'NotReadableError') {
+                    errorMessage = 'Камера занята';
+                    suggestion = ' Закройте другие приложения, использующие камеру.';
+                } else if (error.message.includes('jsQR')) {
+                    errorMessage = 'Библиотека QR сканирования не загружена';
+                    suggestion = ' Обновите страницу.';
+                } else if (error.message) {
+                    errorMessage = error.message;
+                }
+                
+                showError(`❌ ${errorMessage}${suggestion}`);
+                stopScanner();
+            }
+        }
+
+        function stopScanner() {
+            if (scannerStream) {
+                scannerStream.getTracks().forEach(track => track.stop());
+                scannerStream = null;
+            }
+            
+            const preview = document.getElementById('scanner-preview');
+            preview.innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">📷</div>
+                    <div>Нажмите "Запустить сканер"</div>
+                    <div style="font-size: 14px; color: var(--text-muted); margin-top: 8px;">
+                        Наведите камеру на QR-код клиента
+                    </div>
+                </div>
+            `;
+            preview.classList.remove('scanner-active');
+            document.getElementById('scanner-btn').textContent = '📷 Запустить сканер';
+            isScanning = false;
+        }
+
+        // Process QR code result
+        async function processQRCode(qrCode) {
+            try {
+                console.log('QR код:', qrCode);
+                
+                let customerId = qrCode.trim();
+                
+                if (qrCode.includes('card.html?id=')) {
+                    const urlParts = qrCode.split('card.html?id=');
+                    if (urlParts.length > 1) {
+                        customerId = urlParts[1].split('&')[0];
+                    }
+                } else if (qrCode.includes('/')) {
+                    const parts = qrCode.split('/');
+                    customerId = parts[parts.length - 1];
+                }
+                
+                console.log('ID клиента:', customerId);
+                
+                const response = await fetch(`/api/customer/${customerId}`);
+                
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        showError('❌ Клиент не найден');
+                    } else {
+                        const error = await response.json();
+                        showError(error.error || 'Ошибка при получении данных клиента');
+                    }
+                    return;
+                }
+                
+                const customer = await response.json();
+                showSuccess(`✅ QR код распознан: ${customer.name}`);
+                await openPurchaseModal(customerId);
+                
+            } catch (error) {
+                console.error('Ошибка обработки QR кода:', error);
+                showError('❌ Ошибка обработки QR кода');
+            }
+        }
+
+        // Open purchase modal
+        async function openPurchaseModal(customerId) {
+            try {
+                const response = await fetch(`/api/customer/${customerId}`);
+                selectedCustomer = await response.json();
+                
+                document.getElementById('modal-customer-info').innerHTML = `
+                    <div style="text-align: center; margin-bottom: 24px; padding: 20px; background: var(--bg-glass); border-radius: var(--border-radius-small); border: 1px solid var(--border-glass);">
+                        <h3 style="color: var(--text-primary); margin-bottom: 8px; font-size: 24px;">${selectedCustomer.name}</h3>
+                        <p style="color: var(--text-secondary); font-size: 16px;">${selectedCustomer.phone}</p>
+                        <div style="margin-top: 12px; padding: 8px 16px; background: var(--gradient-blue); border-radius: 20px; display: inline-block; color: white; font-size: 14px; font-weight: 600;">
+                            Покупок: ${selectedCustomer.purchases}/6
+                        </div>
+                    </div>
+                `;
+
+                // Show coffee progress
+                const progressDiv = document.getElementById('modal-progress');
+                progressDiv.innerHTML = '';
+                
+                for (let i = 1; i <= 6; i++) {
+                    const dot = document.createElement('div');
+                    dot.style.cssText = `
+                        width: 40px; height: 40px; border-radius: 12px; 
+                        display: flex; align-items: center; justify-content: center;
+                        font-size: 18px; transition: all 0.3s ease; font-weight: bold;
+                        background: ${i <= selectedCustomer.purchases ? 'var(--gradient-orange)' : 'var(--bg-input)'};
+                        color: ${i <= selectedCustomer.purchases ? 'white' : 'var(--text-muted)'};
+                        border: 2px solid ${i === selectedCustomer.purchases + 1 ? 'var(--accent-gold)' : 'var(--border-glass)'};
+                        box-shadow: ${i <= selectedCustomer.purchases ? '0 4px 12px rgba(255, 107, 53, 0.3)' : 'none'};
+                    `;
+                    dot.textContent = '☕';
+                    progressDiv.appendChild(dot);
+                }
+
+                const btn = document.getElementById('confirm-purchase-btn');
+                if (selectedCustomer.purchases >= 6) {
+                    btn.innerHTML = '🎁 Выдать бесплатный кофе';
+                    btn.className = 'btn';
+                    btn.style.background = 'var(--gradient-gold)';
+                    btn.style.color = 'white';
+                    btn.style.boxShadow = '0 4px 16px rgba(218, 165, 32, 0.3)';
+                } else {
+                    btn.innerHTML = '☕ Добавить покупку';
+                    btn.className = 'btn btn-primary';
+                    btn.style.background = '';
+                    btn.style.color = '';
+                    btn.style.boxShadow = '';
+                }
+
+                document.getElementById('purchase-modal').style.display = 'flex';
+                
+            } catch (error) {
+                showError('Ошибка загрузки данных клиента');
+            }
+        }
+
+        // Close purchase modal
+        function closePurchaseModal() {
+            document.getElementById('purchase-modal').style.display = 'none';
+            selectedCustomer = null;
+        }
+
+        // Confirm purchase
+        async function confirmPurchase() {
+            if (!selectedCustomer) return;
+
+            try {
+                const response = await fetch(`/api/purchase/${selectedCustomer.id}`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error);
+                }
+
+                if (result.isComplete) {
+                    showSuccess(`🎉 ${selectedCustomer.name} получает бесплатный кофе!`);
+                } else {
+                    showSuccess(`✅ Покупка добавлена! ${selectedCustomer.name}: ${result.newPurchases}/6`);
+                }
+
+                closePurchaseModal();
+                await loadData();
+
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        // Reset customer purchases
+        async function resetCustomerPurchases() {
+            if (!selectedCustomer) return;
+
+            if (!confirm(`Сбросить счетчик покупок для ${selectedCustomer.name}? \nТекущий прогресс: ${selectedCustomer.purchases}/6`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/customer/${selectedCustomer.id}/reset`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error);
+                }
+
+                showSuccess(`🔄 Счетчик покупок сброшен для ${selectedCustomer.name}`);
+                closePurchaseModal();
+                await loadData();
+
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        // Send customer card via WhatsApp
+        async function sendToCustomer(customerId) {
+            try {
+                const customer = currentCustomers.find(c => c.id === customerId);
+                if (!customer) {
+                    showError('Клиент не найден');
+                    return;
+                }
+                
+                let adminPhone = '+77754555570';
+                try {
+                    const response = await fetch('/api/barista-phone');
+                    if (response.ok) {
+                        const data = await response.json();
+                        adminPhone = data.phone;
+                    }
+                } catch (error) {
+                    console.log('Использую дефолтный номер бариста');
+                }
+                
+                const customerCardUrl = `${window.location.origin}/client-app.html?id=${customerId}`;
+                const cleanPhone = customer.phone.replace(/\D/g, '');
+                
+                const message = `🎉 Спасибо, что посетили COFFEEMANIA! ☕\n\n💎 Ваша личная карта лояльности готова:\n${customerCardUrl}\n\n🎁 Каждая 7-я чашка кофе - БЕСПЛАТНО!\n📱 Установите как приложение на телефон!\n\n☕ COFFEEMANIA - лучший кофе в городе!`;
+                
+                const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+                
+                window.open(whatsappUrl, '_blank');
+                showSuccess(`📱 WhatsApp сообщение отправлено клиенту ${customer.name}`);
+                
+            } catch (error) {
+                showError('Ошибка отправки сообщения');
+                console.error('Send error:', error);
+            }
+        }
+
+        // Show purchase history - НОВАЯ КРАСИВАЯ ЛОГИКА!
+        async function showPurchaseHistory(customerId) {
+            try {
+                const customer = currentCustomers.find(c => c.id === customerId);
+                if (!customer) {
+                    showError('Клиент не найден');
+                    return;
+                }
+
+                const response = await fetch(`/api/history/${customerId}`);
+                const history = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(history.error || 'Ошибка загрузки истории');
+                }
+
+                // Generate beautiful order cards like in client app
+                const historyContent = document.getElementById('history-content');
+                historyContent.innerHTML = `
+                    <div style="background: var(--bg-glass); border-radius: var(--border-radius); padding: 24px; margin-bottom: 24px; border: 1px solid var(--border-glass);">
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <h3 style="color: var(--text-primary); margin-bottom: 8px; font-size: 24px;">${customer.name}</h3>
+                            <p style="color: var(--text-secondary); margin-bottom: 12px;">${customer.phone}</p>
+                            <div style="display: inline-block; padding: 8px 16px; background: var(--gradient-blue); border-radius: 20px; color: white; font-weight: 600;">
+                                Текущий прогресс: ${customer.purchases}/6 ☕
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 20px;">
+                            ${Array.from({length: 6}, (_, i) => `
+                                <div style="
+                                    width: 32px; height: 32px; border-radius: 8px; 
+                                    display: flex; align-items: center; justify-content: center;
+                                    font-size: 14px; font-weight: bold;
+                                    background: ${i < customer.purchases ? 'var(--gradient-orange)' : 'var(--bg-input)'};
+                                    color: ${i < customer.purchases ? 'white' : 'var(--text-muted)'};
+                                    border: 1px solid var(--border-glass);
+                                    position: relative;
+                                ">
+                                    ☕
+                                    ${i < customer.purchases ? '<div style="position: absolute; top: -2px; right: -2px; width: 12px; height: 12px; background: var(--gradient-green); border-radius: 50%; font-size: 8px; display: flex; align-items: center; justify-content: center;">✓</div>' : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    ${generateAdminOrderCards(history, customer)}
+                `;
+
+                document.getElementById('history-modal').style.display = 'flex';
+
+            } catch (error) {
+                showError('Ошибка загрузки истории покупок');
+                console.error('History error:', error);
+            }
+        }
+        
+        // Generate beautiful order cards for admin panel
+        function generateAdminOrderCards(history, customer) {
+            console.log('🔥 Генерируем карточки истории для админки:', history);
+            
+            if (!history || history.length === 0) {
+                return `
+                    <div style="text-align: center; color: var(--text-secondary); padding: 40px;">
+                        <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;">📋</div>
+                        <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">История пуста</div>
+                        <div style="font-size: 14px; line-height: 1.5;">Покупки будут отображаться здесь в виде красивых карточек</div>
+                    </div>
+                `;
+            }
+            
+            // Фильтруем только покупки и сортируем по дате
+            const purchases = history
+                .filter(item => item.action === 'purchase')
+                .sort((a, b) => new Date(a.purchase_date) - new Date(b.purchase_date));
+            
+            console.log('📊 Отфильтрованные покупки:', purchases);
+            
+            const cards = [];
+            const PURCHASES_PER_CARD = 6;
+            
+            // Создаем завершенные карточки (по 6 покупок)
+            const completedCardsCount = Math.floor(purchases.length / PURCHASES_PER_CARD);
+            
+            for (let cardIndex = 0; cardIndex < completedCardsCount; cardIndex++) {
+                const startIndex = cardIndex * PURCHASES_PER_CARD;
+                const cardPurchases = purchases.slice(startIndex, startIndex + PURCHASES_PER_CARD);
+                
+                cards.push({
+                    number: cardIndex + 1,
+                    purchases: cardPurchases,
+                    status: 'completed'
+                });
+            }
+            
+            // Добавляем активную карточку если есть оставшиеся покупки
+            const remainingPurchases = purchases.length % PURCHASES_PER_CARD;
+            if (remainingPurchases > 0) {
+                const startIndex = completedCardsCount * PURCHASES_PER_CARD;
+                const activePurchases = purchases.slice(startIndex);
+                
+                cards.push({
+                    number: completedCardsCount + 1,
+                    purchases: activePurchases,
+                    status: 'active'
+                });
+            }
+            
+            // ИСПРАВЛЕНО: Если у клиента есть текущий прогресс больше чем в истории
+            if (customer && customer.purchases > purchases.length) {
+                const currentProgress = customer.purchases;
+                const historyProgress = purchases.length;
+                const missingPurchases = currentProgress - historyProgress;
+                
+                // Определяем, в какой карточке должны быть эти покупки
+                const totalPurchasesWithMissing = currentProgress;
+                const expectedCompletedCards = Math.floor(totalPurchasesWithMissing / PURCHASES_PER_CARD);
+                const expectedRemainingInActiveCard = totalPurchasesWithMissing % PURCHASES_PER_CARD;
+                
+                // Убираем лишние карточки
+                while (cards.length > expectedCompletedCards + (expectedRemainingInActiveCard > 0 ? 1 : 0)) {
+                    cards.pop();
+                }
+                
+                // Добавляем/корректируем активную карточку
+                if (expectedRemainingInActiveCard > 0) {
+                    if (cards.length === expectedCompletedCards) {
+                        // Нужно добавить новую активную карточку
+                        const newCardPurchases = [];
+                        for (let i = 0; i < expectedRemainingInActiveCard; i++) {
+                            if (i < (purchases.length % PURCHASES_PER_CARD)) {
+                                // Есть реальная покупка
+                                newCardPurchases.push(purchases[expectedCompletedCards * PURCHASES_PER_CARD + i]);
+                            } else {
+                                // Добавляем виртуальную покупку
+                                newCardPurchases.push({
+                                    purchase_date: new Date().toISOString(),
+                                    action: 'purchase'
+                                });
+                            }
+                        }
+                        
+                        cards.push({
+                            number: expectedCompletedCards + 1,
+                            purchases: newCardPurchases,
+                            status: 'active'
+                        });
+                    } else if (cards.length === expectedCompletedCards + 1) {
+                        // Корректируем существующую активную карточку
+                        const activeCard = cards[cards.length - 1];
+                        activeCard.purchases = [];
+                        
+                        for (let i = 0; i < expectedRemainingInActiveCard; i++) {
+                            const purchaseIndex = expectedCompletedCards * PURCHASES_PER_CARD + i;
+                            if (purchaseIndex < purchases.length) {
+                                // Есть реальная покупка
+                                activeCard.purchases.push(purchases[purchaseIndex]);
+                            } else {
+                                // Добавляем виртуальную покупку
+                                activeCard.purchases.push({
+                                    purchase_date: new Date().toISOString(),
+                                    action: 'purchase'
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            
+            console.log('🎯 Сгенерированные карточки для админки:', cards);
+            
+            return `
+                <div style="display: flex; flex-direction: column; gap: 20px;">
+                    ${cards.map(card => generateAdminSingleCard(card)).join('')}
+                </div>
+            `;
+        }
+        
+        // Generate single admin card
+        function generateAdminSingleCard(card) {
+            const { number, purchases, status } = card;
+            const maxSlots = 6;
+            
+            return `
+                <div style="
+                    background: linear-gradient(135deg, rgba(26, 26, 46, 0.95) 0%, rgba(22, 33, 62, 0.95) 25%, rgba(15, 52, 96, 0.95) 50%, rgba(139, 69, 19, 0.1) 75%, rgba(218, 165, 32, 0.1) 100%);
+                    border-radius: 20px;
+                    padding: 24px;
+                    position: relative;
+                    overflow: hidden;
+                    border: 2px solid transparent;
+                    background-clip: padding-box;
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+                    transition: all 0.3s ease;
+                ">
+                    <!-- Голографическая полоска сверху -->
+                    <div style="
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        height: 3px;
+                        background: linear-gradient(90deg, var(--accent-gold) 0%, var(--accent-orange) 50%, var(--accent-gold) 100%);
+                    "></div>
+                    
+                    <!-- Заголовок карточки -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <div style="
+                            background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-orange) 100%);
+                            color: white;
+                            padding: 8px 16px;
+                            border-radius: 12px;
+                            font-size: 14px;
+                            font-weight: 700;
+                            box-shadow: 0 4px 16px rgba(218, 165, 32, 0.3);
+                        ">Карта #${number}</div>
+                        <div style="
+                            font-size: 12px;
+                            color: var(--text-secondary);
+                            text-transform: uppercase;
+                            letter-spacing: 1px;
+                            font-weight: 600;
+                            padding: 4px 8px;
+                            border-radius: 8px;
+                            background: rgba(255, 255, 255, 0.1);
+                        ">${status === 'completed' ? 'Завершена' : 'Активная'}</div>
+                    </div>
+                    
+                    <!-- Сетка кофе -->
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
+                        ${Array.from({length: maxSlots}, (_, i) => {
+                            const purchase = purchases[i];
+                            const isFilled = i < purchases.length;
+                            
+                            return `
+                                <div style="
+                                    aspect-ratio: 1;
+                                    border-radius: 12px;
+                                    display: flex;
+                                    flex-direction: column;
+                                    align-items: center;
+                                    justify-content: center;
+                                    font-size: 20px;
+                                    position: relative;
+                                    transition: all 0.3s ease;
+                                    border: 2px solid var(--border-glass);
+                                    background: ${isFilled ? 'linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-orange) 50%, var(--accent-gold) 100%)' : 'var(--bg-input)'};
+                                    color: ${isFilled ? 'white' : 'var(--text-muted)'};
+                                    box-shadow: ${isFilled ? '0 6px 20px rgba(218, 165, 32, 0.3), 0 0 15px rgba(218, 165, 32, 0.2)' : 'none'};
+                                ">
+                                    ☕
+                                    ${isFilled && purchase ? `
+                                        <div style="
+                                            font-size: 9px;
+                                            color: ${isFilled ? 'rgba(255, 255, 255, 0.9)' : 'var(--text-muted)'};
+                                            margin-top: 4px;
+                                            text-align: center;
+                                            line-height: 1.2;
+                                            font-weight: 600;
+                                            text-shadow: ${isFilled ? '0 1px 2px rgba(0, 0, 0, 0.3)' : 'none'};
+                                        ">
+                                            ${formatAdminDate(purchase.purchase_date)}<br>
+                                            ${formatAdminTime(purchase.purchase_date)}
+                                        </div>
+                                    ` : ''}
+                                    ${isFilled ? `
+                                        <div style="
+                                            position: absolute;
+                                            top: -2px;
+                                            right: -2px;
+                                            width: 14px;
+                                            height: 14px;
+                                            background: var(--gradient-green);
+                                            border-radius: 50%;
+                                            font-size: 8px;
+                                            display: flex;
+                                            align-items: center;
+                                            justify-content: center;
+                                            color: white;
+                                            font-weight: bold;
+                                            box-shadow: 0 2px 8px rgba(0, 212, 170, 0.4);
+                                        ">✓</div>
+                                    ` : ''}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                    
+                    <!-- Подвал карточки -->
+                    <div style="
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding-top: 16px;
+                        border-top: 1px solid rgba(255, 255, 255, 0.1);
+                    ">
+                        <div style="
+                            font-size: 14px;
+                            color: var(--text-primary);
+                            font-weight: 700;
+                            background: linear-gradient(45deg, var(--accent-gold), var(--accent-orange));
+                            -webkit-background-clip: text;
+                            -webkit-text-fill-color: transparent;
+                            background-clip: text;
+                        ">${purchases.length}/6 покупок</div>
+                        <div style="
+                            font-size: 11px;
+                            color: var(--text-secondary);
+                            font-weight: 800;
+                            letter-spacing: 2px;
+                            text-transform: uppercase;
+                        ">COFFEEMANIA</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Format date for admin cards
+        function formatAdminDate(dateString) {
+            const date = new Date(dateString);
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            return `${day}.${month}`;
+        }
+        
+        // Format time for admin cards
+        function formatAdminTime(dateString) {
+            const date = new Date(dateString);
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+
+        // Close history modal
+        function closeHistoryModal() {
+            document.getElementById('history-modal').style.display = 'none';
+        }
+
+        // Delete customer
+        async function deleteCustomer(customerId) {
+            if (!confirm('⚠️ Вы уверены, что хотите удалить этого клиента?\n\nЭто действие нельзя отменить.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/customer/${customerId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error);
+                }
+
+                showSuccess('✅ Клиент успешно удален');
+                await loadData();
+
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        // Show messages
+        function showSuccess(message) {
+            const el = document.getElementById('success-message');
+            el.innerHTML = `<span>✅</span> ${message}`;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 5000);
+        }
+
+        function showError(message) {
+            const el = document.getElementById('error-message');
+            el.innerHTML = `<span>❌</span> ${message}`;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 5000);
+        }
+
+        // Click outside modal to close
+        document.getElementById('purchase-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePurchaseModal();
+            }
+        });
+
+        document.getElementById('history-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeHistoryModal();
+            }
+        });
+
+        // Auto-refresh every 30 seconds
+        setInterval(loadData, 30000);
+
+        // Update barista phone
+        async function updateBaristaPhone() {
+            const phone = document.getElementById('barista-phone-input').value.trim();
+            
+            if (!phone) {
+                showError('Введите номер телефона');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/barista-phone', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone })
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error);
+                }
+                
+                showSuccess(`✅ Номер бариста обновлен: ${phone}`);
+                document.getElementById('barista-phone').textContent = phone;
+                document.getElementById('barista-phone-input').value = '';
+                
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        // Phone number formatting for customer phone - ИСПРАВЛЕНО ФИНАЛЬНО
+        document.getElementById('customer-phone').addEventListener('input', function(e) {
+            // Получаем только цифры из введенного текста
+            let input = e.target.value;
+            let numbers = input.replace(/\D/g, '');
+            
+            // Если пользователь начал печатать с +7, обрабатываем отдельно
+            if (input.startsWith('+7')) {
+                numbers = input.substring(2).replace(/\D/g, '');
+            } else if (numbers.startsWith('8')) {
+                // Заменяем 8 на 7 только если это первая цифра
+                numbers = '7' + numbers.substring(1);
+                numbers = numbers.substring(1); // Убираем 7, так как она будет в +7
+            } else if (numbers.startsWith('7') && numbers.length > 1) {
+                // Если начинается с 7 и есть еще цифры, убираем первую 7
+                numbers = numbers.substring(1);
+            }
+            
+            // Ограничиваем до 10 цифр
+            numbers = numbers.substring(0, 10);
+            
+            // Форматируем
+            if (numbers.length === 0) {
+                e.target.value = '';
+            } else if (numbers.length <= 3) {
+                e.target.value = `+7 (${numbers}`;
+            } else if (numbers.length <= 6) {
+                e.target.value = `+7 (${numbers.substring(0, 3)}) ${numbers.substring(3)}`;
+            } else if (numbers.length <= 8) {
+                e.target.value = `+7 (${numbers.substring(0, 3)}) ${numbers.substring(3, 6)} ${numbers.substring(6)}`;
+            } else {
+                e.target.value = `+7 (${numbers.substring(0, 3)}) ${numbers.substring(3, 6)} ${numbers.substring(6, 8)} ${numbers.substring(8)}`;
+            }
+        });
+
+        // Phone number formatting for barista phone - ИСПРАВЛЕНО ФИНАЛЬНО
+        document.getElementById('barista-phone-input').addEventListener('input', function(e) {
+            // Получаем только цифры из введенного текста
+            let input = e.target.value;
+            let numbers = input.replace(/\D/g, '');
+            
+            // Если пользователь начал печатать с +7, обрабатываем отдельно
+            if (input.startsWith('+7')) {
+                numbers = input.substring(2).replace(/\D/g, '');
+            } else if (numbers.startsWith('8')) {
+                // Заменяем 8 на 7 только если это первая цифра
+                numbers = '7' + numbers.substring(1);
+                numbers = numbers.substring(1); // Убираем 7, так как она будет в +7
+            } else if (numbers.startsWith('7') && numbers.length > 1) {
+                // Если начинается с 7 и есть еще цифры, убираем первую 7
+                numbers = numbers.substring(1);
+            }
+            
+            // Ограничиваем до 10 цифр
+            numbers = numbers.substring(0, 10);
+            
+            // Форматируем
+            if (numbers.length === 0) {
+                e.target.value = '';
+            } else if (numbers.length <= 3) {
+                e.target.value = `+7 (${numbers}`;
+            } else if (numbers.length <= 6) {
+                e.target.value = `+7 (${numbers.substring(0, 3)}) ${numbers.substring(3)}`;
+            } else if (numbers.length <= 8) {
+                e.target.value = `+7 (${numbers.substring(0, 3)}) ${numbers.substring(3, 6)} ${numbers.substring(6)}`;
+            } else {
+                e.target.value = `+7 (${numbers.substring(0, 3)}) ${numbers.substring(3, 6)} ${numbers.substring(6, 8)} ${numbers.substring(8)}`;
+            }
+        });
+
+        // Load current barista phone into input when page loads
+        async function loadBaristaPhoneToInput() {
+            try {
+                const response = await fetch('/api/barista-phone');
+                const data = await response.json();
+                document.getElementById('barista-phone-input').value = data.phone;
+            } catch (error) {
+                console.error('Error loading barista phone to input:', error);
+            }
+        }
+
+        // PWA Install for Admin App
+        let adminDeferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            adminDeferredPrompt = e;
+            
+            // Show admin install button
+            document.getElementById('install-admin-btn').style.display = 'flex';
+        });
+        
+        function installAdminApp() {
+            if (adminDeferredPrompt) {
+                adminDeferredPrompt.prompt();
+                adminDeferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('ADMINCOFFEE: Приложение установлено');
+                        document.getElementById('install-admin-btn').style.display = 'none';
+                        showSuccess('🎉 ADMINCOFFEE успешно установлено!');
+                    }
+                    adminDeferredPrompt = null;
+                });
+            }
+        }
+
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                .then((registration) => {
+                    console.log('ADMINCOFFEE SW registered: ', registration);
+                })
+                .catch((registrationError) => {
+                    console.log('ADMINCOFFEE SW registration failed: ', registrationError);
+                });
+            });
+        }
+
+        // Call this when the interface loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(loadBaristaPhoneToInput, 1000);
+        });
+    </script>
+</body>
+</html>
