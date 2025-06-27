@@ -70,6 +70,8 @@ async function initializeDatabase() {
         
         // Add test customers for demo
         console.log('📝 Creating test customers...');
+        
+        // Клиент с 3 покупками в первой карточке
         memoryStorage.customers.set('demo123', {
             id: 'demo123',
             name: 'Тестовый клиент',
@@ -79,20 +81,45 @@ async function initializeDatabase() {
             updated_at: new Date().toISOString()
         });
         
+        // История покупок для demo123 (3 покупки)
+        for (let i = 1; i <= 3; i++) {
+            const purchaseId = `demo123_${i}`;
+            const purchaseDate = new Date(Date.now() - (4-i) * 24 * 60 * 60 * 1000); // Распределяем по дням
+            memoryStorage.purchases.set(purchaseId, {
+                purchase_id: purchaseId,
+                customer_id: 'demo123',
+                timestamp: purchaseDate.toISOString(),
+                action: 'purchase'
+            });
+        }
+        
+        // Клиент с завершенной карточкой (6 покупок) + 2 покупки в новой карточке
         memoryStorage.customers.set('test456', {
             id: 'test456', 
             name: 'Анна Иванова',
             phone: '+7 (999) 888-77-66',
-            purchases: 6,
+            purchases: 2, // Текущий прогресс во второй карточке
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         });
         
+        // История покупок для test456 (8 покупок = 1 завершенная карточка + 2 в новой)
+        for (let i = 1; i <= 8; i++) {
+            const purchaseId = `test456_${i}`;
+            const purchaseDate = new Date(Date.now() - (9-i) * 24 * 60 * 60 * 1000);
+            memoryStorage.purchases.set(purchaseId, {
+                purchase_id: purchaseId,
+                customer_id: 'test456',
+                timestamp: purchaseDate.toISOString(),
+                action: 'purchase'
+            });
+        }
+        
         memoryStorage.settings.set('barista_phone', '+7 (777) 555-44-33');
         
         console.log('✅ Test customers created:');
-        console.log('   - demo123: Тестовый клиент (3 покупки)');
-        console.log('   - test456: Анна Иванова (6 покупок - готов к бесплатному кофе)');
+        console.log('   - demo123: Тестовый клиент (3/6 покупок в карточке #1)');
+        console.log('   - test456: Анна Иванова (2/6 покупок в карточке #2, карточка #1 завершена)');
         console.log('🔗 Test links:');
         console.log(`   - https://two-coffeemania.onrender.com/card.html?id=demo123`);
         console.log(`   - https://two-coffeemania.onrender.com/card.html?id=test456`);
@@ -274,29 +301,48 @@ app.post('/api/purchase/:id', async (req, res) => {
         const currentPurchases = customer.purchases;
         let newPurchases;
         let isComplete = false;
+        let newCardStarted = false;
         
-        // ИСПРАВЛЕНО: Логика счетчика покупок
+        // ИСПРАВЛЕНО: Правильная логика множественных карточек
         if (currentPurchases >= 6) {
-            // После 6 покупок - выдаем бесплатный кофе и сбрасываем на 1
+            // После 6 покупок - выдаем бесплатный кофе и начинаем новую карточку с 1
             newPurchases = 1;
-            isComplete = true;
+            newCardStarted = true;
+            isComplete = false; // Новая карточка только начинается
         } else {
-            // Увеличиваем счетчик
+            // Увеличиваем счетчик в текущей карточке
             newPurchases = currentPurchases + 1;
             if (newPurchases === 6) {
-                isComplete = true;
+                isComplete = true; // Карточка готова к получению бесплатного кофе
             }
         }
         
         if (useMemory) {
             // In-memory storage
-            memoryStorage.customers.set(id, { ...customer, purchases: newPurchases });
-            memoryStorage.purchases.set(id, { customer_id: id, timestamp: new Date() });
+            memoryStorage.customers.set(id, { 
+                ...customer, 
+                purchases: newPurchases,
+                updated_at: new Date().toISOString()
+            });
+            
+            // Добавляем запись в историю покупок
+            const purchaseId = Date.now().toString();
+            memoryStorage.purchases.set(purchaseId, { 
+                purchase_id: purchaseId,
+                customer_id: id, 
+                timestamp: new Date().toISOString(),
+                action: 'purchase'
+            });
+            
             res.json({ 
                 success: true, 
-                message: 'Purchase added successfully',
+                message: newCardStarted ? 
+                    'Поздравляем! Получен бесплатный кофе. Начата новая карта лояльности!' : 
+                    'Purchase added successfully',
                 newPurchases: newPurchases,
-                isComplete: isComplete
+                isComplete: isComplete,
+                newCardStarted: newCardStarted,
+                totalCards: Math.ceil((currentPurchases + 1) / 6)
             });
         } else {
             // PostgreSQL
@@ -316,9 +362,13 @@ app.post('/api/purchase/:id', async (req, res) => {
             
             res.json({ 
                 success: true, 
-                message: 'Purchase added successfully',
+                message: newCardStarted ? 
+                    'Поздравляем! Получен бесплатный кофе. Начата новая карта лояльности!' : 
+                    'Purchase added successfully',
                 newPurchases: newPurchases,
-                isComplete: isComplete
+                isComplete: isComplete,
+                newCardStarted: newCardStarted,
+                totalCards: Math.ceil((currentPurchases + 1) / 6)
             });
         }
     } catch (error) {
@@ -382,17 +432,30 @@ app.get('/api/history/:id', async (req, res) => {
         let history;
         
         if (useMemory) {
-            // In-memory storage
-            history = Array.from(memoryStorage.purchases.values()).filter(p => p.customer_id === id);
+            // In-memory storage - фильтруем покупки по customer_id
+            history = Array.from(memoryStorage.purchases.values())
+                .filter(p => p.customer_id === id)
+                .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+                .map(p => ({
+                    purchase_id: p.purchase_id,
+                    customer_id: p.customer_id,
+                    purchase_date: p.timestamp,
+                    timestamp: p.timestamp,
+                    action: p.action || 'purchase'
+                }));
         } else {
             // PostgreSQL
             const result = await pool.query(
-                'SELECT * FROM purchase_history WHERE customer_id = $1 ORDER BY timestamp DESC',
+                'SELECT * FROM purchase_history WHERE customer_id = $1 ORDER BY timestamp ASC',
                 [id]
             );
-            history = result.rows;
+            history = result.rows.map(row => ({
+                ...row,
+                purchase_date: row.timestamp || row.purchase_date
+            }));
         }
 
+        console.log(`📊 История для клиента ${id}:`, history);
         res.json(history);
     } catch (error) {
         console.error('Get history error:', error);

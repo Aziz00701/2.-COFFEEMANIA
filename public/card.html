@@ -1481,34 +1481,20 @@
 
             document.getElementById('customer-name').textContent = customerData.name;
             
-            const purchases = customerData.purchases;
+            const currentProgress = customerData.purchases; // Прогресс в текущей активной карточке
             const maxPurchases = 6;
             
-            // ИСПРАВЛЕНО: Правильная обработка прогресса (счетчик сбрасывается после 6)
-            let displayPurchases = purchases;
-            let progressPercent;
-            
-            if (purchases === 0) {
-                displayPurchases = 0;
-                progressPercent = 0;
-            } else if (purchases === 6) {
-                // 6 покупок = готов к бесплатному кофе
-                displayPurchases = 6;
-                progressPercent = 100;
-            } else if (purchases > 6) {
-                // Не должно происходить с новой логикой, но на всякий случай
-                displayPurchases = purchases % 6 || 6;
-                progressPercent = (displayPurchases / maxPurchases) * 100;
-            } else {
-                // Обычное состояние 1-5 покупок
-                displayPurchases = purchases;
-                progressPercent = (purchases / maxPurchases) * 100;
-            }
+            // Правильная обработка прогресса текущей карточки
+            let displayPurchases = currentProgress;
+            let progressPercent = (currentProgress / maxPurchases) * 100;
             
             // Update progress text
             if (displayPurchases >= maxPurchases) {
                 document.getElementById('progress-text').textContent = 'Поздравляем! Бесплатный кофе готов';
                 document.getElementById('free-coffee-notice').style.display = 'block';
+            } else if (displayPurchases === 0) {
+                document.getElementById('progress-text').textContent = 'Начните собирать покупки для бесплатного кофе';
+                document.getElementById('free-coffee-notice').style.display = 'none';
             } else {
                 const remaining = maxPurchases - displayPurchases;
                 document.getElementById('progress-text').textContent = 
@@ -1516,7 +1502,7 @@
                 document.getElementById('free-coffee-notice').style.display = 'none';
             }
             
-            // Update coffee dots
+            // Update coffee dots для текущей карточки
             const dotsContainer = document.getElementById('coffee-dots');
             dotsContainer.innerHTML = '';
             
@@ -1711,9 +1697,10 @@
             }
         }
         
-        // НОВАЯ ПРАВИЛЬНАЯ ЛОГИКА ИСТОРИИ - 1 КАРТОЧКА = 6 ПОКУПОК! - ИСПРАВЛЕНО ОКОНЧАТЕЛЬНО
+        // ИСПРАВЛЕННАЯ ЛОГИКА ИСТОРИИ - Множественные карточки лояльности
         function generateOrderCards(history) {
             console.log('🔥 Генерируем карточки истории:', history);
+            console.log('👤 Данные клиента:', customerData);
             
             if (!history || history.length === 0) {
                 return `
@@ -1733,8 +1720,8 @@
                     return isValidPurchase;
                 })
                 .sort((a, b) => {
-                    const dateA = new Date(a.purchase_date || a.purchase_id || 0);
-                    const dateB = new Date(b.purchase_date || b.purchase_id || 0);
+                    const dateA = new Date(a.purchase_date || a.timestamp || 0);
+                    const dateB = new Date(b.purchase_date || b.timestamp || 0);
                     return dateA - dateB;
                 });
             
@@ -1757,80 +1744,36 @@
                 });
             }
             
-            // Добавляем активную карточку если есть оставшиеся покупки
-            const remainingPurchases = purchases.length % PURCHASES_PER_CARD;
-            if (remainingPurchases > 0) {
-                const startIndex = completedCardsCount * PURCHASES_PER_CARD;
-                const activePurchases = purchases.slice(startIndex);
+            // Добавляем активную карточку
+            const remainingPurchasesInHistory = purchases.length % PURCHASES_PER_CARD;
+            const currentProgressFromCustomer = customerData ? customerData.purchases : 0;
+            
+            // Логика для активной карточки:
+            // Если в истории есть остаток покупок ИЛИ у клиента есть текущий прогресс
+            if (remainingPurchasesInHistory > 0 || currentProgressFromCustomer > 0) {
+                const activePurchases = [];
+                
+                // Берем покупки из истории для активной карточки
+                if (remainingPurchasesInHistory > 0) {
+                    const startIndex = completedCardsCount * PURCHASES_PER_CARD;
+                    activePurchases.push(...purchases.slice(startIndex));
+                }
+                
+                // Если текущий прогресс больше чем в истории, добавляем виртуальные покупки
+                const totalNeededPurchases = Math.max(remainingPurchasesInHistory, currentProgressFromCustomer);
+                while (activePurchases.length < totalNeededPurchases) {
+                    activePurchases.push({
+                        purchase_date: new Date().toISOString(),
+                        timestamp: new Date().toISOString(),
+                        action: 'purchase'
+                    });
+                }
                 
                 cards.push({
                     number: completedCardsCount + 1,
                     purchases: activePurchases,
                     status: 'active'
                 });
-            }
-            
-            // ИСПРАВЛЕНО: Если у клиента есть текущий прогресс больше чем в истории
-            if (customerData && customerData.purchases > purchases.length) {
-                const currentProgress = customerData.purchases;
-                const historyProgress = purchases.length;
-                const missingPurchases = currentProgress - historyProgress;
-                
-                console.log(`📈 Текущий прогресс (${currentProgress}) больше истории (${historyProgress}), добавляем ${missingPurchases} покупок`);
-                
-                // Определяем, в какой карточке должны быть эти покупки
-                const totalPurchasesWithMissing = currentProgress;
-                const expectedCompletedCards = Math.floor(totalPurchasesWithMissing / PURCHASES_PER_CARD);
-                const expectedRemainingInActiveCard = totalPurchasesWithMissing % PURCHASES_PER_CARD;
-                
-                // Убираем лишние карточки
-                while (cards.length > expectedCompletedCards + (expectedRemainingInActiveCard > 0 ? 1 : 0)) {
-                    cards.pop();
-                }
-                
-                // Добавляем/корректируем активную карточку
-                if (expectedRemainingInActiveCard > 0) {
-                    if (cards.length === expectedCompletedCards) {
-                        // Нужно добавить новую активную карточку
-                        const newCardPurchases = [];
-                        for (let i = 0; i < expectedRemainingInActiveCard; i++) {
-                            if (i < (purchases.length % PURCHASES_PER_CARD)) {
-                                // Есть реальная покупка
-                                newCardPurchases.push(purchases[expectedCompletedCards * PURCHASES_PER_CARD + i]);
-                            } else {
-                                // Добавляем виртуальную покупку
-                                newCardPurchases.push({
-                                    purchase_date: new Date().toISOString(),
-                                    action: 'purchase'
-                                });
-                            }
-                        }
-                        
-                        cards.push({
-                            number: expectedCompletedCards + 1,
-                            purchases: newCardPurchases,
-                            status: 'active'
-                        });
-                    } else if (cards.length === expectedCompletedCards + 1) {
-                        // Корректируем существующую активную карточку
-                        const activeCard = cards[cards.length - 1];
-                        activeCard.purchases = [];
-                        
-                        for (let i = 0; i < expectedRemainingInActiveCard; i++) {
-                            const purchaseIndex = expectedCompletedCards * PURCHASES_PER_CARD + i;
-                            if (purchaseIndex < purchases.length) {
-                                // Есть реальная покупка
-                                activeCard.purchases.push(purchases[purchaseIndex]);
-                            } else {
-                                // Добавляем виртуальную покупку
-                                activeCard.purchases.push({
-                                    purchase_date: new Date().toISOString(),
-                                    action: 'purchase'
-                                });
-                            }
-                        }
-                    }
-                }
             }
             
             console.log('🎯 Сгенерированные карточки:', cards);
