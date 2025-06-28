@@ -787,7 +787,7 @@ app.get('/api/qr/:id', async (req, res) => {
 
         // ИСПРАВЛЕНО: Используем корректный ID для генерации ссылки в QR коде
         const correctId = foundCustomer.id;
-        const cardUrl = `${req.protocol}://${req.get('host')}/client.html?id=${correctId}`;
+        const cardUrl = `${req.protocol}://${req.get('host')}/card.html?id=${correctId}`;
         
         // Логируем если ID был исправлен
         if (correctId !== id) {
@@ -846,7 +846,7 @@ app.get('/api/client-link/:id', async (req, res) => {
         
         // ИСПРАВЛЕНО: Используем корректный ID для генерации ссылки
         const correctId = foundCustomer.id;
-        const clientAppUrl = `${req.protocol}://${req.get('host')}/client.html?id=${correctId}`;
+        const clientAppUrl = `${req.protocol}://${req.get('host')}/card.html?id=${correctId}`;
         
         // Логируем если ID был исправлен
         if (correctId !== id) {
@@ -1003,6 +1003,69 @@ app.post('/api/cleanup-duplicates', async (req, res) => {
 // Serve admin manifest
 app.get('/admin-manifest.json', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin-manifest.json'));
+});
+
+// Serve personalized client manifest
+app.get('/manifest-:clientId.json', async (req, res) => {
+    try {
+        const { clientId } = req.params;
+        
+        // Проверяем что клиент существует
+        let customers, foundCustomer;
+        
+        if (usePostgreSQL) {
+            const result = await pool.query('SELECT * FROM customers');
+            customers = result.rows;
+            foundCustomer = findCustomerByIdSmart(customers, clientId);
+        } else {
+            customers = await new Promise((resolve, reject) => {
+                db.all('SELECT * FROM customers', [], (err, rows) => {
+                    if (err) reject(err);
+                    else resolve(rows);
+                });
+            });
+            foundCustomer = findCustomerByIdSmart(customers, clientId);
+        }
+        
+        if (!foundCustomer) {
+            return res.status(404).json({ error: 'Client not found' });
+        }
+        
+        // Генерируем персональный манифест
+        const personalManifest = {
+            "name": `COFFEEMANIA - ${foundCustomer.name}`,
+            "short_name": "COFFEEMANIA",
+            "description": `Персональная карта лояльности ${foundCustomer.name} в COFFEEMANIA`,
+            "start_url": `/card.html?id=${foundCustomer.id}`,
+            "display": "standalone",
+            "background_color": "#0F0C29",
+            "theme_color": "#0F0C29",
+            "orientation": "portrait",
+            "categories": ["food", "lifestyle"],
+            "lang": "ru",
+            "scope": "/",
+            "icons": [
+                {
+                    "src": "/icon-192.png",
+                    "sizes": "192x192",
+                    "type": "image/png",
+                    "purpose": "any maskable"
+                },
+                {
+                    "src": "/icon-512.png",
+                    "sizes": "512x512",
+                    "type": "image/png",
+                    "purpose": "any maskable"
+                }
+            ]
+        };
+        
+        res.json(personalManifest);
+        
+    } catch (error) {
+        console.error('Personal manifest error:', error);
+        res.status(500).json({ error: 'Failed to generate personal manifest' });
+    }
 });
 
 // Serve client router for PWA
