@@ -1,4 +1,4 @@
-const CACHE_NAME = 'coffeemania-v2.0.0';
+const CACHE_NAME = 'coffeemania-v2.1.0';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -113,10 +113,34 @@ self.addEventListener('fetch', event => {
             return fetchResponse;
           })
           .catch(() => {
-            // Если запрос не удался и это HTML страница, возвращаем офлайн страницу
-            if (event.request.destination === 'document') {
+            // ИСПРАВЛЕНО: НЕ РЕДИРЕКТИМ на index.html для персональных PWA
+            // Если это запрос к card.html с параметрами, пытаемся вернуть базовую версию card.html
+            if (event.request.destination === 'document' && event.request.url.includes('card.html')) {
+              console.log('COFFEEMANIA SW: Возвращаем кэшированную card.html для персонального PWA');
+              return caches.match('/card.html');
+            }
+            
+            // Для admin.html возвращаем кэшированную версию
+            if (event.request.destination === 'document' && event.request.url.includes('admin.html')) {
+              console.log('COFFEEMANIA SW: Возвращаем кэшированную admin.html');
+              return caches.match('/admin.html');
+            }
+            
+            // Только для основных запросов без параметров редиректим на главную
+            if (event.request.destination === 'document' && !event.request.url.includes('?')) {
+              console.log('COFFEEMANIA SW: Возвращаем главную страницу для базовых запросов');
               return caches.match('/index.html');
             }
+            
+            // Для всех остальных случаев не делаем ничего (позволяем запросу провалиться)
+            console.log('COFFEEMANIA SW: Не можем обработать запрос:', event.request.url);
+            return new Response('Offline', { 
+              status: 503, 
+              statusText: 'Service Unavailable',
+              headers: new Headers({
+                'Content-Type': 'text/plain'
+              })
+            });
           });
       })
   );

@@ -1407,6 +1407,68 @@
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 
     <script>
+        // ИСПРАВЛЕНИЕ PWA: Принудительная очистка состояния при запуске
+        // Проверяем, запущено ли как PWA и очищаем кэшированное состояние
+        (function() {
+            console.log('🔧 COFFEEMANIA Admin: Инициализация PWA...');
+            
+            // Проверяем, запущено ли как PWA (standalone mode)
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+            const isIosStandalone = window.navigator.standalone === true;
+            const isPWA = isStandalone || isIosStandalone;
+            
+            if (isPWA) {
+                console.log('📱 Запущено как PWA - принудительная очистка состояния');
+                
+                // Очищаем любое сохраненное состояние авторизации
+                localStorage.removeItem('admin_logged_in');
+                sessionStorage.removeItem('admin_session');
+                
+                // Принудительно показываем форму авторизации
+                setTimeout(() => {
+                    const authContainer = document.getElementById('auth-container');
+                    const mainInterface = document.getElementById('main-interface');
+                    
+                    if (authContainer && mainInterface) {
+                        authContainer.style.display = 'block';
+                        mainInterface.style.display = 'none';
+                        
+                        // Очищаем поля
+                        const usernameInput = document.getElementById('username');
+                        const passwordInput = document.getElementById('password');
+                        if (usernameInput) usernameInput.value = '';
+                        if (passwordInput) passwordInput.value = '';
+                        
+                        console.log('✅ Форма авторизации восстановлена для PWA');
+                    }
+                }, 100);
+                
+                // Обновляем Service Worker для исправления кэша
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.ready.then(registration => {
+                        return registration.update();
+                    }).then(() => {
+                        console.log('🔄 Service Worker обновлен');
+                    });
+                }
+            }
+            
+            // Для не-PWA режима тоже принудительно показываем авторизацию
+            window.addEventListener('load', () => {
+                setTimeout(() => {
+                    const authContainer = document.getElementById('auth-container');
+                    const mainInterface = document.getElementById('main-interface');
+                    
+                    if (authContainer && mainInterface) {
+                        // По умолчанию всегда показываем форму авторизации
+                        authContainer.style.display = 'block';
+                        mainInterface.style.display = 'none';
+                        console.log('🔐 Форма авторизации отображена');
+                    }
+                }, 50);
+            });
+        })();
+        
         let currentCustomers = [];
         let selectedCustomer = null;
         let isScanning = false;

@@ -1504,6 +1504,102 @@
     </div>
 
     <script>
+        // ИСПРАВЛЕНИЕ PWA: Проверка персонального ID при запуске PWA клиента
+        (function() {
+            console.log('🔧 COFFEEMANIA Client: Инициализация персонального PWA...');
+            
+            // Проверяем, запущено ли как PWA (standalone mode)
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+            const isIosStandalone = window.navigator.standalone === true;
+            const isPWA = isStandalone || isIosStandalone;
+            
+            if (isPWA) {
+                console.log('📱 Запущено как персональное PWA клиента');
+                
+                // Получаем ID из URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const currentClientId = urlParams.get('id');
+                
+                // Получаем сохраненный ID из localStorage
+                const savedClientId = localStorage.getItem('coffeemania_customer_id');
+                
+                console.log('🔍 Текущий ID в URL:', currentClientId);
+                console.log('💾 Сохраненный ID в localStorage:', savedClientId);
+                
+                // Если нет ID в URL, но есть сохраненный ID - восстанавливаем URL
+                if (!currentClientId && savedClientId) {
+                    console.log('🔄 Восстанавливаем персональную ссылку клиента');
+                    const newUrl = `${window.location.pathname}?id=${savedClientId}`;
+                    window.history.replaceState({}, '', newUrl);
+                    
+                    // Перезапускаем загрузку с правильным ID
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 100);
+                    return;
+                }
+                
+                // Если есть ID в URL, сохраняем его
+                if (currentClientId) {
+                    localStorage.setItem('coffeemania_customer_id', currentClientId);
+                    console.log('💾 ID клиента сохранен:', currentClientId);
+                }
+                
+                // Если нет никакого ID - это ошибка PWA
+                if (!currentClientId && !savedClientId) {
+                    console.error('❌ КРИТИЧЕСКАЯ ОШИБКА: Персональное PWA без ID клиента!');
+                    
+                    // Показываем ошибку пользователю
+                    setTimeout(() => {
+                        document.body.innerHTML = `
+                            <div style="
+                                display: flex; 
+                                align-items: center; 
+                                justify-content: center; 
+                                min-height: 100vh; 
+                                text-align: center; 
+                                background: var(--bg-primary);
+                                color: white;
+                                padding: 20px;
+                            ">
+                                <div style="
+                                    background: rgba(255,255,255,0.1);
+                                    border-radius: 20px;
+                                    padding: 40px;
+                                    max-width: 400px;
+                                ">
+                                    <div style="font-size: 64px; margin-bottom: 20px;">⚠️</div>
+                                    <h2 style="margin-bottom: 16px;">Ошибка персонального PWA</h2>
+                                    <p style="margin-bottom: 24px; opacity: 0.8;">
+                                        Приложение установлено неправильно. Удалите его и установите заново с правильной персональной ссылки от бариста.
+                                    </p>
+                                    <button onclick="window.location.href='/'" style="
+                                        background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+                                        color: white;
+                                        border: none;
+                                        padding: 12px 24px;
+                                        border-radius: 12px;
+                                        font-weight: 600;
+                                        cursor: pointer;
+                                    ">На главную</button>
+                                </div>
+                            </div>
+                        `;
+                    }, 500);
+                    return;
+                }
+                
+                // Обновляем Service Worker для лучшей работы
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.ready.then(registration => {
+                        return registration.update();
+                    }).then(() => {
+                        console.log('🔄 Service Worker обновлен для клиента');
+                    });
+                }
+            }
+        })();
+        
         let customerData = null;
         const customerId = new URLSearchParams(window.location.search).get('id');
         
