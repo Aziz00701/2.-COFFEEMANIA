@@ -14,27 +14,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// Middleware для защиты админ панели
-app.use('/admin.html', (req, res, next) => {
-    // Блокируем доступ к админке для всех кроме localhost
-    const allowedHosts = ['localhost', '127.0.0.1', '::1'];
-    const host = req.hostname || req.get('host')?.split(':')[0];
-    
-    if (!allowedHosts.includes(host)) {
-        return res.status(403).send(`
-            <!DOCTYPE html>
-            <html><head><meta charset="UTF-8"><title>Доступ запрещен</title></head>
-            <body style="font-family:Arial;text-align:center;padding:50px;background:#0F0C29;color:white;">
-                <h1>🚫 Доступ запрещен</h1>
-                <p>Административная панель доступна только с локального хоста</p>
-                <a href="/" style="color:#DAA520;">← Вернуться на главную</a>
-            </body></html>
-        `);
-    }
-    
-    next();
-});
-
 // Database configuration
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
