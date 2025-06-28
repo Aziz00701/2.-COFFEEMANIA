@@ -1000,6 +1000,11 @@ app.post('/api/cleanup-duplicates', async (req, res) => {
     }
 });
 
+// Serve admin manifest
+app.get('/admin-manifest.json', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin-manifest.json'));
+});
+
 // Serve main page
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));

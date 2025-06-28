@@ -13,7 +13,7 @@
     <meta name="description" content="Панель управления бариста COFFEEMANIA">
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="/admin-manifest.json">
     
     <!-- Icons -->
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
@@ -628,14 +628,15 @@
         .action-buttons {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
+            gap: 20px;
             margin-bottom: 16px;
         }
         
-        .action-buttons-row {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
+        .action-buttons .btn-small {
+            margin: 0;
+            min-width: 0;
+            font-size: 13px;
+            padding: 10px 12px;
         }
         
         /* Messages */
@@ -822,54 +823,54 @@
             display: none;
         }
         
-        /* Responsive Design */
+        /* Responsive Design - Адаптивность для всех экранов */
         @media (min-width: 768px) {
             .container {
                 max-width: 900px;
-                padding: 30px;
+                padding: 2vw;
             }
             
             .header {
-                padding: 32px 40px;
+                padding: 1.5vw 2vw;
             }
             
             .brand-text h1 {
-                font-size: 36px;
+                font-size: clamp(24px, 3vw, 36px);
             }
             
             .brand-text p {
-                font-size: 18px;
+                font-size: clamp(14px, 1.5vw, 18px);
             }
             
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
-                gap: 20px;
+                gap: 1.5vw;
             }
             
             .stat-number {
-                font-size: 52px;
+                font-size: clamp(32px, 4vw, 52px);
             }
             
             .stat-label {
-                font-size: 16px;
+                font-size: clamp(12px, 1.2vw, 16px);
             }
             
             .glass-card {
-                padding: 36px;
+                padding: clamp(24px, 3vw, 36px);
             }
             
             .card-title {
-                font-size: 22px;
+                font-size: clamp(18px, 2vw, 22px);
             }
             
             .form-input {
-                padding: 18px 24px;
-                font-size: 18px;
+                padding: clamp(16px, 1.5vw, 18px) clamp(20px, 2vw, 24px);
+                font-size: clamp(16px, 1.5vw, 18px);
             }
             
             .btn {
-                padding: 18px 28px;
-                font-size: 18px;
+                padding: clamp(16px, 1.5vw, 18px) clamp(24px, 2vw, 28px);
+                font-size: clamp(16px, 1.5vw, 18px);
             }
         }
         
@@ -878,135 +879,143 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                padding: 30px;
+                padding: 2vh 2vw;
+                min-height: 100vh;
             }
             
             .container {
-                max-width: 950px;
+                max-width: min(95vw, 1200px);
                 min-height: auto;
                 background: var(--bg-glass);
                 backdrop-filter: var(--blur);
                 border-radius: 28px;
                 border: 1px solid var(--border-glass);
                 box-shadow: var(--shadow-hover);
-                padding: 32px 28px;
+                padding: clamp(24px, 2.5vw, 32px);
             }
             
             .brand-text h1 {
-                font-size: 24px;
+                font-size: clamp(24px, 2.2vw, 28px);
             }
             
             .brand-text p {
-                font-size: 13px;
+                font-size: clamp(12px, 1.1vw, 15px);
             }
             
             .stats-grid {
                 grid-template-columns: repeat(4, 1fr);
-                gap: 16px;
+                gap: clamp(12px, 1.5vw, 20px);
             }
             
             .stat-number {
-                font-size: 32px;
+                font-size: clamp(28px, 2.8vw, 36px);
             }
             
             .stat-label {
-                font-size: 11px;
+                font-size: clamp(10px, 1vw, 13px);
             }
             
             .card-title {
-                font-size: 14px;
+                font-size: clamp(14px, 1.4vw, 18px);
             }
             
             .form-input {
-                padding: 12px 16px;
-                font-size: 13px;
+                padding: clamp(12px, 1.2vw, 16px) clamp(16px, 1.5vw, 20px);
+                font-size: clamp(13px, 1.3vw, 16px);
             }
             
             .btn {
-                padding: 12px 18px;
-                font-size: 13px;
+                padding: clamp(12px, 1.2vw, 16px) clamp(18px, 1.8vw, 24px);
+                font-size: clamp(13px, 1.3vw, 16px);
             }
             
             .customer-info h4 {
-                font-size: 14px;
+                font-size: clamp(14px, 1.4vw, 18px);
             }
             
             .customer-info p {
-                font-size: 12px;
+                font-size: clamp(12px, 1.2vw, 15px);
+            }
+            
+            .action-buttons .btn-small {
+                font-size: clamp(11px, 1.1vw, 14px);
+                padding: clamp(8px, 1vw, 12px) clamp(10px, 1.2vw, 16px);
             }
         }
         
         @media (min-width: 1440px) {
             .container {
-                max-width: 1100px;
-                padding: 40px 35px;
+                max-width: min(90vw, 1400px);
+                padding: clamp(32px, 3vw, 40px);
             }
             
             .brand-text h1 {
-                font-size: 28px;
+                font-size: clamp(26px, 2vw, 32px);
             }
             
             .brand-text p {
-                font-size: 15px;
+                font-size: clamp(14px, 1.2vw, 18px);
             }
             
             .stat-number {
-                font-size: 36px;
+                font-size: clamp(32px, 2.5vw, 40px);
             }
             
             .stat-label {
-                font-size: 13px;
+                font-size: clamp(12px, 1vw, 16px);
             }
             
             .card-title {
-                font-size: 16px;
+                font-size: clamp(16px, 1.3vw, 20px);
             }
             
             .form-input {
-                padding: 14px 18px;
-                font-size: 15px;
+                padding: clamp(14px, 1.2vw, 18px) clamp(18px, 1.5vw, 24px);
+                font-size: clamp(15px, 1.2vw, 18px);
             }
             
             .btn {
-                padding: 14px 20px;
-                font-size: 15px;
+                padding: clamp(14px, 1.2vw, 18px) clamp(20px, 1.8vw, 28px);
+                font-size: clamp(15px, 1.2vw, 18px);
             }
             
             .customer-info h4 {
-                font-size: 16px;
+                font-size: clamp(16px, 1.3vw, 20px);
             }
             
             .customer-info p {
-                font-size: 14px;
+                font-size: clamp(14px, 1.1vw, 16px);
             }
         }
         
         @media (max-width: 1200px) {
             .main-grid {
                 grid-template-columns: 1fr;
-                gap: 24px;
+                gap: clamp(20px, 3vw, 24px);
             }
             
             .stats-grid {
-                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                gap: clamp(16px, 2vw, 20px);
             }
         }
         
         @media (max-width: 768px) {
             .container {
-                padding: 16px;
+                padding: clamp(12px, 3vw, 20px);
             }
             
             .header {
                 flex-direction: column;
-                gap: 20px;
+                gap: clamp(16px, 3vw, 24px);
                 text-align: center;
-                padding: 24px;
+                padding: clamp(20px, 4vw, 28px);
             }
             
             .header-controls {
                 justify-content: center;
                 flex-wrap: wrap;
+                gap: clamp(8px, 2vw, 16px);
             }
             
             .stats-grid {
