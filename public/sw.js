@@ -1,9 +1,11 @@
-const CACHE_NAME = 'coffeemania-v2.1.0';
+const CACHE_NAME = 'coffeemania-v2.2.0';
 const urlsToCache = [
   '/',
   '/index.html',
   '/card.html',
+  '/admin.html',
   '/manifest.json',
+  '/admin-manifest.json',
   '/icon-192.png',
   '/icon-512.png',
   '/icon.svg',
@@ -15,7 +17,7 @@ const urlsToCache = [
 
 // Install event - cache resources
 self.addEventListener('install', event => {
-  console.log('COFFEEMANIA SW: Installing...');
+  console.log('COFFEEMANIA SW v2.2.0: Installing...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
@@ -32,7 +34,7 @@ self.addEventListener('install', event => {
 
 // Activate event - cleanup old caches and take control
 self.addEventListener('activate', event => {
-  console.log('COFFEEMANIA SW: Активация...');
+  console.log('COFFEEMANIA SW v2.2.0: Активация...');
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
@@ -53,18 +55,33 @@ self.addEventListener('activate', event => {
 
 // Fetch event - serve from cache when offline, update cache when online
 self.addEventListener('fetch', event => {
-  // Игнорируем запросы к API для динамических данных
+  // УЛУЧШЕНА логика для API запросов
   if (event.request.url.includes('/api/')) {
-    // Для API запросов используем network-first стратегию
+    // Для API запросов используем network-first стратегию с быстрым таймаутом
     event.respondWith(
-      fetch(event.request)
+      Promise.race([
+        fetch(event.request, { timeout: 10000 }), // 10 сек таймаут
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('API timeout')), 10000)
+        )
+      ])
         .then(response => {
           // Если запрос успешен, возвращаем ответ
           return response;
         })
-        .catch(() => {
-          // Если сеть недоступна, возвращаем кэшированную версию если есть
-          return caches.match(event.request);
+        .catch(error => {
+          console.log('COFFEEMANIA SW: API запрос не удался:', error.message);
+          // Возвращаем 503 для индикации проблем с сервером
+          return new Response(JSON.stringify({
+            error: 'Server temporarily unavailable',
+            status: 'offline'
+          }), { 
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: new Headers({
+              'Content-Type': 'application/json'
+            })
+          });
         })
     );
     return;

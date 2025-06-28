@@ -2859,7 +2859,7 @@
             setTimeout(loadBaristaPhoneToInput, 1000);
         });
 
-        // Check server status - ИСПРАВЛЕНО: лучшая обработка ошибок
+        // Check server status - ОПТИМИЗИРОВАНО: быстрая проверка с таймаутами
         async function checkServerStatus() {
             const connectionIndicator = document.getElementById('connection-indicator');
             const connectionText = connectionIndicator.querySelector('.connection-text');
@@ -2871,11 +2871,17 @@
                 connectionIndicator.className = 'connection-indicator';
                 
                 const startTime = Date.now();
+                // СОКРАТИЛ таймаут до 5 секунд для быстрого отклика
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                
                 const response = await fetch('/api/stats', { 
                     method: 'GET',
                     cache: 'no-cache',
-                    signal: AbortSignal.timeout(8000) // Увеличенный таймаут
+                    signal: controller.signal
                 });
+                
+                clearTimeout(timeoutId);
                 const responseTime = Date.now() - startTime;
                 
                 if (response.ok) {
@@ -2898,7 +2904,7 @@
                 }
             } catch (error) {
                 console.log('Connection check:', error.message);
-                if (error.name === 'TimeoutError') {
+                if (error.name === 'AbortError') {
                     connectionText.textContent = '🟡 Медленно';
                     connectionIndicator.classList.add('slow');
                 } else {
@@ -2908,19 +2914,129 @@
             }
         }
 
-        // Load initial data - ИСПРАВЛЕНО: увеличена задержка для первой проверки
-        async function loadData() {
-            await Promise.all([
-                loadStats(),
-                loadCustomers(),
-                loadBaristaPhone()
-            ]);
+        // НОВАЯ оптимизированная функция загрузки данных с retry логикой
+        async function loadDataWithRetry(maxRetries = 3) {
+            let attempts = 0;
             
-            // Запускаем проверку соединения с увеличенной задержкой
+            while (attempts < maxRetries) {
+                try {
+                    console.log(`🔄 Попытка загрузки данных #${attempts + 1}`);
+                    
+                    // Загружаем данные параллельно с таймаутами
+                    const promises = [
+                        loadStatsWithTimeout(),
+                        loadCustomersWithTimeout(),
+                        loadBaristaPhoneWithTimeout()
+                    ];
+                    
+                    await Promise.allSettled(promises);
+                    console.log('✅ Данные загружены успешно');
+                    break;
+                    
+                } catch (error) {
+                    attempts++;
+                    console.log(`❌ Попытка #${attempts} не удалась:`, error.message);
+                    
+                    if (attempts < maxRetries) {
+                        console.log(`⏳ Ожидание ${attempts * 2} сек перед следующей попыткой...`);
+                        await new Promise(resolve => setTimeout(resolve, attempts * 2000));
+                    } else {
+                        console.log('💥 Все попытки загрузки исчерпаны');
+                        showError('Не удалось загрузить данные. Проверьте соединение.');
+                    }
+                }
+            }
+        }
+
+        // Загрузка статистики с таймаутом
+        async function loadStatsWithTimeout() {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
+            
+            try {
+                const response = await fetch('/api/stats', { signal: controller.signal });
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const stats = await response.json();
+                
+                document.getElementById('total-customers').textContent = stats.totalCustomers;
+                document.getElementById('total-purchases').textContent = stats.totalPurchases;
+                document.getElementById('ready-customers').textContent = stats.readyForFreeCoffee;
+                
+                // Calculate average purchases
+                const avgPurchases = stats.totalCustomers > 0 ? 
+                    (stats.totalPurchases / stats.totalCustomers).toFixed(1) : '0.0';
+                document.getElementById('average-purchases').textContent = avgPurchases;
+                
+            } catch (error) {
+                clearTimeout(timeoutId);
+                console.error('Error loading stats:', error);
+                // Устанавливаем placeholder значения
+                document.getElementById('total-customers').textContent = '-';
+                document.getElementById('total-purchases').textContent = '-';
+                document.getElementById('ready-customers').textContent = '-';
+                document.getElementById('average-purchases').textContent = '-';
+                throw error;
+            }
+        }
+
+        // Загрузка клиентов с таймаутом
+        async function loadCustomersWithTimeout() {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
+            
+            try {
+                const response = await fetch('/api/customers', { signal: controller.signal });
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                currentCustomers = await response.json();
+                displayCustomers(currentCustomers);
+                
+            } catch (error) {
+                clearTimeout(timeoutId);
+                console.error('Error loading customers:', error);
+                document.getElementById('customer-list').innerHTML = 
+                    '<div style="text-align: center; color: var(--text-secondary); padding: 40px;">❌ Ошибка загрузки клиентов</div>';
+                throw error;
+            }
+        }
+
+        // Загрузка номера бариста с таймаутом
+        async function loadBaristaPhoneWithTimeout() {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            
+            try {
+                const response = await fetch('/api/barista-phone', { signal: controller.signal });
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const data = await response.json();
+                document.getElementById('barista-phone').textContent = data.phone;
+                
+            } catch (error) {
+                clearTimeout(timeoutId);
+                console.error('Error loading barista phone:', error);
+                // Используем дефолтный номер при ошибке
+                document.getElementById('barista-phone').textContent = '+7 (775) 455-55-70';
+                throw error;
+            }
+        }
+
+        // СТАРУЮ функцию заменяем на оптимизированную
+        async function loadData() {
+            await loadDataWithRetry();
+            
+            // Запускаем проверку соединения с уменьшенной задержкой
             setTimeout(() => {
                 checkServerStatus();
-                setInterval(checkServerStatus, 15000); // Каждые 15 секунд
-            }, 3000); // Увеличена задержка до 3 секунд
+                setInterval(checkServerStatus, 10000); // Каждые 10 секунд
+            }, 1000); // Уменьшена задержка до 1 секунды
         }
 
         // Clean duplicate purchase history records
