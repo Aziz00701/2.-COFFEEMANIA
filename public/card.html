@@ -2170,7 +2170,7 @@
         function shareCard() {
             if (!customerId || !customerData) return;
             
-            const cardUrl = `${window.location.origin}/card.html?id=${customerId}`;
+            const cardUrl = `${window.location.origin}/client.html?id=${customerId}`;
             const customerName = customerData.name;
             
             const whatsappMessage = `🎉 Привет! Я использую карту лояльности COFFEEMANIA ☕\n\n👤 Клиент: ${customerName}\n🔗 Моя карта: ${cardUrl}\n\n💎 Каждая 7-я чашка кофе - БЕСПЛАТНО!`;
@@ -2261,6 +2261,29 @@
         });
     </script>
         <script src="/connection-check.js"></script>
+
+    <script>
+        // АВТОМАТИЧЕСКИЙ РЕДИРЕКТ на client.html для PWA совместимости
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectId = urlParams.get('id');
+        
+        if (redirectId) {
+            // Перенаправляем на client.html который правильно работает с PWA
+            console.log('🔄 Редирект с card.html на client.html для PWA совместимости');
+            window.location.replace(`/client.html?id=${redirectId}`);
+        } else {
+            // Если нет ID, показываем ошибку
+            document.body.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #0F0C29 0%, #24243e 25%, #302b63 50%, #8B4513 75%, #DAA520 100%); color: white; font-family: Inter, sans-serif; text-align: center; padding: 20px;">
+                    <div>
+                        <h1 style="font-size: 24px; margin-bottom: 16px;">⚠️ Ошибка</h1>
+                        <p style="margin-bottom: 20px;">Необходим ID клиента для доступа к карте</p>
+                        <a href="/" style="background: #DAA520; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">На главную</a>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
 </body>
 </html>
 

@@ -787,7 +787,7 @@ app.get('/api/qr/:id', async (req, res) => {
 
         // ИСПРАВЛЕНО: Используем корректный ID для генерации ссылки в QR коде
         const correctId = foundCustomer.id;
-        const cardUrl = `${req.protocol}://${req.get('host')}/card.html?id=${correctId}`;
+        const cardUrl = `${req.protocol}://${req.get('host')}/client.html?id=${correctId}`;
         
         // Логируем если ID был исправлен
         if (correctId !== id) {
@@ -846,7 +846,7 @@ app.get('/api/client-link/:id', async (req, res) => {
         
         // ИСПРАВЛЕНО: Используем корректный ID для генерации ссылки
         const correctId = foundCustomer.id;
-        const clientAppUrl = `${req.protocol}://${req.get('host')}/card.html?id=${correctId}`;
+        const clientAppUrl = `${req.protocol}://${req.get('host')}/client.html?id=${correctId}`;
         
         // Логируем если ID был исправлен
         if (correctId !== id) {
