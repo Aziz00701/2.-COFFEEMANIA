@@ -379,38 +379,20 @@
             document.getElementById('error').classList.remove('hidden');
         }
 
-        // Блокируем навигацию в админку
+        // Защита от навигации в другие разделы
         window.addEventListener('beforeunload', function(e) {
             // Дополнительная защита
         });
 
-        // Запрещаем доступ к админским функциям
+        // Запрещаем доступ к системным функциям
         Object.freeze(window);
         
-        // Блокируем попытки навигации к админке
+        // Блокируем попытки навигации к системным страницам
         window.addEventListener('hashchange', function() {
-            if (window.location.hash.includes('admin')) {
+            if (window.location.hash.includes('system')) {
                 window.location.href = '/';
             }
         });
-        
-        // Блокируем admin URLs
-        const originalPushState = history.pushState;
-        const originalReplaceState = history.replaceState;
-        
-        history.pushState = function(state, title, url) {
-            if (url && url.includes('admin')) {
-                return;
-            }
-            return originalPushState.apply(history, arguments);
-        };
-        
-        history.replaceState = function(state, title, url) {
-            if (url && url.includes('admin')) {
-                return;
-            }
-            return originalReplaceState.apply(history, arguments);
-        };
 
         // Загружаем карту при старте
         window.addEventListener('load', loadClientCard);
