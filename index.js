@@ -505,19 +505,19 @@ app.post('/api/purchase/:id', async (req, res) => {
         const currentPurchases = customer.purchases;
         let newPurchases;
         let isComplete = false;
-        let newCardStarted = false;
+        let isFreeDelivery = false;
         
-        // ИСПРАВЛЕНО: Правильная логика множественных карточек
+        // ИСПРАВЛЕНО: Правильная логика для бесплатного кофе
         if (currentPurchases >= 6) {
-            // После 6 покупок - выдаем бесплатный кофе и начинаем новую карточку с 1
-            newPurchases = 1;
-            newCardStarted = true;
-            isComplete = false; // Новая карточка только начинается
+            // Выдача бесплатного кофе - сбрасываем счетчик в 0 (НЕ в 1!)
+            newPurchases = 0;
+            isFreeDelivery = true;
+            isComplete = false;
         } else {
-            // Увеличиваем счетчик в текущей карточке
+            // Обычная покупка - увеличиваем счетчик
             newPurchases = currentPurchases + 1;
-            if (newPurchases === 6) {
-                isComplete = true; // Карточка готова к получению бесплатного кофе
+            if (newPurchases >= 6) {
+                isComplete = true; // Готов к получению бесплатного кофе
             }
         }
         
@@ -525,15 +525,19 @@ app.post('/api/purchase/:id', async (req, res) => {
             // PostgreSQL
             await pool.query('BEGIN');
             
+            // Обновляем счетчик покупок
             await pool.query(
                 'UPDATE customers SET purchases = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
                 [newPurchases, id]
             );
             
-            await pool.query(
-                'INSERT INTO purchase_history (customer_id) VALUES ($1)',
-                [id]
-            );
+            // Записываем в историю ТОЛЬКО реальные покупки (НЕ бесплатный кофе)
+            if (!isFreeDelivery) {
+                await pool.query(
+                    'INSERT INTO purchase_history (customer_id) VALUES ($1)',
+                    [id]
+                );
+            }
             
             await pool.query('COMMIT');
         } else {
@@ -554,35 +558,44 @@ app.post('/api/purchase/:id', async (req, res) => {
                         }
                     );
                     
-                    db.run(
-                        'INSERT INTO purchase_history (customer_id, timestamp) VALUES (?, ?)',
-                        [id, new Date().toISOString()],
-                        (err) => {
-                            if (err) {
-                                db.run('ROLLBACK');
-                                reject(err);
-                                return;
+                    // Записываем в историю ТОЛЬКО реальные покупки (НЕ бесплатный кофе)
+                    if (!isFreeDelivery) {
+                        db.run(
+                            'INSERT INTO purchase_history (customer_id, timestamp) VALUES (?, ?)',
+                            [id, new Date().toISOString()],
+                            (err) => {
+                                if (err) {
+                                    db.run('ROLLBACK');
+                                    reject(err);
+                                    return;
+                                }
+                                
+                                db.run('COMMIT', (err) => {
+                                    if (err) reject(err);
+                                    else resolve();
+                                });
                             }
-                            
-                            db.run('COMMIT', (err) => {
-                                if (err) reject(err);
-                                else resolve();
-                            });
-                        }
-                    );
+                        );
+                    } else {
+                        // Для бесплатного кофе просто коммитим без записи в историю
+                        db.run('COMMIT', (err) => {
+                            if (err) reject(err);
+                            else resolve();
+                        });
+                    }
                 });
             });
         }
         
         res.json({ 
             success: true, 
-            message: newCardStarted ? 
-                'Поздравляем! Получен бесплатный кофе. Начата новая карта лояльности!' : 
-                'Purchase added successfully',
+            message: isFreeDelivery ? 
+                '🎉 Бесплатный кофе выдан! Новая карта начинается с 0.' : 
+                `✅ Покупка добавлена! Прогресс: ${newPurchases}/6`,
             newPurchases: newPurchases,
             isComplete: isComplete,
-            newCardStarted: newCardStarted,
-            totalCards: Math.ceil((currentPurchases + 1) / 6)
+            isFreeDelivery: isFreeDelivery,
+            totalCards: Math.floor((customer.purchases + (!isFreeDelivery ? 1 : 0)) / 7) + 1
         });
     } catch (error) {
         console.error('Add purchase error:', error);
