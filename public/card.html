@@ -2343,6 +2343,11 @@
         // Initialize
         setCurrentDate();
         loadCustomerData();
+        
+        // ДОБАВЛЕНО: Проверяем статус установки PWA при загрузке
+        setTimeout(() => {
+            checkIfAppInstalled();
+        }, 1000);
 
         // Auto-refresh every 30 seconds
         setInterval(loadCustomerData, 30000);
@@ -2367,7 +2372,7 @@
         let clientDeferredPrompt;
         let isAppInstalled = false;
         
-        // Check if app is already installed (display mode detection)
+        // ИСПРАВЛЕНО: Улучшенная проверка статуса установки для мобильных
         function checkIfAppInstalled() {
             // Проверяем display mode PWA
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
@@ -2378,43 +2383,113 @@
             
             if (isAppInstalled) {
                 // Скрываем кнопки установки если приложение уже установлено
-                document.getElementById('pwa-install-section').style.display = 'none';
-                document.getElementById('install-btn').style.display = 'none';
+                const installBtn = document.getElementById('install-btn');
+                const installSection = document.getElementById('pwa-install-section');
+                
+                if (installBtn) installBtn.style.display = 'none';
+                if (installSection) installSection.style.display = 'none';
+                
+                console.log('📱 Кнопки установки скрыты - приложение уже установлено');
+            } else {
+                // НОВОЕ: Автоматически показываем кнопку если приложение НЕ установлено
+                showInstallButton();
             }
             
             return isAppInstalled;
         }
         
-        // Показать кнопку установки
+        // УЛУЧШЕНО: Более умная логика показа кнопки для всех устройств
         function showInstallButton() {
-            if (isAppInstalled) return;
+            if (isAppInstalled) {
+                console.log('📱 PWA уже установлено - кнопка не нужна');
+                return;
+            }
             
             const installBtn = document.getElementById('install-btn');
             const installSection = document.getElementById('pwa-install-section');
             
+            // Проверяем тип устройства
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            
+            console.log('📱 Тип устройства:', {
+                mobile: isMobile,
+                iOS: isIOS,
+                android: isAndroid,
+                desktop: !isMobile
+            });
+            
+            // ВСЕГДА показываем кнопку установки если приложение не установлено
             if (installBtn) {
                 installBtn.style.display = 'block';
                 console.log('📱 Кнопка установки PWA показана в action-buttons');
             }
             
-            // Для iOS показываем инструкции вместо автоматического промпта
-            if (isIOS() && installSection) {
-                installSection.innerHTML = `
-                    <div class="glass-card" style="margin-top: 24px; padding: 20px; text-align: center;">
-                        <div style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                            🍎 Установить на iOS
+            // Для мобильных устройств показываем дополнительную секцию с инструкциями
+            if (isMobile && installSection) {
+                if (isIOS) {
+                    // Специальные инструкции для iOS
+                    installSection.innerHTML = `
+                        <div class="glass-card" style="margin-top: 24px; padding: 20px; text-align: center;">
+                            <div style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                🍎 Установить на iPhone/iPad
+                            </div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; margin-bottom: 16px;">
+                                <div style="background: var(--bg-input); padding: 12px; border-radius: 8px; margin: 8px 0; border: 1px solid var(--border-glass);">
+                                    <strong>1.</strong> Нажмите кнопку "Поделиться" <span style="font-size: 1.2rem;">⤴️</span>
+                                </div>
+                                <div style="background: var(--bg-input); padding: 12px; border-radius: 8px; margin: 8px 0; border: 1px solid var(--border-glass);">
+                                    <strong>2.</strong> Выберите "На экран 'Домой'" 🏠
+                                </div>
+                                <div style="background: var(--bg-input); padding: 12px; border-radius: 8px; margin: 8px 0; border: 1px solid var(--border-glass);">
+                                    <strong>3.</strong> Нажмите "Добавить" ➕
+                                </div>
+                            </div>
+                            <div style="background: rgba(0,122,255,0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(0,122,255,0.3);">
+                                <span style="font-size: 1.2rem;">💡</span> Приложение появится на главном экране
+                            </div>
                         </div>
-                        <div style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; margin-bottom: 16px;">
-                            1. Нажмите кнопку "Поделиться" <span style="font-size: 1.2rem;">⤴️</span><br>
-                            2. Выберите "На экран 'Домой'"<br>
-                            3. Нажмите "Добавить"
+                    `;
+                } else if (isAndroid) {
+                    // Специальные инструкции для Android
+                    installSection.innerHTML = `
+                        <div class="glass-card" style="margin-top: 24px; padding: 20px; text-align: center;">
+                            <div style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                🤖 Установить на Android
+                            </div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; margin-bottom: 16px;">
+                                <div style="background: var(--bg-input); padding: 12px; border-radius: 8px; margin: 8px 0; border: 1px solid var(--border-glass);">
+                                    <strong>Chrome:</strong> Появится автоматическое предложение установки
+                                </div>
+                                <div style="background: var(--bg-input); padding: 12px; border-radius: 8px; margin: 8px 0; border: 1px solid var(--border-glass);">
+                                    <strong>Другие браузеры:</strong> Меню → "Добавить на главный экран"
+                                </div>
+                            </div>
+                            <div style="background: rgba(76,175,80,0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(76,175,80,0.3);">
+                                <span style="font-size: 1.2rem;">🚀</span> Быстрый доступ к вашей карте!
+                            </div>
                         </div>
-                        <div style="background: rgba(0,122,255,0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(0,122,255,0.3);">
-                            <span style="font-size: 1.2rem;">💡</span> Приложение появится на главном экране
+                    `;
+                } else {
+                    // Общие инструкции для других мобильных браузеров
+                    installSection.innerHTML = `
+                        <div class="glass-card" style="margin-top: 24px; padding: 20px; text-align: center;">
+                            <div style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                📱 Установить приложение
+                            </div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; margin-bottom: 16px;">
+                                Нажмите кнопку "Установить" выше или найдите опцию "Добавить на главный экран" в меню браузера
+                            </div>
+                            <div style="background: rgba(255,107,53,0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,107,53,0.3);">
+                                <span style="font-size: 1.2rem;">☕</span> Ваша карта лояльности всегда под рукой!
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                }
+                
                 installSection.style.display = 'block';
+                console.log('📱 Секция установки PWA показана для мобильного устройства');
             }
         }
         
@@ -2423,146 +2498,123 @@
             return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
         }
         
+        // УЛУЧШЕНО: Лучшая обработка события beforeinstallprompt
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             clientDeferredPrompt = e;
             console.log('📱 COFFEEMANIA: Install prompt доступен');
             
-            // Проверяем можем ли показать кнопку
-            checkIfAppInstalled();
+            // Проверяем статус и показываем кнопку если нужно
+            if (!checkIfAppInstalled()) {
+                showInstallButton();
+            }
         });
         
-        // Function to trigger client app install - ИСПРАВЛЕНО
-        function installClientApp() {
-            if (isAppInstalled) {
-                console.log('📱 COFFEEMANIA уже установлено');
-                return;
-            }
+        // НОВОЕ: Обработка события после установки PWA
+        window.addEventListener('appinstalled', () => {
+            console.log('🎉 COFFEEMANIA PWA успешно установлено!');
+            isAppInstalled = true;
             
-            if (isIOS()) {
-                // Для iOS показываем инструкции
-                const modal = document.getElementById('qr-modal');
-                const content = modal.querySelector('.modal-content');
-                
-                content.innerHTML = `
-                    <div class="modal-title">🍎 Установка на iOS</div>
-                    <div style="color: var(--text-primary); margin-bottom: 24px; text-align: center; line-height: 1.6;">
-                        <div style="font-size: 48px; margin-bottom: 16px;">📱</div>
-                        <div style="font-size: 16px; margin-bottom: 16px; font-weight: 600;">Как установить COFFEEMANIA</div>
-                        <div style="font-size: 14px; text-align: left; background: var(--bg-input); padding: 16px; border-radius: 12px; margin: 16px 0;">
-                            <div style="margin-bottom: 12px;"><span style="background: #007AFF; color: white; padding: 4px 8px; border-radius: 4px; margin-right: 8px;">1</span>Нажмите кнопку "Поделиться" <span style="font-size: 18px;">⤴️</span></div>
-                            <div style="margin-bottom: 12px;"><span style="background: #007AFF; color: white; padding: 4px 8px; border-radius: 4px; margin-right: 8px;">2</span>Выберите "На экран 'Домой'"</div>
-                            <div style="margin-bottom: 12px;"><span style="background: #007AFF; color: white; padding: 4px 8px; border-radius: 4px; margin-right: 8px;">3</span>Нажмите "Добавить"</div>
-                            <div><span style="background: #34C759; color: white; padding: 4px 8px; border-radius: 4px; margin-right: 8px;">✓</span>Готово! Приложение на главном экране</div>
-                        </div>
-                    </div>
-                    <button class="modal-btn secondary" onclick="hideQR()" style="width: 100%;">Понятно</button>
-                `;
-                
-                modal.style.display = 'flex';
-                return;
-            }
-            
-            if (clientDeferredPrompt) {
-                // Используем нативный промпт если доступен
-                clientDeferredPrompt.prompt();
-                clientDeferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        console.log('📱 COFFEEMANIA: Клиентское приложение установлено');
-                        document.getElementById('pwa-install-section').style.display = 'none';
-                        document.getElementById('install-btn').style.display = 'none';
-                        isAppInstalled = true;
-                        
-                        // Show success message
-                        const modal = document.getElementById('qr-modal');
-                        const content = modal.querySelector('.modal-content');
-                        
-                        content.innerHTML = `
-                            <div class="modal-title">🎉 Успешно установлено!</div>
-                            <div style="color: var(--text-primary); margin-bottom: 24px; text-align: center;">
-                                <div style="font-size: 64px; margin-bottom: 16px;">📱</div>
-                                <div style="font-size: 18px; margin-bottom: 12px; font-weight: 600;">COFFEEMANIA установлено!</div>
-                                <div style="font-size: 14px; line-height: 1.6; color: var(--text-secondary);">
-                                    Теперь вы можете быстро открывать свою карту лояльности прямо с главного экрана устройства.
-                                </div>
-                            </div>
-                            <button class="modal-btn secondary" onclick="hideQR()" style="width: 100%;">Отлично!</button>
-                        `;
-                        
-                        modal.style.display = 'flex';
-                    } else {
-                        console.log('📱 COFFEEMANIA: Установка отменена пользователем');
-                    }
-                    clientDeferredPrompt = null;
-                });
-            } else {
-                // Показываем инструкции если нативный промпт недоступен
-                const modal = document.getElementById('qr-modal');
-                const content = modal.querySelector('.modal-content');
-                
-                content.innerHTML = `
-                    <div class="modal-title">📱 Установка приложения</div>
-                    <div style="color: var(--text-primary); margin-bottom: 24px; text-align: center; line-height: 1.6;">
-                        <div style="font-size: 48px; margin-bottom: 16px;">💻</div>
-                        <div style="font-size: 16px; margin-bottom: 16px; font-weight: 600;">Как установить COFFEEMANIA</div>
-                        <div style="font-size: 14px; text-align: left; background: var(--bg-input); padding: 16px; border-radius: 12px; margin: 16px 0;">
-                            <div style="margin-bottom: 12px;"><span style="background: var(--accent-blue); color: white; padding: 4px 8px; border-radius: 4px; margin-right: 8px;">1</span>Нажмите на иконку установки в адресной строке</div>
-                            <div style="margin-bottom: 12px;"><span style="background: var(--accent-blue); color: white; padding: 4px 8px; border-radius: 4px; margin-right: 8px;">2</span>Или через меню браузера → "Установить приложение"</div>
-                            <div><span style="background: var(--accent-green); color: white; padding: 4px 8px; border-radius: 4px; margin-right: 8px;">✓</span>Подтвердите установку</div>
-                        </div>
-                    </div>
-                    <button class="modal-btn secondary" onclick="hideQR()" style="width: 100%;">Понятно</button>
-                `;
-                
-                modal.style.display = 'flex';
-            }
-        }
-        
-        // Показать кнопку установки - ИСПРАВЛЕНО: всегда показываем если не установлено
-        function showInstallButton() {
-            if (isAppInstalled) return;
-            
+            // Скрываем все кнопки установки
             const installBtn = document.getElementById('install-btn');
             const installSection = document.getElementById('pwa-install-section');
             
-            // Всегда показываем кнопку если приложение не установлено
-            if (installBtn) {
-                installBtn.style.display = 'block';
-                console.log('📱 Кнопка установки PWA показана в action-buttons');
-            }
+            if (installBtn) installBtn.style.display = 'none';
+            if (installSection) installSection.style.display = 'none';
             
-            // Дополнительно для iOS показываем section с инструкциями
-            if (isIOS() && installSection) {
-                installSection.innerHTML = `
-                    <div class="glass-card" style="margin-top: 24px; padding: 20px; text-align: center;">
-                        <div style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                            🍎 Установить на iOS
-                        </div>
-                        <div style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; margin-bottom: 16px;">
-                            1. Нажмите кнопку "Поделиться" <span style="font-size: 1.2rem;">⤴️</span><br>
-                            2. Выберите "На экран 'Домой'"<br>
-                            3. Нажмите "Добавить"
-                        </div>
-                        <div style="background: rgba(0,122,255,0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(0,122,255,0.3);">
-                            <span style="font-size: 1.2rem;">💡</span> Приложение появится на главном экране
-                        </div>
-                    </div>
-                `;
-                installSection.style.display = 'block';
-            }
-        }
-        
-        // Initialize PWA checks when page loads - ИСПРАВЛЕНО: всегда показываем кнопку
-        window.addEventListener('load', () => {
+            // Показываем сообщение об успехе
             setTimeout(() => {
-                checkIfAppInstalled();
-                
-                // Всегда показываем кнопку если приложение не установлено
-                if (!isAppInstalled) {
-                    showInstallButton();
-                }
+                alert('🎉 COFFEEMANIA установлено! Теперь вы можете открывать приложение прямо с главного экрана.');
             }, 1000);
         });
+        
+        // ДОБАВЛЕНО: Функция установки PWA клиента
+        async function installClientApp() {
+            console.log('📱 Попытка установки PWA клиента...');
+            
+            if (isAppInstalled) {
+                alert('📱 Приложение уже установлено!');
+                return;
+            }
+            
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            
+            if (isIOS) {
+                // Показываем инструкции для iOS
+                const modal = document.getElementById('qr-modal');
+                const content = modal.querySelector('.modal-content');
+                
+                content.innerHTML = `
+                    <div class="modal-title">📱 Установка на iPhone/iPad</div>
+                    <div style="color: var(--text-primary); text-align: left; line-height: 1.6;">
+                        <div style="margin-bottom: 16px; font-size: 16px; text-align: center;">
+                            🍎 <strong>Инструкция для iOS Safari</strong>
+                        </div>
+                        
+                        <div style="background: var(--bg-input); padding: 16px; border-radius: 12px; margin: 12px 0; border: 1px solid var(--border-glass);">
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                                <span style="font-size: 24px;">1️⃣</span>
+                                <span>Нажмите кнопку <strong>"Поделиться"</strong></span>
+                                <span style="font-size: 20px;">⤴️</span>
+                            </div>
+                            <div style="font-size: 14px; color: var(--text-secondary);">Находится внизу экрана в Safari</div>
+                        </div>
+                        
+                        <div style="background: var(--bg-input); padding: 16px; border-radius: 12px; margin: 12px 0; border: 1px solid var(--border-glass);">
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                                <span style="font-size: 24px;">2️⃣</span>
+                                <span>Выберите <strong>"На экран 'Домой'"</strong></span>
+                                <span style="font-size: 20px;">🏠</span>
+                            </div>
+                            <div style="font-size: 14px; color: var(--text-secondary);">Прокрутите меню, если не видите опцию</div>
+                        </div>
+                        
+                        <div style="background: var(--bg-input); padding: 16px; border-radius: 12px; margin: 12px 0; border: 1px solid var(--border-glass);">
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                                <span style="font-size: 24px;">3️⃣</span>
+                                <span>Нажмите <strong>"Добавить"</strong></span>
+                                <span style="font-size: 20px;">➕</span>
+                            </div>
+                            <div style="font-size: 14px; color: var(--text-secondary);">Подтвердите установку приложения</div>
+                        </div>
+                        
+                        <div style="background: rgba(0,122,255,0.1); padding: 16px; border-radius: 12px; border: 1px solid rgba(0,122,255,0.3); text-align: center;">
+                            <span style="font-size: 24px;">🎉</span><br>
+                            <strong>Готово!</strong> Приложение появится на главном экране
+                        </div>
+                    </div>
+                    <button class="modal-btn secondary" onclick="hideQR()" style="width: 100%; margin-top: 16px;">Понятно</button>
+                `;
+                
+                modal.style.display = 'flex';
+                return;
+            }
+            
+            // Для Android и десктопа - используем стандартный prompt
+            if (clientDeferredPrompt) {
+                try {
+                    const result = await clientDeferredPrompt.prompt();
+                    console.log('📱 Результат установки PWA:', result.outcome);
+                    
+                    if (result.outcome === 'accepted') {
+                        console.log('✅ Пользователь принял установку PWA');
+                        clientDeferredPrompt = null;
+                    } else {
+                        console.log('❌ Пользователь отклонил установку PWA');
+                    }
+                } catch (error) {
+                    console.error('❌ Ошибка установки PWA:', error);
+                }
+            } else {
+                // Fallback для браузеров без поддержки beforeinstallprompt
+                if (isAndroid) {
+                    alert('📱 Для установки:\n1. Откройте меню браузера (⋮)\n2. Выберите "Добавить на главный экран"\n3. Подтвердите установку');
+                } else {
+                    alert('📱 Ваш браузер поддерживает установку PWA!\nИспользуйте меню браузера → "Установить приложение"');
+                }
+            }
+        }
     </script>
         <script src="/connection-check.js"></script>
 
