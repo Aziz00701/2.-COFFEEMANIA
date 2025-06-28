@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COFFEEMANIA - Новая иконка PWA</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+            padding: 40px 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            max-width: 600px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        h1 {
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+        
+        .icon-showcase {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 40px 0;
+            flex-wrap: wrap;
+        }
+        
+        .icon-demo {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .icon-demo h3 {
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .icon-192 {
+            width: 192px;
+            height: 192px;
+            border-radius: 15%;
+            background: #ffffff;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        .icon-512 {
+            width: 128px;
+            height: 128px;
+            border-radius: 15%;
+            background: #ffffff;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        
+        .instructions {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 30px 0;
+            text-align: left;
+            border-left: 4px solid #00D4AA;
+        }
+        
+        .instructions h3 {
+            color: #00D4AA;
+            margin-bottom: 15px;
+        }
+        
+        .instructions ol {
+            line-height: 1.8;
+        }
+        
+        .instructions code {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #00D4AA 0%, #00B894 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            margin: 10px;
+            transition: transform 0.2s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .preview-bg {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .dark-preview {
+            background: #343a40;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Новая иконка COFFEEMANIA</h1>
+        
+        <p>Красивая белая кружка кофе без фона для PWA приложения</p>
+        
+        <div class="icon-showcase">
+            <div class="icon-demo">
+                <h3>192x192 (Мобильные)</h3>
+                <div class="icon-192">
+                    <img src="/icon.svg" alt="COFFEEMANIA Icon" style="width: 100%; height: 100%;">
+                </div>
+            </div>
+            
+            <div class="icon-demo">
+                <h3>512x512 (Десктоп)</h3>
+                <div class="icon-512">
+                    <img src="/icon.svg" alt="COFFEEMANIA Icon" style="width: 100%; height: 100%;">
+                </div>
+            </div>
+        </div>
+        
+        <div class="preview-bg">
+            <h3 style="color: #333;">На светлом фоне:</h3>
+            <img src="/icon.svg" alt="COFFEEMANIA" style="width: 128px; height: 128px;">
+        </div>
+        
+        <div class="preview-bg dark-preview">
+            <h3 style="color: #fff;">На темном фоне:</h3>
+            <img src="/icon.svg" alt="COFFEEMANIA" style="width: 128px; height: 128px;">
+        </div>
+        
+        <div class="instructions">
+            <h3>📋 Инструкция по конвертации SVG в PNG:</h3>
+            <ol>
+                <li>Откройте <a href="/icon.svg" target="_blank" style="color: #00D4AA;">icon.svg</a> в браузере</li>
+                <li>Используйте онлайн конвертер (например, <code>cloudconvert.com</code>)</li>
+                <li>Конвертируйте в PNG с размерами:
+                    <ul>
+                        <li><code>icon-192.png</code> → 192×192 пикселей</li>
+                        <li><code>icon-512.png</code> → 512×512 пикселей</li>
+                    </ul>
+                </li>
+                <li>Замените старые файлы <code>icon-192.png</code> и <code>icon-512.png</code></li>
+                <li>Перезапустите сервер: <code>node index.js</code></li>
+            </ol>
+        </div>
+        
+        <div style="margin-top: 30px;">
+            <a href="/icon.svg" class="btn" target="_blank">📁 Скачать SVG</a>
+            <a href="/" class="btn">🏠 Главная</a>
+            <a href="/admin.html" class="btn">⚙️ Админ панель</a>
+        </div>
+        
+        <div style="margin-top: 40px; font-size: 0.9em; opacity: 0.8;">
+            <p>🎯 <strong>Что изменилось:</strong></p>
+            <ul style="text-align: left; display: inline-block;">
+                <li>Убрана цветная фоновая окружность</li>
+                <li>Добавлена красивая белая кружка кофе</li>
+                <li>Реалистичные тени и блики</li>
+                <li>Элегантный пар над кофе</li>
+                <li>Профессиональный вид для PWA</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html> 

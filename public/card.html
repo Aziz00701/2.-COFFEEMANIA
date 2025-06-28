@@ -21,6 +21,31 @@
     <!-- PWA Manifest -->
     <link rel="manifest" href="" id="manifest-link">
     
+    <!-- Устанавливаем персональный манифест СРАЗУ -->
+    <script>
+        // КРИТИЧНО: устанавливаем персональный манифест НЕМЕДЛЕННО
+        (function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const clientId = urlParams.get('id');
+            const manifestLink = document.getElementById('manifest-link');
+            
+            if (clientId && manifestLink) {
+                // Устанавливаем персональный манифест для этого клиента
+                manifestLink.href = `/manifest-${clientId}.json`;
+                console.log(`📱 PWA персональный манифест установлен для клиента: ${clientId}`);
+                
+                // Также сохраняем ID в localStorage для PWA
+                localStorage.setItem('coffeemania_customer_id', clientId);
+            } else {
+                // Fallback на общий манифест
+                if (manifestLink) {
+                    manifestLink.href = '/manifest.json';
+                }
+                console.log('📱 Установлен общий манифест (fallback)');
+            }
+        })();
+    </script>
+    
     <!-- Icons -->
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
     <link rel="apple-touch-icon" href="/icon-192.png">
@@ -2276,6 +2301,6 @@
             document.getElementById('manifest-link').href = '/manifest.json';
         }
     </script>
+
 </body>
 </html>
-
