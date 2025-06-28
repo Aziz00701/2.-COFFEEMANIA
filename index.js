@@ -1084,8 +1084,10 @@ app.post('/api/cleanup-duplicates', async (req, res) => {
     }
 });
 
-// Serve admin manifest
+// Serve admin manifest with proper headers
 app.get('/admin-manifest.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'no-cache');
     res.sendFile(path.join(__dirname, 'public', 'admin-manifest.json'));
 });
 
@@ -1144,6 +1146,8 @@ app.get('/manifest-:clientId.json', async (req, res) => {
             ]
         };
         
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Cache-Control', 'no-cache');
         res.json(personalManifest);
         
     } catch (error) {

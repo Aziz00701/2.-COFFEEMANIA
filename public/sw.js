@@ -1,11 +1,10 @@
-const CACHE_NAME = 'coffeemania-v2.3.0';
+const CACHE_NAME = 'coffeemania-v2.4.0';
 const urlsToCache = [
   '/',
   '/index.html',
   '/card.html',
-  '/admin.html',
   '/manifest.json',
-  '/admin-manifest.json',
+  '/client-manifest.json',
   '/icon-192.png',
   '/icon-512.png',
   '/icon.svg',
@@ -18,7 +17,7 @@ const urlsToCache = [
 
 // Install event - cache resources
 self.addEventListener('install', event => {
-  console.log('COFFEEMANIA SW v2.3.0: Installing...');
+  console.log('COFFEEMANIA SW v2.4.0: Installing...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
@@ -27,7 +26,6 @@ self.addEventListener('install', event => {
       })
       .then(() => {
         console.log('COFFEEMANIA SW: Установлен успешно');
-        // Принудительно активируем новый SW
         return self.skipWaiting();
       })
   );
@@ -35,12 +33,12 @@ self.addEventListener('install', event => {
 
 // Activate event - cleanup old caches and take control
 self.addEventListener('activate', event => {
-  console.log('COFFEEMANIA SW v2.3.0: Активация...');
+  console.log('COFFEEMANIA SW v2.4.0: Активация...');
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
+          if (cacheName.startsWith('coffeemania-v') && cacheName !== CACHE_NAME) {
             console.log('COFFEEMANIA SW: Удаление старого кэша', cacheName);
             return caches.delete(cacheName);
           }
@@ -48,7 +46,6 @@ self.addEventListener('activate', event => {
       );
     }).then(() => {
       console.log('COFFEEMANIA SW: Активирован успешно');
-      // Принудительно берем контроль над всеми клиентами
       return self.clients.claim();
     })
   );
@@ -58,18 +55,43 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   
-  // СТРАТЕГИЯ 1: API запросы - быстрый Network First с коротким таймаутом
+  // Skip admin requests - they have their own SW
+  if (url.pathname.includes('admin')) {
+    return;
+  }
+  
+  // Handle personalized manifests
+  if (url.pathname.match(/^\/manifest-[\w\d-]+\.json$/)) {
+    event.respondWith(
+      fetch(event.request, { 
+        signal: AbortSignal.timeout(5000),
+        cache: 'no-cache' 
+      }).then(response => {
+        if (response.ok) {
+          // Cache personalized manifest for short time
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, response.clone());
+          });
+        }
+        return response;
+      }).catch(() => {
+        // Fallback to cached version if available
+        return caches.match(event.request);
+      })
+    );
+    return;
+  }
+  
+  // API requests - Network First with timeout
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       Promise.race([
-        // Быстрый сетевой запрос с таймаутом 2 секунды
         fetch(event.request, { 
           signal: AbortSignal.timeout(2000),
           cache: 'no-cache' 
         }).catch(error => {
           console.log('SW: API недоступен, используем заглушку:', url.pathname);
           
-          // Возвращаем заглушки для критических API
           if (url.pathname === '/api/stats') {
             return new Response(JSON.stringify({
               totalCustomers: 0,
@@ -81,19 +103,16 @@ self.addEventListener('fetch', event => {
             });
           }
           
-          // Для остальных API - просто ошибка
           return new Response(JSON.stringify({ error: 'Сервер недоступен' }), {
             status: 503,
             headers: { 'Content-Type': 'application/json' }
           });
         }),
         
-        // Таймаут через 2 секунды
         new Promise((_, reject) => 
           setTimeout(() => reject(new Error('API timeout')), 2000)
         )
       ]).catch(() => {
-        // Fallback при полном провале
         return new Response(JSON.stringify({ error: 'Соединение недоступно' }), {
           status: 503,
           headers: { 'Content-Type': 'application/json' }
@@ -103,7 +122,7 @@ self.addEventListener('fetch', event => {
     return;
   }
   
-  // СТРАТЕГИЯ 2: Статические файлы - МГНОВЕННЫЙ Cache First
+  // Static files - Cache First
   if (urlsToCache.some(cachedUrl => url.pathname === cachedUrl || event.request.url === cachedUrl)) {
     event.respondWith(
       caches.match(event.request)
@@ -111,21 +130,18 @@ self.addEventListener('fetch', event => {
           if (response) {
             console.log('SW: Мгновенная загрузка из кэша:', url.pathname);
             
-            // ПАРАЛЛЕЛЬНО обновляем кэш в фоне (stale-while-revalidate)
+            // Background update
             fetch(event.request).then(fetchResponse => {
               if (fetchResponse && fetchResponse.status === 200) {
                 caches.open(CACHE_NAME).then(cache => {
                   cache.put(event.request, fetchResponse.clone());
                 });
               }
-            }).catch(() => {
-              // Игнорируем ошибки фонового обновления
-            });
+            }).catch(() => {});
             
             return response;
           }
           
-          // Если нет в кэше - запрашиваем из сети
           return fetch(event.request).then(fetchResponse => {
             if (fetchResponse && fetchResponse.status === 200) {
               caches.open(CACHE_NAME).then(cache => {
@@ -139,29 +155,27 @@ self.addEventListener('fetch', event => {
     return;
   }
   
-  // СТРАТЕГИЯ 3: Все остальное - быстрый Network First
+  // Everything else - Network First
   event.respondWith(
     fetch(event.request, { signal: AbortSignal.timeout(3000) })
       .catch(() => {
-        // При ошибке - пытаемся найти в кэше
         return caches.match(event.request);
       })
   );
 });
 
-// Background sync для отложенных запросов
+// Background sync
 self.addEventListener('sync', event => {
   console.log('COFFEEMANIA SW: Background sync', event.tag);
   
   if (event.tag === 'background-sync') {
     event.waitUntil(
-      // Здесь можно добавить логику для синхронизации данных
       console.log('COFFEEMANIA SW: Выполнение фоновой синхронизации')
     );
   }
 });
 
-// Push notifications (для будущего использования)
+// Push notifications
 self.addEventListener('push', event => {
   console.log('COFFEEMANIA SW: Push уведомление получено');
   
@@ -200,18 +214,7 @@ self.addEventListener('notificationclick', event => {
   event.notification.close();
 
   if (event.action === 'explore') {
-    // Открываем приложение
-    event.waitUntil(
-      clients.openWindow('/')
-    );
-  } else if (event.action === 'close') {
-    // Просто закрываем уведомление
-    event.notification.close();
-  } else {
-    // Действие по умолчанию - открыть приложение
-    event.waitUntil(
-      clients.openWindow('/')
-    );
+    event.waitUntil(clients.openWindow('/card.html'));
   }
 });
 
@@ -238,4 +241,4 @@ self.addEventListener('unhandledrejection', event => {
   console.error('COFFEEMANIA SW: Необработанное отклонение', event.reason);
 });
 
-console.log('COFFEEMANIA SW: Service Worker загружен');
+console.log('🔧 COFFEEMANIA Client Service Worker загружен');

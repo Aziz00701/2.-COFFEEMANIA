@@ -2,12 +2,12 @@
   "name": "COFFEEMANIA - Моя карта",
   "short_name": "Моя карта",
   "description": "Моя личная карта лояльности COFFEEMANIA",
-  "start_url": "/client-app.html",
+  "start_url": "/card.html",
   "display": "standalone",
   "background_color": "#0F0C29",
   "theme_color": "#0F0C29",
   "orientation": "portrait",
-  "scope": "/client-app.html",
+  "scope": "/card.html",
   "icons": [
     {
       "src": "/icon-192.png",
