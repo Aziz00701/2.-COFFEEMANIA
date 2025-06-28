@@ -921,6 +921,85 @@ app.post('/api/barista-phone', async (req, res) => {
     }
 });
 
+// Clean duplicate purchase history records (admin only)
+app.post('/api/cleanup-duplicates', async (req, res) => {
+    try {
+        console.log('🧹 Начинаем очистку дублирующихся записей...');
+        
+        if (usePostgreSQL) {
+            // PostgreSQL cleanup
+            await pool.query('BEGIN');
+            
+            // Удаляем дублирующиеся записи, оставляя только самую раннюю для каждого клиента и времени
+            const cleanupResult = await pool.query(`
+                DELETE FROM purchase_history 
+                WHERE purchase_id NOT IN (
+                    SELECT MIN(purchase_id) 
+                    FROM purchase_history 
+                    GROUP BY customer_id, DATE_TRUNC('minute', timestamp)
+                )
+            `);
+            
+            await pool.query('COMMIT');
+            
+            console.log(`✅ Удалено ${cleanupResult.rowCount} дублирующихся записей`);
+            res.json({ 
+                success: true, 
+                message: `Очистка завершена. Удалено ${cleanupResult.rowCount} дублей.`,
+                deleted: cleanupResult.rowCount
+            });
+            
+        } else {
+            // SQLite cleanup
+            const duplicates = await new Promise((resolve, reject) => {
+                db.all(`
+                    SELECT customer_id, 
+                           strftime('%Y-%m-%d %H:%M', timestamp) as minute_group,
+                           COUNT(*) as count,
+                           MIN(purchase_id) as keep_id
+                    FROM purchase_history 
+                    GROUP BY customer_id, minute_group
+                    HAVING COUNT(*) > 1
+                `, [], (err, rows) => {
+                    if (err) reject(err);
+                    else resolve(rows);
+                });
+            });
+            
+            let totalDeleted = 0;
+            
+            for (const group of duplicates) {
+                const deleted = await new Promise((resolve, reject) => {
+                    db.run(`
+                        DELETE FROM purchase_history 
+                        WHERE customer_id = ? 
+                        AND strftime('%Y-%m-%d %H:%M', timestamp) = ?
+                        AND purchase_id != ?
+                    `, [group.customer_id, group.minute_group, group.keep_id], function(err) {
+                        if (err) reject(err);
+                        else resolve(this.changes);
+                    });
+                });
+                totalDeleted += deleted;
+            }
+            
+            console.log(`✅ Удалено ${totalDeleted} дублирующихся записей`);
+            res.json({ 
+                success: true, 
+                message: `Очистка завершена. Удалено ${totalDeleted} дублей.`,
+                deleted: totalDeleted
+            });
+        }
+        
+    } catch (error) {
+        if (usePostgreSQL) {
+            await pool.query('ROLLBACK');
+        }
+        console.error('❌ Ошибка очистки дублей:', error);
+        res.status(500).json({ error: 'Ошибка очистки дублей' });
+    }
+});
+
 // Serve main page
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));

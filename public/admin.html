@@ -1325,6 +1325,20 @@
                             💡 Этот номер будет использоваться клиентами для предзаказа кофе
                         </div>
                     </div>
+
+                    <!-- Database Cleanup Section -->
+                    <div class="glass-card">
+                        <div class="card-title">
+                            <div class="card-icon">🧹</div>
+                            Очистка базы данных
+                        </div>
+                        <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.4;">
+                            ⚠️ Удаляет дублирующиеся записи покупок из истории
+                        </div>
+                        <button class="btn" id="cleanup-btn" onclick="cleanupDuplicates()" style="background: var(--gradient-orange); color: white;">
+                            🧹 Очистить дубли
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Main Content -->
@@ -1986,6 +2000,17 @@
         async function confirmPurchase() {
             if (!selectedCustomer) return;
 
+            // ✅ БЛОКИРУЕМ КНОПКУ для предотвращения дублей
+            const confirmBtn = document.getElementById('confirm-purchase-btn');
+            const resetBtn = document.getElementById('reset-purchases-btn');
+            
+            if (confirmBtn.disabled) return; // Уже выполняется
+            
+            confirmBtn.disabled = true;
+            resetBtn.disabled = true;
+            confirmBtn.innerHTML = '⏳ Обработка...';
+            confirmBtn.style.opacity = '0.6';
+
             try {
                 const response = await fetch(`/api/purchase/${selectedCustomer.id}`, {
                     method: 'POST'
@@ -2008,6 +2033,12 @@
 
             } catch (error) {
                 showError(error.message);
+            } finally {
+                // ✅ РАЗБЛОКИРУЕМ КНОПКИ
+                confirmBtn.disabled = false;
+                resetBtn.disabled = false;
+                confirmBtn.innerHTML = 'Добавить покупку';
+                confirmBtn.style.opacity = '1';
             }
         }
 
@@ -2018,6 +2049,17 @@
             if (!confirm(`Сбросить счетчик покупок для ${selectedCustomer.name}? \nТекущий прогресс: ${selectedCustomer.purchases}/6`)) {
                 return;
             }
+
+            // ✅ БЛОКИРУЕМ КНОПКИ для предотвращения дублей
+            const confirmBtn = document.getElementById('confirm-purchase-btn');
+            const resetBtn = document.getElementById('reset-purchases-btn');
+            
+            if (resetBtn.disabled) return; // Уже выполняется
+            
+            confirmBtn.disabled = true;
+            resetBtn.disabled = true;
+            resetBtn.innerHTML = '⏳ Сброс...';
+            resetBtn.style.opacity = '0.6';
 
             try {
                 const response = await fetch(`/api/customer/${selectedCustomer.id}/reset`, {
@@ -2036,6 +2078,12 @@
 
             } catch (error) {
                 showError(error.message);
+            } finally {
+                // ✅ РАЗБЛОКИРУЕМ КНОПКИ
+                confirmBtn.disabled = false;
+                resetBtn.disabled = false;
+                resetBtn.innerHTML = '🔄 Сбросить счетчик';
+                resetBtn.style.opacity = '1';
             }
         }
 
@@ -2676,6 +2724,45 @@
                 checkServerStatus();
                 setInterval(checkServerStatus, 10000); // Каждые 10 секунд
             }, 1000);
+        }
+
+        // Clean duplicate purchase history records
+        async function cleanupDuplicates() {
+            if (!confirm('🧹 Очистить дублирующиеся записи покупок?\n\nЭто действие нельзя отменить!')) {
+                return;
+            }
+
+            const cleanupBtn = document.getElementById('cleanup-btn');
+            
+            if (cleanupBtn.disabled) return; // Уже выполняется
+            
+            cleanupBtn.disabled = true;
+            cleanupBtn.innerHTML = '⏳ Очистка...';
+            cleanupBtn.style.opacity = '0.6';
+
+            try {
+                const response = await fetch('/api/cleanup-duplicates', {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error);
+                }
+
+                showSuccess(`✅ ${result.message}`);
+                
+                // Обновляем данные после очистки
+                await loadData();
+
+            } catch (error) {
+                showError(`❌ Ошибка очистки: ${error.message}`);
+            } finally {
+                cleanupBtn.disabled = false;
+                cleanupBtn.innerHTML = '🧹 Очистить дубли';
+                cleanupBtn.style.opacity = '1';
+            }
         }
     </script>
 </body>
