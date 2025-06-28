@@ -17,7 +17,10 @@ app.use(express.static('public'));
 // Database configuration
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
 });
 
 // Database type
@@ -28,7 +31,11 @@ let db = null; // SQLite database instance
 async function initializeDatabase() {
     // Try PostgreSQL first
     try {
-        await pool.query('SELECT NOW()');
+        // Test connection
+        const client = await pool.connect();
+        await client.query('SELECT NOW()');
+        client.release();
+        
         console.log('✅ PostgreSQL connected successfully');
         
         // Create tables if they don't exist
@@ -58,10 +65,21 @@ async function initializeDatabase() {
             )
         `);
         
+        // Add default barista phone if not exists
+        await pool.query(`
+            INSERT INTO settings (key, value) 
+            VALUES ('barista_phone', $1) 
+            ON CONFLICT (key) DO NOTHING
+        `, [process.env.BARISTA_PHONE || '+7 (999) 123-45-67']);
+        
         console.log('✅ PostgreSQL tables ready');
         usePostgreSQL = true;
         return;
     } catch (error) {
+        if (process.env.NODE_ENV === 'production') {
+            console.error('❌ PostgreSQL connection failed in production:', error.message);
+            throw error; // В продакшене не должно быть fallback к SQLite
+        }
         console.log('❌ PostgreSQL connection error:', error.message);
         console.log('🔄 Switching to SQLite database...');
     }
@@ -915,14 +933,23 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, async () => {
-    console.log(`🚀 COFFEEMANIA server running on port ${PORT}`);
-    console.log(`📱 Admin panel: http://localhost:${PORT}/admin.html`);
-    console.log(`☕ Main page: http://localhost:${PORT}`);
-    console.log(`📷 Для работы камеры используйте LOCALHOST: http://localhost:${PORT}/admin.html`);
-    
-    await initializeDatabase();
-});
+async function startServer() {
+    try {
+        await initializeDatabase();
+        
+        app.listen(PORT, () => {
+            console.log(`🚀 COFFEEMANIA server running on port ${PORT}`);
+            console.log(`📱 Admin panel: http://localhost:${PORT}/admin.html`);
+            console.log(`☕ Main page: http://localhost:${PORT}`);
+            console.log(`📷 Для работы камеры используйте LOCALHOST: http://localhost:${PORT}/admin.html`);
+        });
+    } catch (error) {
+        console.error('❌ Failed to start server:', error);
+        process.exit(1);
+    }
+}
+
+startServer();
 
 // Graceful shutdown
 process.on('SIGINT', async () => {

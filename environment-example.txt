@@ -1,0 +1,16 @@
+# COFFEEMANIA Environment Variables для Render
+
+# Database (Neon PostgreSQL)
+DATABASE_URL=postgresql://username:password@ep-example.eu-central-1.aws.neon.tech/neondb?sslmode=require
+
+# Server Configuration  
+NODE_ENV=production
+PORT=10000
+
+# Optional: Custom settings
+BARISTA_PHONE=+7 (999) 123-45-67
+
+# Инструкции:
+# 1. В Neon создай базу данных и скопируй CONNECTION STRING
+# 2. В Render добавь эти переменные в Environment Variables
+# 3. Render автоматически возьмёт PORT из своих настроек 
