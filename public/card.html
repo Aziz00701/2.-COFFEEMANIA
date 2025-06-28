@@ -1716,7 +1716,7 @@
             }
         }
         
-        // Проверка соединения с сервером
+        // Проверка соединения с сервером - ИСПРАВЛЕНО: лучшая обработка ошибок
         async function checkConnection() {
             const connectionEl = document.getElementById('connection-status');
             if (!connectionEl) return;
@@ -1727,25 +1727,38 @@
                 const response = await fetch('/api/stats', {
                     method: 'GET',
                     cache: 'no-cache',
-                    signal: AbortSignal.timeout(5000) // Таймаут 5 секунд
+                    signal: AbortSignal.timeout(8000) // Увеличенный таймаут
                 });
                 
                 const endTime = Date.now();
                 const responseTime = endTime - startTime;
                 
                 if (response.ok) {
-                    updateConnectionStatus('online', responseTime);
+                    const data = await response.json();
+                    // Проверяем что данные корректные
+                    if (typeof data.totalCustomers === 'number') {
+                        updateConnectionStatus('online', responseTime);
+                    } else {
+                        updateConnectionStatus('slow', responseTime);
+                    }
+                } else if (response.status === 503) {
+                    // База данных еще не готова
+                    updateConnectionStatus('slow', null);
                 } else {
                     updateConnectionStatus('slow', responseTime);
                 }
                 
             } catch (error) {
                 console.log('Соединение недоступно:', error.message);
-                updateConnectionStatus('offline', null);
+                if (error.name === 'TimeoutError') {
+                    updateConnectionStatus('slow', null);
+                } else {
+                    updateConnectionStatus('offline', null);
+                }
             }
         }
         
-        // Обновление статуса соединения
+        // Обновление статуса соединения - ИСПРАВЛЕНО: упрощенные сообщения
         function updateConnectionStatus(status, responseTime) {
             const connectionEl = document.getElementById('connection-status');
             if (!connectionEl) return;
@@ -1760,19 +1773,13 @@
             
             switch (status) {
                 case 'online':
-                    if (responseTime < 500) {
-                        textEl.textContent = `🟢 Отличное соединение (${responseTime}мс)`;
-                    } else if (responseTime < 1000) {
-                        textEl.textContent = `🟡 Хорошее соединение (${responseTime}мс)`;
-                    } else {
-                        textEl.textContent = `🟠 Медленное соединение (${responseTime}мс)`;
-                    }
+                    textEl.textContent = '🟢 Онлайн';
                     break;
                 case 'slow':
-                    textEl.textContent = `🟡 Медленное соединение (${responseTime || '?'}мс)`;
+                    textEl.textContent = '🟡 Медленно';
                     break;
                 case 'offline':
-                    textEl.textContent = '🔴 Нет соединения с сервером';
+                    textEl.textContent = '🔴 Офлайн';
                     break;
             }
         }
@@ -2419,15 +2426,16 @@
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             clientDeferredPrompt = e;
-            console.log('📱 COFFEEMANIA: Install prompt available');
+            console.log('📱 COFFEEMANIA: Install prompt доступен');
             
-            showInstallButton();
+            // Проверяем можем ли показать кнопку
+            checkIfAppInstalled();
         });
         
-        // Function to trigger client app install
+        // Function to trigger client app install - ИСПРАВЛЕНО
         function installClientApp() {
             if (isAppInstalled) {
-                console.log('📱 Приложение уже установлено');
+                console.log('📱 COFFEEMANIA уже установлено');
                 return;
             }
             
@@ -2456,12 +2464,14 @@
             }
             
             if (clientDeferredPrompt) {
+                // Используем нативный промпт если доступен
                 clientDeferredPrompt.prompt();
                 clientDeferredPrompt.userChoice.then((choiceResult) => {
                     if (choiceResult.outcome === 'accepted') {
                         console.log('📱 COFFEEMANIA: Клиентское приложение установлено');
                         document.getElementById('pwa-install-section').style.display = 'none';
                         document.getElementById('install-btn').style.display = 'none';
+                        isAppInstalled = true;
                         
                         // Show success message
                         const modal = document.getElementById('qr-modal');
@@ -2486,7 +2496,7 @@
                     clientDeferredPrompt = null;
                 });
             } else {
-                // Fallback для браузеров без поддержки beforeinstallprompt
+                // Показываем инструкции если нативный промпт недоступен
                 const modal = document.getElementById('qr-modal');
                 const content = modal.querySelector('.modal-content');
                 
@@ -2508,27 +2518,48 @@
             }
         }
         
-        // Legacy function for compatibility
-        function installApp() {
-            installClientApp();
+        // Показать кнопку установки - ИСПРАВЛЕНО: всегда показываем если не установлено
+        function showInstallButton() {
+            if (isAppInstalled) return;
+            
+            const installBtn = document.getElementById('install-btn');
+            const installSection = document.getElementById('pwa-install-section');
+            
+            // Всегда показываем кнопку если приложение не установлено
+            if (installBtn) {
+                installBtn.style.display = 'block';
+                console.log('📱 Кнопка установки PWA показана в action-buttons');
+            }
+            
+            // Дополнительно для iOS показываем section с инструкциями
+            if (isIOS() && installSection) {
+                installSection.innerHTML = `
+                    <div class="glass-card" style="margin-top: 24px; padding: 20px; text-align: center;">
+                        <div style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            🍎 Установить на iOS
+                        </div>
+                        <div style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; margin-bottom: 16px;">
+                            1. Нажмите кнопку "Поделиться" <span style="font-size: 1.2rem;">⤴️</span><br>
+                            2. Выберите "На экран 'Домой'"<br>
+                            3. Нажмите "Добавить"
+                        </div>
+                        <div style="background: rgba(0,122,255,0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(0,122,255,0.3);">
+                            <span style="font-size: 1.2rem;">💡</span> Приложение появится на главном экране
+                        </div>
+                    </div>
+                `;
+                installSection.style.display = 'block';
+            }
         }
         
-        // Check if app is already installed
-        window.addEventListener('appinstalled', () => {
-            console.log('📱 COFFEEMANIA: Приложение успешно установлено');
-            document.getElementById('pwa-install-section').style.display = 'none';
-            document.getElementById('install-btn').style.display = 'none';
-            isAppInstalled = true;
-        });
-        
-        // Initialize PWA checks when page loads
+        // Initialize PWA checks when page loads - ИСПРАВЛЕНО: всегда показываем кнопку
         window.addEventListener('load', () => {
             setTimeout(() => {
                 checkIfAppInstalled();
                 
-                // Показываем кнопку через некоторое время если приложение не установлено
+                // Всегда показываем кнопку если приложение не установлено
                 if (!isAppInstalled) {
-                    setTimeout(showInstallButton, 2000);
+                    showInstallButton();
                 }
             }, 1000);
         });
@@ -2548,6 +2579,21 @@
             // Fallback на общий манифест
             document.getElementById('manifest-link').href = '/manifest.json';
         }
+    </script>
+
+    <!-- Legacy function for compatibility -->
+    <script>
+        function installApp() {
+            installClientApp();
+        }
+        
+        // Check if app is already installed
+        window.addEventListener('appinstalled', () => {
+            console.log('📱 COFFEEMANIA: Приложение успешно установлено');
+            document.getElementById('pwa-install-section').style.display = 'none';
+            document.getElementById('install-btn').style.display = 'none';
+            isAppInstalled = true;
+        });
     </script>
 
 </body>

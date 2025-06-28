@@ -1594,11 +1594,11 @@
                 loadBaristaPhone()
             ]);
             
-            // Запускаем проверку соединения
+            // Запускаем проверку соединения с увеличенной задержкой
             setTimeout(() => {
                 checkServerStatus();
-                setInterval(checkServerStatus, 10000); // Каждые 10 секунд
-            }, 1000);
+                setInterval(checkServerStatus, 15000); // Каждые 15 секунд
+            }, 3000); // Увеличена задержка до 3 секунд
         }
 
         // Load statistics
@@ -2764,30 +2764,82 @@
             }
         }
 
-        // PWA Install for Admin App
+        // PWA Install for Admin App - ИСПРАВЛЕНО: всегда показываем кнопку если не установлено
         let adminDeferredPrompt;
+        let isAdminAppInstalled = false;
+        
+        // Проверяем, установлено ли админ приложение
+        function checkIfAdminAppInstalled() {
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+            const isIosStandalone = window.navigator.standalone === true;
+            isAdminAppInstalled = isStandalone || isIosStandalone;
+            
+            console.log('📱 ADMINCOFFEE статус:', isAdminAppInstalled ? 'Установлено' : 'Не установлено');
+            
+            const installBtn = document.getElementById('install-admin-btn');
+            if (installBtn) {
+                if (isAdminAppInstalled) {
+                    installBtn.style.display = 'none';
+                } else {
+                    installBtn.style.display = 'flex'; // Показываем всегда если не установлено
+                }
+            }
+            
+            return isAdminAppInstalled;
+        }
         
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             adminDeferredPrompt = e;
+            console.log('📱 ADMINCOFFEE: Install prompt доступен');
             
-            // Show admin install button
-            document.getElementById('install-admin-btn').style.display = 'flex';
+            // Проверяем статус установки
+            checkIfAdminAppInstalled();
         });
         
         function installAdminApp() {
+            if (isAdminAppInstalled) {
+                console.log('📱 ADMINCOFFEE уже установлено');
+                return;
+            }
+            
             if (adminDeferredPrompt) {
+                // Используем нативный промпт если доступен
                 adminDeferredPrompt.prompt();
                 adminDeferredPrompt.userChoice.then((choiceResult) => {
                     if (choiceResult.outcome === 'accepted') {
-                        console.log('ADMINCOFFEE: Приложение установлено');
+                        console.log('📱 ADMINCOFFEE: Приложение установлено');
                         document.getElementById('install-admin-btn').style.display = 'none';
                         showSuccess('🎉 ADMINCOFFEE успешно установлено!');
+                        isAdminAppInstalled = true;
+                    } else {
+                        console.log('📱 ADMINCOFFEE: Установка отменена');
                     }
                     adminDeferredPrompt = null;
                 });
+            } else {
+                // Показываем инструкции если нативный промпт недоступен
+                showError(`
+                    📱 Установка ADMINCOFFEE:<br><br>
+                    <strong>Chrome/Edge:</strong> Нажмите иконку установки в адресной строке<br>
+                    <strong>Firefox:</strong> Меню → Установить приложение<br>
+                    <strong>Safari:</strong> Поделиться → На экран "Домой"
+                `);
             }
         }
+        
+        // Проверяем статус установки при загрузке
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(checkIfAdminAppInstalled, 500);
+        });
+        
+        // Обрабатываем событие установки
+        window.addEventListener('appinstalled', () => {
+            console.log('📱 ADMINCOFFEE: Приложение успешно установлено');
+            document.getElementById('install-admin-btn').style.display = 'none';
+            isAdminAppInstalled = true;
+            showSuccess('🎉 ADMINCOFFEE успешно установлено!');
+        });
 
         // Register service worker for PWA
         if ('serviceWorker' in navigator) {
@@ -2807,7 +2859,7 @@
             setTimeout(loadBaristaPhoneToInput, 1000);
         });
 
-        // Check server status
+        // Check server status - ИСПРАВЛЕНО: лучшая обработка ошибок
         async function checkServerStatus() {
             const connectionIndicator = document.getElementById('connection-indicator');
             const connectionText = connectionIndicator.querySelector('.connection-text');
@@ -2821,33 +2873,42 @@
                 const startTime = Date.now();
                 const response = await fetch('/api/stats', { 
                     method: 'GET',
-                    cache: 'no-cache'
+                    cache: 'no-cache',
+                    signal: AbortSignal.timeout(8000) // Увеличенный таймаут
                 });
                 const responseTime = Date.now() - startTime;
                 
                 if (response.ok) {
-                    if (responseTime < 500) {
-                        connectionText.textContent = `🟢 ${responseTime}мс`;
+                    const data = await response.json();
+                    // Проверяем что данные корректные
+                    if (typeof data.totalCustomers === 'number') {
+                        connectionText.textContent = '🟢 Онлайн';
                         connectionIndicator.classList.add('online');
-                    } else if (responseTime < 1000) {
-                        connectionText.textContent = `🟡 ${responseTime}мс`;
-                        connectionIndicator.classList.add('slow');
                     } else {
-                        connectionText.textContent = `🟠 ${responseTime}мс`;
+                        connectionText.textContent = '🟡 Инициализация...';
                         connectionIndicator.classList.add('slow');
                     }
+                } else if (response.status === 503) {
+                    // База данных еще не готова
+                    connectionText.textContent = '🟡 Инициализация...';
+                    connectionIndicator.classList.add('slow');
                 } else {
-                    connectionText.textContent = `🟡 Ошибка ${response.status}`;
+                    connectionText.textContent = '🟠 Ошибка';
                     connectionIndicator.classList.add('slow');
                 }
             } catch (error) {
-                console.error('Server status check error:', error);
-                connectionText.textContent = '🔴 Офлайн';
-                connectionIndicator.classList.add('offline');
+                console.log('Connection check:', error.message);
+                if (error.name === 'TimeoutError') {
+                    connectionText.textContent = '🟡 Медленно';
+                    connectionIndicator.classList.add('slow');
+                } else {
+                    connectionText.textContent = '🔴 Офлайн';
+                    connectionIndicator.classList.add('offline');
+                }
             }
         }
 
-        // Load initial data
+        // Load initial data - ИСПРАВЛЕНО: увеличена задержка для первой проверки
         async function loadData() {
             await Promise.all([
                 loadStats(),
@@ -2855,11 +2916,11 @@
                 loadBaristaPhone()
             ]);
             
-            // Запускаем проверку соединения
+            // Запускаем проверку соединения с увеличенной задержкой
             setTimeout(() => {
                 checkServerStatus();
-                setInterval(checkServerStatus, 10000); // Каждые 10 секунд
-            }, 1000);
+                setInterval(checkServerStatus, 15000); // Каждые 15 секунд
+            }, 3000); // Увеличена задержка до 3 секунд
         }
 
         // Clean duplicate purchase history records
