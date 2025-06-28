@@ -398,9 +398,33 @@
         /* Action Buttons */
         .action-buttons {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 16px;
             margin-bottom: 32px;
+        }
+        
+        @media (max-width: 768px) {
+            .action-buttons {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .action-buttons {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .action-btn {
+                padding: 16px 12px;
+                min-height: 80px;
+            }
+            
+            .action-btn .emoji {
+                font-size: 24px;
+                margin-bottom: 6px;
+            }
         }
         
         .action-btn {
@@ -1406,6 +1430,10 @@
                 <span class="emoji">📞</span>
                 Предзаказ
             </a>
+            <a href="#" class="action-btn" id="install-btn" onclick="installClientApp(); return false;" style="display: none;">
+                <span class="emoji">⬇️</span>
+                Установить
+            </a>
         </div>
 
         <div class="pwa-install-section" id="pwa-install-section" style="display: none;">
@@ -1704,6 +1732,10 @@
                     <a href="#" class="action-btn" onclick="openPreorder(); return false;">
                         <span class="emoji">📞</span>
                         Предзаказ
+                    </a>
+                    <a href="#" class="action-btn" id="install-btn" onclick="installClientApp(); return false;" style="display: none;">
+                        <span class="emoji">⬇️</span>
+                        Установить
                     </a>
                 </div>
 
@@ -2230,24 +2262,110 @@
         
         // PWA Install prompt for client app
         let clientDeferredPrompt;
+        let isAppInstalled = false;
+        
+        // Check if app is already installed (display mode detection)
+        function checkIfAppInstalled() {
+            // Проверяем display mode PWA
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+            const isIosStandalone = window.navigator.standalone === true;
+            
+            isAppInstalled = isStandalone || isIosStandalone;
+            console.log('📱 PWA статус установки:', isAppInstalled ? 'Установлено' : 'Не установлено');
+            
+            if (isAppInstalled) {
+                // Скрываем кнопки установки если приложение уже установлено
+                document.getElementById('pwa-install-section').style.display = 'none';
+                document.getElementById('install-btn').style.display = 'none';
+            }
+            
+            return isAppInstalled;
+        }
+        
+        // Показать кнопку установки
+        function showInstallButton() {
+            if (isAppInstalled) return;
+            
+            const installBtn = document.getElementById('install-btn');
+            const installSection = document.getElementById('pwa-install-section');
+            
+            if (installBtn) {
+                installBtn.style.display = 'block';
+                console.log('📱 Кнопка установки PWA показана в action-buttons');
+            }
+            
+            // Для iOS показываем инструкции вместо автоматического промпта
+            if (isIOS() && installSection) {
+                installSection.innerHTML = `
+                    <div class="glass-card" style="margin-top: 24px; padding: 20px; text-align: center;">
+                        <div style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            🍎 Установить на iOS
+                        </div>
+                        <div style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; margin-bottom: 16px;">
+                            1. Нажмите кнопку "Поделиться" <span style="font-size: 1.2rem;">⤴️</span><br>
+                            2. Выберите "На экран 'Домой'"<br>
+                            3. Нажмите "Добавить"
+                        </div>
+                        <div style="background: rgba(0,122,255,0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(0,122,255,0.3);">
+                            <span style="font-size: 1.2rem;">💡</span> Приложение появится на главном экране
+                        </div>
+                    </div>
+                `;
+                installSection.style.display = 'block';
+            }
+        }
+        
+        // Проверка iOS
+        function isIOS() {
+            return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        }
         
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             clientDeferredPrompt = e;
-            console.log('COFFEEMANIA: Install prompt available');
+            console.log('📱 COFFEEMANIA: Install prompt available');
             
-            // Show install section
-            document.getElementById('pwa-install-section').style.display = 'block';
+            showInstallButton();
         });
         
         // Function to trigger client app install
         function installClientApp() {
+            if (isAppInstalled) {
+                console.log('📱 Приложение уже установлено');
+                return;
+            }
+            
+            if (isIOS()) {
+                // Для iOS показываем инструкции
+                const modal = document.getElementById('qr-modal');
+                const content = modal.querySelector('.modal-content');
+                
+                content.innerHTML = `
+                    <div class="modal-title">🍎 Установка на iOS</div>
+                    <div style="color: var(--text-primary); margin-bottom: 24px; text-align: center; line-height: 1.6;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">📱</div>
+                        <div style="font-size: 16px; margin-bottom: 16px; font-weight: 600;">Как установить COFFEEMANIA</div>
+                        <div style="font-size: 14px; text-align: left; background: var(--bg-input); padding: 16px; border-radius: 12px; margin: 16px 0;">
+                            <div style="margin-bottom: 12px;"><span style="background: #007AFF; color: white; padding: 4px 8px; border-radius: 4px; margin-right: 8px;">1</span>Нажмите кнопку "Поделиться" <span style="font-size: 18px;">⤴️</span></div>
+                            <div style="margin-bottom: 12px;"><span style="background: #007AFF; color: white; padding: 4px 8px; border-radius: 4px; margin-right: 8px;">2</span>Выберите "На экран 'Домой'"</div>
+                            <div style="margin-bottom: 12px;"><span style="background: #007AFF; color: white; padding: 4px 8px; border-radius: 4px; margin-right: 8px;">3</span>Нажмите "Добавить"</div>
+                            <div><span style="background: #34C759; color: white; padding: 4px 8px; border-radius: 4px; margin-right: 8px;">✓</span>Готово! Приложение на главном экране</div>
+                        </div>
+                    </div>
+                    <button class="modal-btn secondary" onclick="hideQR()" style="width: 100%;">Понятно</button>
+                `;
+                
+                modal.style.display = 'flex';
+                return;
+            }
+            
             if (clientDeferredPrompt) {
                 clientDeferredPrompt.prompt();
                 clientDeferredPrompt.userChoice.then((choiceResult) => {
                     if (choiceResult.outcome === 'accepted') {
-                        console.log('COFFEEMANIA: Клиентское приложение установлено');
+                        console.log('📱 COFFEEMANIA: Клиентское приложение установлено');
                         document.getElementById('pwa-install-section').style.display = 'none';
+                        document.getElementById('install-btn').style.display = 'none';
                         
                         // Show success message
                         const modal = document.getElementById('qr-modal');
@@ -2267,10 +2385,30 @@
                         
                         modal.style.display = 'flex';
                     } else {
-                        console.log('COFFEEMANIA: Установка отменена пользователем');
+                        console.log('📱 COFFEEMANIA: Установка отменена пользователем');
                     }
                     clientDeferredPrompt = null;
                 });
+            } else {
+                // Fallback для браузеров без поддержки beforeinstallprompt
+                const modal = document.getElementById('qr-modal');
+                const content = modal.querySelector('.modal-content');
+                
+                content.innerHTML = `
+                    <div class="modal-title">📱 Установка приложения</div>
+                    <div style="color: var(--text-primary); margin-bottom: 24px; text-align: center; line-height: 1.6;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">💻</div>
+                        <div style="font-size: 16px; margin-bottom: 16px; font-weight: 600;">Как установить COFFEEMANIA</div>
+                        <div style="font-size: 14px; text-align: left; background: var(--bg-input); padding: 16px; border-radius: 12px; margin: 16px 0;">
+                            <div style="margin-bottom: 12px;"><span style="background: var(--accent-blue); color: white; padding: 4px 8px; border-radius: 4px; margin-right: 8px;">1</span>Нажмите на иконку установки в адресной строке</div>
+                            <div style="margin-bottom: 12px;"><span style="background: var(--accent-blue); color: white; padding: 4px 8px; border-radius: 4px; margin-right: 8px;">2</span>Или через меню браузера → "Установить приложение"</div>
+                            <div><span style="background: var(--accent-green); color: white; padding: 4px 8px; border-radius: 4px; margin-right: 8px;">✓</span>Подтвердите установку</div>
+                        </div>
+                    </div>
+                    <button class="modal-btn secondary" onclick="hideQR()" style="width: 100%;">Понятно</button>
+                `;
+                
+                modal.style.display = 'flex';
             }
         }
         
@@ -2281,8 +2419,22 @@
         
         // Check if app is already installed
         window.addEventListener('appinstalled', () => {
-            console.log('COFFEEMANIA: Приложение успешно установлено');
+            console.log('📱 COFFEEMANIA: Приложение успешно установлено');
             document.getElementById('pwa-install-section').style.display = 'none';
+            document.getElementById('install-btn').style.display = 'none';
+            isAppInstalled = true;
+        });
+        
+        // Initialize PWA checks when page loads
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                checkIfAppInstalled();
+                
+                // Показываем кнопку через некоторое время если приложение не установлено
+                if (!isAppInstalled) {
+                    setTimeout(showInstallButton, 2000);
+                }
+            }, 1000);
         });
     </script>
         <script src="/connection-check.js"></script>
