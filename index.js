@@ -1005,6 +1005,11 @@ app.get('/admin-manifest.json', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin-manifest.json'));
 });
 
+// Serve client router for PWA
+app.get('/client.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'client.html'));
+});
+
 // Serve main page
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));

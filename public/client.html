@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COFFEEMANIA</title>
+    <meta name="theme-color" content="#0F0C29">
+    <link rel="icon" href="/icon-192.png">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0F0C29 0%, #24243e 25%, #302b63 50%, #8B4513 75%, #DAA520 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        .loader {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid #DAA520;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="loader">
+        <div class="spinner"></div>
+        <h2>☕ COFFEEMANIA</h2>
+        <p>Загрузка вашей карты...</p>
+    </div>
+
+    <script>
+        // Умный роутер для клиентов PWA
+        function routeClient() {
+            // 1. Проверяем URL параметры (если пришли по прямой ссылке)
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlId = urlParams.get('id');
+            
+            if (urlId) {
+                // Есть ID в URL - сохраняем и переходим к карте
+                localStorage.setItem('coffeemania_customer_id', urlId);
+                window.location.replace(`/card.html?id=${urlId}`);
+                return;
+            }
+            
+            // 2. Проверяем сохраненный ID
+            const savedId = localStorage.getItem('coffeemania_customer_id');
+            
+            if (savedId) {
+                // Есть сохраненный ID - переходим к карте
+                window.location.replace(`/card.html?id=${savedId}`);
+                return;
+            }
+            
+            // 3. Проверяем hash (если ID передан через #)
+            const hash = window.location.hash.substring(1);
+            if (hash && hash.length > 5) {
+                localStorage.setItem('coffeemania_customer_id', hash);
+                window.location.replace(`/card.html?id=${hash}`);
+                return;
+            }
+            
+            // 4. Нет ID - переходим на главную страницу
+            window.location.replace('/');
+        }
+        
+        // Запускаем роутер
+        routeClient();
+    </script>
+</body>
+</html> 

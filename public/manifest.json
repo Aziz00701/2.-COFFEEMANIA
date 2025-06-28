@@ -2,7 +2,7 @@
   "name": "COFFEEMANIA - Карта Лояльности",
   "short_name": "COFFEEMANIA",
   "description": "Программа лояльности кофейни COFFEEMANIA - каждая 7-я чашка бесплатно!",
-  "start_url": "/",
+  "start_url": "/client.html",
   "display": "standalone",
   "background_color": "#0F0C29",
   "theme_color": "#0F0C29",

@@ -1453,6 +1453,12 @@
     <script>
         let customerData = null;
         const customerId = new URLSearchParams(window.location.search).get('id');
+        
+        // Сохраняем ID клиента в localStorage для PWA
+        if (customerId) {
+            localStorage.setItem('coffeemania_customer_id', customerId);
+            console.log('💾 ID клиента сохранен в localStorage:', customerId);
+        }
 
         // Set current date
         function setCurrentDate() {
