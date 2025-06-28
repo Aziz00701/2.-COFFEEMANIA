@@ -2805,77 +2805,40 @@
                 return;
             }
             
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-            const isAndroid = /Android/i.test(navigator.userAgent);
-            
-            if (isIOS) {
-                // Показываем специальные инструкции для iOS
-                showError(`
-                    <div style="text-align: left; line-height: 1.6;">
-                        <div style="text-align: center; margin-bottom: 16px; font-size: 18px;">
-                            🍎 <strong>Установка на iPhone/iPad</strong>
-                        </div>
-                        
-                        <div style="background: rgba(0,122,255,0.1); padding: 12px; border-radius: 8px; margin: 8px 0; border: 1px solid rgba(0,122,255,0.3);">
-                            <strong>1️⃣ Нажмите кнопку "Поделиться" ⤴️</strong><br>
-                            <small>Находится внизу экрана в Safari</small>
-                        </div>
-                        
-                        <div style="background: rgba(0,122,255,0.1); padding: 12px; border-radius: 8px; margin: 8px 0; border: 1px solid rgba(0,122,255,0.3);">
-                            <strong>2️⃣ Выберите "На экран 'Домой'" 🏠</strong><br>
-                            <small>Прокрутите меню, если не видите опцию</small>
-                        </div>
-                        
-                        <div style="background: rgba(0,122,255,0.1); padding: 12px; border-radius: 8px; margin: 8px 0; border: 1px solid rgba(0,122,255,0.3);">
-                            <strong>3️⃣ Нажмите "Добавить" ➕</strong><br>
-                            <small>Подтвердите установку приложения</small>
-                        </div>
-                        
-                        <div style="background: rgba(76,175,80,0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(76,175,80,0.3); text-align: center; margin-top: 12px;">
-                            <span style="font-size: 20px;">🎉</span><br>
-                            <strong>Готово!</strong> ADMINCOFFEE появится на главном экране
-                        </div>
-                    </div>
-                `);
-                return;
-            }
-            
+            // Для всех платформ - используем стандартный PWA install
             if (adminDeferredPrompt) {
-                // Используем нативный промпт для Android/Desktop
-                adminDeferredPrompt.prompt();
-                adminDeferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        console.log('📱 ADMINCOFFEE: Приложение установлено');
-                        document.getElementById('install-admin-btn').style.display = 'none';
-                        showSuccess('🎉 ADMINCOFFEE успешно установлено!');
-                        isAdminAppInstalled = true;
-                    } else {
-                        console.log('📱 ADMINCOFFEE: Установка отменена');
-                    }
-                    adminDeferredPrompt = null;
-                });
-            } else {
-                // Fallback инструкции для разных браузеров и устройств
-                if (isAndroid) {
-                    showError(`
-                        <div style="text-align: left;">
-                            📱 <strong>Установка на Android:</strong><br><br>
-                            <strong>Chrome:</strong> Появится автоматическое предложение<br>
-                            <strong>Другие браузеры:</strong> Меню (⋮) → "Добавить на главный экран"<br><br>
-                            <div style="background: rgba(76,175,80,0.1); padding: 8px; border-radius: 6px; margin-top: 8px;">
-                                🚀 Быстрый доступ к панели администрирования!
-                            </div>
-                        </div>
-                    `);
-                } else {
-                    showError(`
-                        📱 <strong>Установка ADMINCOFFEE:</strong><br><br>
-                        <strong>Chrome/Edge:</strong> Иконка установки в адресной строке<br>
-                        <strong>Firefox:</strong> Меню → Установить приложение<br>
-                        <strong>Safari:</strong> Поделиться → На экран "Домой"<br><br>
-                        💡 Приложение появится на рабочем столе или главном экране
-                    `);
+                try {
+                    adminDeferredPrompt.prompt();
+                    adminDeferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('📱 ADM: Приложение установлено');
+                            document.getElementById('install-admin-btn').style.display = 'none';
+                            showSuccess('🎉 ADM панель успешно установлена! Приложение появится на главном экране с красивой иконкой.');
+                            isAdminAppInstalled = true;
+                        } else {
+                            console.log('📱 ADM: Установка отменена');
+                        }
+                        adminDeferredPrompt = null;
+                    });
+                } catch (error) {
+                    console.error('❌ Ошибка установки PWA админки:', error);
+                    showError('❌ Ошибка установки. Попробуйте позже.');
                 }
+            } else {
+                // Показываем информацию о том что PWA установка недоступна
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                const isAndroid = /Android/i.test(navigator.userAgent);
+                
+                let message = '';
+                if (isIOS) {
+                    message = '📱 На iOS Safari:\n\n🔸 Откройте админку в Safari\n🔸 Нажмите кнопку "Поделиться" внизу\n🔸 Выберите "Добавить в Dock"\n🔸 Или используйте браузер Chrome для полной PWA поддержки';
+                } else if (isAndroid) {
+                    message = '📱 На Android:\n\n🔸 Используйте Chrome браузер для установки PWA\n🔸 Или найдите "Добавить на главный экран" в меню браузера';
+                } else {
+                    message = '📱 Для установки PWA:\n\n🔸 Используйте Chrome, Edge или Firefox\n🔸 Найдите иконку установки в адресной строке\n🔸 Или используйте меню браузера';
+                }
+                
+                showError(message);
             }
         }
         
