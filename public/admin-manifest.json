@@ -1,13 +1,13 @@
 {
-  "name": "ADMINCOFFEE - Панель Бариста",
-  "short_name": "ADMINCOFFEE",
+  "name": "ADM - Панель Бариста",
+  "short_name": "ADM",
   "description": "Панель управления бариста COFFEEMANIA",
   "start_url": "/admin.html",
   "display": "standalone",
   "background_color": "#0F0C29",
   "theme_color": "#0F0C29",
   "orientation": "portrait",
-  "scope": "/",
+  "scope": "/admin.html",
   "lang": "ru",
   "categories": ["business", "productivity"],
   "icons": [

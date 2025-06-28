@@ -1127,7 +1127,7 @@ app.get('/manifest-:clientId.json', async (req, res) => {
             "orientation": "portrait",
             "categories": ["food", "lifestyle"],
             "lang": "ru",
-            "scope": "/",
+            "scope": "/card.html",
             "icons": [
                 {
                     "src": "/icon-192.png",
