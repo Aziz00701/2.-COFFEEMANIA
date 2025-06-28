@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
+const sqlite3 = require('sqlite3').verbose();
 const QRCode = require('qrcode');
 const { nanoid } = require('nanoid');
 const path = require('path');
@@ -13,23 +14,19 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// PostgreSQL connection
+// Database configuration
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL || 'postgresql://database_nnzy_user:aZfYtJkSb0f3wULFIzrYaWE6J6dV96ck@dpg-cthjaq3tq21c73f7uoag-a.oregon-postgres.render.com/database_nnzy',
+    connectionString: process.env.DATABASE_URL,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// In-memory storage fallback
-let memoryStorage = {
-    customers: new Map(),
-    purchases: new Map(),
-    settings: new Map()
-};
+// Database type
+let usePostgreSQL = false;
+let db = null; // SQLite database instance
 
-let useMemory = false;
-
-// Database connection check and table creation
+// Initialize database
 async function initializeDatabase() {
+    // Try PostgreSQL first
     try {
         await pool.query('SELECT NOW()');
         console.log('✅ PostgreSQL connected successfully');
@@ -61,69 +58,220 @@ async function initializeDatabase() {
             )
         `);
         
-        console.log('✅ Database tables ready');
-        useMemory = false;
+        console.log('✅ PostgreSQL tables ready');
+        usePostgreSQL = true;
+        return;
     } catch (error) {
-        console.log('❌ Database connection error:', error.message);
-        console.log('🔄 Using in-memory storage...');
-        useMemory = true;
+        console.log('❌ PostgreSQL connection error:', error.message);
+        console.log('🔄 Switching to SQLite database...');
+    }
+    
+    // Fallback to SQLite
+    try {
+        const dbPath = path.join(__dirname, 'coffeemania.db');
+        db = new sqlite3.Database(dbPath);
         
-        // Add test customers for demo
-        console.log('📝 Creating test customers...');
-        
-        // Клиент с 3 покупками в первой карточке
-        memoryStorage.customers.set('demo123', {
-            id: 'demo123',
-            name: 'Тестовый клиент',
-            phone: '+7 (777) 123-45-67',
-            purchases: 3,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+        // Create tables if they don't exist
+        await new Promise((resolve, reject) => {
+            db.serialize(() => {
+                db.run(`
+                    CREATE TABLE IF NOT EXISTS customers (
+                        id TEXT PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        phone TEXT NOT NULL,
+                        purchases INTEGER DEFAULT 0,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )
+                `, (err) => {
+                    if (err) reject(err);
+                });
+                
+                db.run(`
+                    CREATE TABLE IF NOT EXISTS purchase_history (
+                        purchase_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        customer_id TEXT REFERENCES customers(id),
+                        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )
+                `, (err) => {
+                    if (err) reject(err);
+                });
+                
+                db.run(`
+                    CREATE TABLE IF NOT EXISTS settings (
+                        key TEXT PRIMARY KEY,
+                        value TEXT
+                    )
+                `, (err) => {
+                    if (err) reject(err);
+                    else resolve();
+                });
+            });
         });
         
-        // История покупок для demo123 (3 покупки)
-        for (let i = 1; i <= 3; i++) {
-            const purchaseId = `demo123_${i}`;
-            const purchaseDate = new Date(Date.now() - (4-i) * 24 * 60 * 60 * 1000); // Распределяем по дням
-            memoryStorage.purchases.set(purchaseId, {
-                purchase_id: purchaseId,
-                customer_id: 'demo123',
-                timestamp: purchaseDate.toISOString(),
-                action: 'purchase'
-            });
-        }
+        console.log('✅ SQLite database ready');
+        console.log(`📁 Database file: ${dbPath}`);
         
-        // Клиент с завершенной карточкой (6 покупок) + 2 покупки в новой карточке
-        memoryStorage.customers.set('test456', {
-            id: 'test456', 
-            name: 'Анна Иванова',
-            phone: '+7 (999) 888-77-66',
-            purchases: 2, // Текущий прогресс во второй карточке
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+        // Check if we need to create initial data
+        const customerCount = await new Promise((resolve, reject) => {
+            db.get('SELECT COUNT(*) as count FROM customers', (err, row) => {
+                if (err) reject(err);
+                else resolve(row.count);
+            });
         });
         
-        // История покупок для test456 (8 покупок = 1 завершенная карточка + 2 в новой)
-        for (let i = 1; i <= 8; i++) {
-            const purchaseId = `test456_${i}`;
-            const purchaseDate = new Date(Date.now() - (9-i) * 24 * 60 * 60 * 1000);
-            memoryStorage.purchases.set(purchaseId, {
-                purchase_id: purchaseId,
-                customer_id: 'test456',
-                timestamp: purchaseDate.toISOString(),
-                action: 'purchase'
-            });
+        // Only create test data if database is empty
+        if (customerCount === 0) {
+            console.log('📝 Creating initial test customers...');
+            await createTestCustomers();
+        } else {
+            console.log(`📊 Found ${customerCount} existing customers in database`);
         }
         
-        memoryStorage.settings.set('barista_phone', '+7 (777) 555-44-33');
+        usePostgreSQL = false;
+    } catch (error) {
+        console.error('❌ SQLite initialization error:', error);
+        process.exit(1);
+    }
+}
+
+// Create test customers for demo (only when database is empty)
+async function createTestCustomers() {
+    try {
+        // Insert test customers
+        await new Promise((resolve, reject) => {
+            db.serialize(() => {
+                const stmt = db.prepare('INSERT INTO customers (id, name, phone, purchases, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)');
+                
+                const now = new Date().toISOString();
+                
+                stmt.run('demo123', 'Тестовый клиент', '+7 (777) 123-45-67', 3, now, now);
+                stmt.run('test456', 'Анна Иванова', '+7 (999) 888-77-66', 2, now, now);
+                
+                stmt.finalize((err) => {
+                    if (err) reject(err);
+                    else resolve();
+                });
+            });
+        });
+        
+        // Insert purchase history
+        await new Promise((resolve, reject) => {
+            db.serialize(() => {
+                const stmt = db.prepare('INSERT INTO purchase_history (customer_id, timestamp) VALUES (?, ?)');
+                
+                // History for demo123 (3 purchases)
+                for (let i = 1; i <= 3; i++) {
+                    const purchaseDate = new Date(Date.now() - (4-i) * 24 * 60 * 60 * 1000).toISOString();
+                    stmt.run('demo123', purchaseDate);
+                }
+                
+                // History for test456 (8 purchases = 1 completed card + 2 in new card)
+                for (let i = 1; i <= 8; i++) {
+                    const purchaseDate = new Date(Date.now() - (9-i) * 24 * 60 * 60 * 1000).toISOString();
+                    stmt.run('test456', purchaseDate);
+                }
+                
+                stmt.finalize((err) => {
+                    if (err) reject(err);
+                    else resolve();
+                });
+            });
+        });
+        
+        // Insert settings
+        await new Promise((resolve, reject) => {
+            db.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['barista_phone', '+77754555570'], (err) => {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
         
         console.log('✅ Test customers created:');
         console.log('   - demo123: Тестовый клиент (3/6 покупок в карточке #1)');
         console.log('   - test456: Анна Иванова (2/6 покупок в карточке #2, карточка #1 завершена)');
         console.log('🔗 Test links:');
-        console.log(`   - https://two-coffeemania.onrender.com/card.html?id=demo123`);
-        console.log(`   - https://two-coffeemania.onrender.com/card.html?id=test456`);
+        console.log(`   - http://localhost:${PORT}/card.html?id=demo123`);
+        console.log(`   - http://localhost:${PORT}/card.html?id=test456`);
+    } catch (error) {
+        console.error('❌ Error creating test customers:', error);
     }
+}
+
+// Smart customer search with error correction
+function findCustomerByIdSmart(customers, searchId) {
+    if (!searchId || !customers) return null;
+    
+    // Прямой поиск (точное совпадение)
+    let customer = customers.find(c => c.id === searchId);
+    if (customer) return customer;
+    
+    // Поиск без учета регистра
+    customer = customers.find(c => c.id.toLowerCase() === searchId.toLowerCase());
+    if (customer) return customer;
+    
+    // Автоисправление распространенных ошибок
+    const correctedId = searchId
+        .replace(/O/gi, '0')    // O -> 0
+        .replace(/I/gi, 'l')    // I -> l  
+        .replace(/1/g, 'l')     // 1 -> l
+        .replace(/S/gi, '5')    // S -> 5
+        .replace(/G/gi, '6')    // G -> 6
+        .replace(/B/gi, '8');   // B -> 8
+    
+    // Поиск с исправлениями
+    customer = customers.find(c => c.id.toLowerCase() === correctedId.toLowerCase());
+    if (customer) return customer;
+    
+    // Обратное исправление
+    const reverseId = searchId
+        .replace(/0/g, 'O')     // 0 -> O
+        .replace(/l/gi, 'I')    // l -> I
+        .replace(/5/g, 'S')     // 5 -> S
+        .replace(/6/g, 'G')     // 6 -> G
+        .replace(/8/g, 'B');    // 8 -> B
+    
+    customer = customers.find(c => c.id.toLowerCase() === reverseId.toLowerCase());
+    if (customer) return customer;
+    
+    // Нечеткий поиск по схожести (Levenshtein distance <= 2)
+    const similar = customers.find(c => {
+        const distance = levenshteinDistance(searchId.toLowerCase(), c.id.toLowerCase());
+        return distance <= 2;
+    });
+    
+    return similar || null;
+}
+
+// Простая реализация расстояния Левенштейна
+function levenshteinDistance(str1, str2) {
+    const matrix = [];
+    const len1 = str1.length;
+    const len2 = str2.length;
+    
+    for (let i = 0; i <= len1; i++) {
+        matrix[i] = [i];
+    }
+    
+    for (let j = 0; j <= len2; j++) {
+        matrix[0][j] = j;
+    }
+    
+    for (let i = 1; i <= len1; i++) {
+        for (let j = 1; j <= len2; j++) {
+            if (str1.charAt(i - 1) === str2.charAt(j - 1)) {
+                matrix[i][j] = matrix[i - 1][j - 1];
+            } else {
+                matrix[i][j] = Math.min(
+                    matrix[i - 1][j - 1] + 1,
+                    matrix[i][j - 1] + 1,
+                    matrix[i - 1][j] + 1
+                );
+            }
+        }
+    }
+    
+    return matrix[len1][len2];
 }
 
 // API Routes
@@ -133,12 +281,7 @@ app.get('/api/stats', async (req, res) => {
     try {
         let totalCustomers, totalPurchases, readyForFreeCoffee;
         
-        if (useMemory) {
-            // In-memory storage queries
-            totalCustomers = memoryStorage.customers.size;
-            totalPurchases = memoryStorage.purchases.size;
-            readyForFreeCoffee = 0;
-        } else {
+        if (usePostgreSQL) {
             // PostgreSQL queries
             const totalCustomersResult = await pool.query('SELECT COUNT(*) FROM customers');
             totalCustomers = parseInt(totalCustomersResult.rows[0].count);
@@ -148,6 +291,31 @@ app.get('/api/stats', async (req, res) => {
 
             const readyResult = await pool.query('SELECT COUNT(*) FROM customers WHERE purchases >= 6');
             readyForFreeCoffee = parseInt(readyResult.rows[0].count);
+        } else {
+            // SQLite queries
+            const totalCustomersResult = await new Promise((resolve, reject) => {
+                db.get('SELECT COUNT(*) as count FROM customers', (err, row) => {
+                    if (err) reject(err);
+                    else resolve(row.count);
+                });
+            });
+            totalCustomers = totalCustomersResult;
+
+            const totalPurchasesResult = await new Promise((resolve, reject) => {
+                db.get('SELECT SUM(purchases) as sum FROM customers', (err, row) => {
+                    if (err) reject(err);
+                    else resolve(row.sum || 0);
+                });
+            });
+            totalPurchases = totalPurchasesResult;
+
+            const readyResult = await new Promise((resolve, reject) => {
+                db.get('SELECT COUNT(*) as count FROM customers WHERE purchases >= 6', (err, row) => {
+                    if (err) reject(err);
+                    else resolve(row.count);
+                });
+            });
+            readyForFreeCoffee = readyResult;
         }
 
         res.json({
@@ -172,20 +340,26 @@ app.post('/api/register', async (req, res) => {
 
         const customerId = nanoid(10);
         
-        if (useMemory) {
-            // In-memory storage
-            memoryStorage.customers.set(customerId, { id: customerId, name, phone, purchases: 0 });
+        if (usePostgreSQL) {
+            // PostgreSQL
+            await pool.query(
+                'INSERT INTO customers (id, name, phone) VALUES ($1, $2, $3)',
+                [customerId, name, phone]
+            );
+            
             res.json({ 
                 success: true, 
                 customerId,
                 message: 'Customer registered successfully' 
             });
         } else {
-            // PostgreSQL
-            await pool.query(
-                'INSERT INTO customers (id, name, phone) VALUES ($1, $2, $3)',
-                [customerId, name, phone]
-            );
+            // SQLite
+            await new Promise((resolve, reject) => {
+                db.run('INSERT INTO customers (id, name, phone, purchases, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET name = excluded.name, phone = excluded.phone, purchases = excluded.purchases, updated_at = excluded.updated_at', [customerId, name, phone, 0, new Date().toISOString(), new Date().toISOString()], (err) => {
+                    if (err) reject(err);
+                    else resolve();
+                });
+            });
             
             res.json({ 
                 success: true, 
@@ -214,16 +388,21 @@ app.get('/api/search', async (req, res) => {
 
         let customers;
         
-        if (useMemory) {
-            // In-memory storage
-            customers = Array.from(memoryStorage.customers.values()).filter(c => c.name.toLowerCase().includes(q.toLowerCase()) || c.phone.includes(q));
-        } else {
+        if (usePostgreSQL) {
             // PostgreSQL
             const result = await pool.query(
                 'SELECT * FROM customers WHERE name ILIKE $1 OR phone ILIKE $1 ORDER BY created_at DESC',
                 [`%${q}%`]
             );
             customers = result.rows;
+        } else {
+            // SQLite
+            customers = await new Promise((resolve, reject) => {
+                db.all('SELECT * FROM customers WHERE name LIKE ? OR phone LIKE ? ORDER BY created_at DESC', [q, q], (err, rows) => {
+                    if (err) reject(err);
+                    else resolve(rows);
+                });
+            });
         }
 
         res.json(customers);
@@ -238,13 +417,18 @@ app.get('/api/customers', async (req, res) => {
     try {
         let customers;
         
-        if (useMemory) {
-            // In-memory storage
-            customers = Array.from(memoryStorage.customers.values());
-        } else {
+        if (usePostgreSQL) {
             // PostgreSQL
             const result = await pool.query('SELECT * FROM customers ORDER BY created_at DESC');
             customers = result.rows;
+        } else {
+            // SQLite
+            customers = await new Promise((resolve, reject) => {
+                db.all('SELECT * FROM customers ORDER BY created_at DESC', [], (err, rows) => {
+                    if (err) reject(err);
+                    else resolve(rows);
+                });
+            });
         }
 
         res.json(customers);
@@ -258,22 +442,37 @@ app.get('/api/customers', async (req, res) => {
 app.get('/api/customer/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        let customer;
+        let customers, foundCustomer;
         
-        if (useMemory) {
-            // In-memory storage
-            customer = memoryStorage.customers.get(id);
+        if (usePostgreSQL) {
+            // PostgreSQL - получаем всех клиентов для умного поиска
+            const result = await pool.query('SELECT * FROM customers');
+            customers = result.rows;
+            foundCustomer = findCustomerByIdSmart(customers, id);
         } else {
-            // PostgreSQL
-            const result = await pool.query('SELECT * FROM customers WHERE id = $1', [id]);
-            customer = result.rows[0];
+            // SQLite - получаем всех клиентов для умного поиска
+            customers = await new Promise((resolve, reject) => {
+                db.all('SELECT * FROM customers', [], (err, rows) => {
+                    if (err) reject(err);
+                    else resolve(rows);
+                });
+            });
+            foundCustomer = findCustomerByIdSmart(customers, id);
         }
 
-        if (!customer) {
-            return res.status(404).json({ error: 'Customer not found' });
+        if (!foundCustomer) {
+            return res.status(404).json({ 
+                error: 'Customer not found',
+                suggestion: `Проверьте правильность ID "${id}". Возможные проблемы: регистр букв, похожие символы (0/O, l/I, 1/l)`
+            });
         }
 
-        res.json(customer);
+        // Логируем если ID был исправлен
+        if (foundCustomer.id !== id) {
+            console.log(`🔧 ID исправлен: "${id}" -> "${foundCustomer.id}"`);
+        }
+
+        res.json(foundCustomer);
     } catch (error) {
         console.error('Get customer error:', error);
         res.status(500).json({ error: 'Failed to get customer' });
@@ -287,11 +486,16 @@ app.post('/api/purchase/:id', async (req, res) => {
         
         // Сначала получаем текущее количество покупок
         let customer;
-        if (useMemory) {
-            customer = memoryStorage.customers.get(id);
-        } else {
+        if (usePostgreSQL) {
             const result = await pool.query('SELECT * FROM customers WHERE id = $1', [id]);
             customer = result.rows[0];
+        } else {
+            customer = await new Promise((resolve, reject) => {
+                db.get('SELECT * FROM customers WHERE id = ?', [id], (err, row) => {
+                    if (err) reject(err);
+                    else resolve(row);
+                });
+            });
         }
         
         if (!customer) {
@@ -317,34 +521,7 @@ app.post('/api/purchase/:id', async (req, res) => {
             }
         }
         
-        if (useMemory) {
-            // In-memory storage
-            memoryStorage.customers.set(id, { 
-                ...customer, 
-                purchases: newPurchases,
-                updated_at: new Date().toISOString()
-            });
-            
-            // Добавляем запись в историю покупок
-            const purchaseId = Date.now().toString();
-            memoryStorage.purchases.set(purchaseId, { 
-                purchase_id: purchaseId,
-                customer_id: id, 
-                timestamp: new Date().toISOString(),
-                action: 'purchase'
-            });
-            
-            res.json({ 
-                success: true, 
-                message: newCardStarted ? 
-                    'Поздравляем! Получен бесплатный кофе. Начата новая карта лояльности!' : 
-                    'Purchase added successfully',
-                newPurchases: newPurchases,
-                isComplete: isComplete,
-                newCardStarted: newCardStarted,
-                totalCards: Math.ceil((currentPurchases + 1) / 6)
-            });
-        } else {
+        if (usePostgreSQL) {
             // PostgreSQL
             await pool.query('BEGIN');
             
@@ -359,22 +536,60 @@ app.post('/api/purchase/:id', async (req, res) => {
             );
             
             await pool.query('COMMIT');
-            
-            res.json({ 
-                success: true, 
-                message: newCardStarted ? 
-                    'Поздравляем! Получен бесплатный кофе. Начата новая карта лояльности!' : 
-                    'Purchase added successfully',
-                newPurchases: newPurchases,
-                isComplete: isComplete,
-                newCardStarted: newCardStarted,
-                totalCards: Math.ceil((currentPurchases + 1) / 6)
+        } else {
+            // SQLite
+            await new Promise((resolve, reject) => {
+                db.serialize(() => {
+                    db.run('BEGIN TRANSACTION');
+                    
+                    db.run(
+                        'UPDATE customers SET purchases = ?, updated_at = ? WHERE id = ?',
+                        [newPurchases, new Date().toISOString(), id],
+                        (err) => {
+                            if (err) {
+                                db.run('ROLLBACK');
+                                reject(err);
+                                return;
+                            }
+                        }
+                    );
+                    
+                    db.run(
+                        'INSERT INTO purchase_history (customer_id, timestamp) VALUES (?, ?)',
+                        [id, new Date().toISOString()],
+                        (err) => {
+                            if (err) {
+                                db.run('ROLLBACK');
+                                reject(err);
+                                return;
+                            }
+                            
+                            db.run('COMMIT', (err) => {
+                                if (err) reject(err);
+                                else resolve();
+                            });
+                        }
+                    );
+                });
             });
         }
+        
+        res.json({ 
+            success: true, 
+            message: newCardStarted ? 
+                'Поздравляем! Получен бесплатный кофе. Начата новая карта лояльности!' : 
+                'Purchase added successfully',
+            newPurchases: newPurchases,
+            isComplete: isComplete,
+            newCardStarted: newCardStarted,
+            totalCards: Math.ceil((currentPurchases + 1) / 6)
+        });
     } catch (error) {
         console.error('Add purchase error:', error);
-        if (!useMemory) {
+        if (usePostgreSQL) {
             await pool.query('ROLLBACK');
+        } else {
+            db.run('ROLLBACK');
         }
         res.status(500).json({ error: 'Failed to add purchase' });
     }
@@ -386,19 +601,27 @@ app.put('/api/customer/:id', async (req, res) => {
         const { id } = req.params;
         const { name, phone } = req.body;
         
-        if (useMemory) {
-            // In-memory storage
-            memoryStorage.customers.set(id, { ...memoryStorage.customers.get(id), name, phone });
-            res.json({ success: true, message: 'Customer updated successfully' });
-        } else {
+        if (usePostgreSQL) {
             // PostgreSQL
             await pool.query(
                 'UPDATE customers SET name = $1, phone = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
                 [name, phone, id]
             );
-            
-            res.json({ success: true, message: 'Customer updated successfully' });
+        } else {
+            // SQLite
+            await new Promise((resolve, reject) => {
+                db.run(
+                    'UPDATE customers SET name = ?, phone = ?, updated_at = ? WHERE id = ?',
+                    [name, phone, new Date().toISOString(), id],
+                    (err) => {
+                        if (err) reject(err);
+                        else resolve();
+                    }
+                );
+            });
         }
+        
+        res.json({ success: true, message: 'Customer updated successfully' });
     } catch (error) {
         console.error('Update customer error:', error);
         res.status(500).json({ error: 'Failed to update customer' });
@@ -410,15 +633,20 @@ app.delete('/api/customer/:id', async (req, res) => {
     try {
         const { id } = req.params;
         
-        if (useMemory) {
-            // In-memory storage
-            memoryStorage.customers.delete(id);
-            res.json({ success: true, message: 'Customer deleted successfully' });
-        } else {
+        if (usePostgreSQL) {
             // PostgreSQL
             await pool.query('DELETE FROM customers WHERE id = $1', [id]);
-            res.json({ success: true, message: 'Customer deleted successfully' });
+        } else {
+            // SQLite
+            await new Promise((resolve, reject) => {
+                db.run('DELETE FROM customers WHERE id = ?', [id], (err) => {
+                    if (err) reject(err);
+                    else resolve();
+                });
+            });
         }
+        
+        res.json({ success: true, message: 'Customer deleted successfully' });
     } catch (error) {
         console.error('Delete customer error:', error);
         res.status(500).json({ error: 'Failed to delete customer' });
@@ -431,19 +659,7 @@ app.get('/api/history/:id', async (req, res) => {
         const { id } = req.params;
         let history;
         
-        if (useMemory) {
-            // In-memory storage - фильтруем покупки по customer_id
-            history = Array.from(memoryStorage.purchases.values())
-                .filter(p => p.customer_id === id)
-                .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
-                .map(p => ({
-                    purchase_id: p.purchase_id,
-                    customer_id: p.customer_id,
-                    purchase_date: p.timestamp,
-                    timestamp: p.timestamp,
-                    action: p.action || 'purchase'
-                }));
-        } else {
+        if (usePostgreSQL) {
             // PostgreSQL
             const result = await pool.query(
                 'SELECT * FROM purchase_history WHERE customer_id = $1 ORDER BY timestamp ASC',
@@ -451,11 +667,30 @@ app.get('/api/history/:id', async (req, res) => {
             );
             history = result.rows.map(row => ({
                 ...row,
-                purchase_date: row.timestamp || row.purchase_date
+                purchase_date: row.timestamp || row.purchase_date,
+                action: 'purchase'
             }));
+        } else {
+            // SQLite
+            history = await new Promise((resolve, reject) => {
+                db.all(
+                    'SELECT * FROM purchase_history WHERE customer_id = ? ORDER BY timestamp ASC',
+                    [id],
+                    (err, rows) => {
+                        if (err) reject(err);
+                        else {
+                            const mapped = rows.map(row => ({
+                                ...row,
+                                purchase_date: row.timestamp,
+                                action: 'purchase'
+                            }));
+                            resolve(mapped);
+                        }
+                    }
+                );
+            });
         }
 
-        console.log(`📊 История для клиента ${id}:`, history);
         res.json(history);
     } catch (error) {
         console.error('Get history error:', error);
@@ -468,19 +703,23 @@ app.post('/api/customer/:id/reset', async (req, res) => {
     try {
         const { id } = req.params;
         
-        if (useMemory) {
-            // In-memory storage
-            memoryStorage.customers.set(id, { ...memoryStorage.customers.get(id), purchases: 0 });
-            res.json({ success: true, message: 'Customer purchases reset successfully' });
-        } else {
+        if (usePostgreSQL) {
             // PostgreSQL
             await pool.query(
                 'UPDATE customers SET purchases = 0, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
                 [id]
             );
-            
-            res.json({ success: true, message: 'Customer purchases reset successfully' });
+        } else {
+            // SQLite
+            await new Promise((resolve, reject) => {
+                db.run('UPDATE customers SET purchases = 0, updated_at = ? WHERE id = ?', [new Date().toISOString(), id], (err) => {
+                    if (err) reject(err);
+                    else resolve();
+                });
+            });
         }
+        
+        res.json({ success: true, message: 'Customer purchases reset successfully' });
     } catch (error) {
         console.error('Reset customer error:', error);
         res.status(500).json({ error: 'Failed to reset customer purchases' });
@@ -491,7 +730,38 @@ app.post('/api/customer/:id/reset', async (req, res) => {
 app.get('/api/qr/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const cardUrl = `${req.protocol}://${req.get('host')}/card.html?id=${id}`;
+        let customers, foundCustomer;
+        
+        // ИСПРАВЛЕНО: Используем умный поиск для получения корректного ID
+        if (usePostgreSQL) {
+            const result = await pool.query('SELECT * FROM customers');
+            customers = result.rows;
+            foundCustomer = findCustomerByIdSmart(customers, id);
+        } else {
+            customers = await new Promise((resolve, reject) => {
+                db.all('SELECT * FROM customers', [], (err, rows) => {
+                    if (err) reject(err);
+                    else resolve(rows);
+                });
+            });
+            foundCustomer = findCustomerByIdSmart(customers, id);
+        }
+
+        if (!foundCustomer) {
+            return res.status(404).json({ 
+                error: 'Customer not found',
+                suggestion: `Проверьте правильность ID "${id}" для генерации QR кода`
+            });
+        }
+
+        // ИСПРАВЛЕНО: Используем корректный ID для генерации ссылки в QR коде
+        const correctId = foundCustomer.id;
+        const cardUrl = `${req.protocol}://${req.get('host')}/card.html?id=${correctId}`;
+        
+        // Логируем если ID был исправлен
+        if (correctId !== id) {
+            console.log(`🔧 ID исправлен для QR кода: "${id}" -> "${correctId}"`);
+        }
         
         const qrCode = await QRCode.toDataURL(cardUrl, {
             width: 300,
@@ -502,7 +772,13 @@ app.get('/api/qr/:id', async (req, res) => {
             }
         });
         
-        res.json({ qrCode, url: cardUrl });
+        res.json({ 
+            qrCode, 
+            url: cardUrl,
+            originalId: id,
+            correctedId: correctId,
+            corrected: correctId !== id
+        });
     } catch (error) {
         console.error('QR generation error:', error);
         res.status(500).json({ error: 'Failed to generate QR code' });
@@ -513,25 +789,45 @@ app.get('/api/qr/:id', async (req, res) => {
 app.get('/api/client-link/:id', async (req, res) => {
     try {
         const { id } = req.params;
+        let customers, foundCustomer;
         
-        // Проверяем существование клиента
-        let customer;
-        if (useMemory) {
-            customer = memoryStorage.customers.get(id);
+        // ИСПРАВЛЕНО: Используем умный поиск для получения корректного клиента
+        if (usePostgreSQL) {
+            const result = await pool.query('SELECT * FROM customers');
+            customers = result.rows;
+            foundCustomer = findCustomerByIdSmart(customers, id);
         } else {
-            const result = await pool.query('SELECT * FROM customers WHERE id = $1', [id]);
-            customer = result.rows[0];
+            customers = await new Promise((resolve, reject) => {
+                db.all('SELECT * FROM customers', [], (err, rows) => {
+                    if (err) reject(err);
+                    else resolve(rows);
+                });
+            });
+            foundCustomer = findCustomerByIdSmart(customers, id);
         }
         
-        if (!customer) {
-            return res.status(404).json({ error: 'Customer not found' });
+        if (!foundCustomer) {
+            return res.status(404).json({ 
+                error: 'Customer not found',
+                suggestion: `Проверьте правильность ID "${id}" для генерации ссылки`
+            });
         }
         
-        const clientAppUrl = `${req.protocol}://${req.get('host')}/client-app.html?id=${id}`;
+        // ИСПРАВЛЕНО: Используем корректный ID для генерации ссылки
+        const correctId = foundCustomer.id;
+        const clientAppUrl = `${req.protocol}://${req.get('host')}/card.html?id=${correctId}`;
+        
+        // Логируем если ID был исправлен
+        if (correctId !== id) {
+            console.log(`🔧 ID исправлен для client-link: "${id}" -> "${correctId}"`);
+        }
         
         res.json({ 
             url: clientAppUrl,
-            customer: customer,
+            customer: foundCustomer,
+            originalId: id,
+            correctedId: correctId,
+            corrected: correctId !== id,
             message: 'Secure client app link generated' 
         });
     } catch (error) {
@@ -545,13 +841,18 @@ app.get('/api/barista-phone', async (req, res) => {
     try {
         let phone;
         
-        if (useMemory) {
-            // In-memory storage
-            phone = memoryStorage.settings.get('barista_phone') || '+7 (999) 123-45-67';
-        } else {
+        if (usePostgreSQL) {
             // PostgreSQL
             const result = await pool.query('SELECT value FROM settings WHERE key = $1', ['barista_phone']);
             phone = result.rows[0]?.value || '+7 (999) 123-45-67';
+        } else {
+            // SQLite
+            phone = await new Promise((resolve, reject) => {
+                db.get('SELECT value FROM settings WHERE key = ?', ['barista_phone'], (err, row) => {
+                    if (err) reject(err);
+                    else resolve(row.value || '+7 (999) 123-45-67');
+                });
+            });
         }
 
         res.json({ phone });
@@ -566,19 +867,23 @@ app.post('/api/barista-phone', async (req, res) => {
     try {
         const { phone } = req.body;
         
-        if (useMemory) {
-            // In-memory storage
-            memoryStorage.settings.set('barista_phone', phone);
-            res.json({ success: true, message: 'Phone updated successfully' });
-        } else {
+        if (usePostgreSQL) {
             // PostgreSQL
             await pool.query(
                 'INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2',
                 ['barista_phone', phone]
             );
-            
-            res.json({ success: true, message: 'Phone updated successfully' });
+        } else {
+            // SQLite
+            await new Promise((resolve, reject) => {
+                db.run('UPDATE settings SET value = ? WHERE key = ?', [phone, 'barista_phone'], (err) => {
+                    if (err) reject(err);
+                    else resolve();
+                });
+            });
         }
+        
+        res.json({ success: true, message: 'Phone updated successfully' });
     } catch (error) {
         console.error('Update barista phone error:', error);
         res.status(500).json({ error: 'Failed to update phone' });
@@ -608,12 +913,22 @@ app.listen(PORT, async () => {
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
-    console.log('\n👋 Shutting down server...');
-    if (pool.end) {
-        await pool.end();
-    }
-    if (useMemory) {
-        console.log('👋 In-memory storage cleared');
+    console.log('\n🛑 Получен сигнал завершения...');
+    try {
+        if (usePostgreSQL) {
+            await pool.end();
+            console.log('👋 PostgreSQL connection closed');
+        } else if (db) {
+            db.close((err) => {
+                if (err) {
+                    console.error('❌ Error closing SQLite database:', err);
+                } else {
+                    console.log('👋 SQLite database closed');
+                }
+            });
+        }
+    } catch (error) {
+        console.error('❌ Error during shutdown:', error);
     }
     process.exit(0);
 }); 

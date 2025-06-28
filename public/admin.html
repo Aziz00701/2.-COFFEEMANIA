@@ -201,6 +201,58 @@
             backdrop-filter: var(--blur);
         }
         
+        /* Connection Indicator */
+        .connection-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-glass);
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        
+        .connection-indicator.online {
+            color: var(--accent-green);
+            border-color: rgba(0, 212, 170, 0.3);
+            background: rgba(0, 212, 170, 0.05);
+        }
+        
+        .connection-indicator.offline {
+            color: var(--accent-red);
+            border-color: rgba(255, 71, 87, 0.3);
+            background: rgba(255, 71, 87, 0.05);
+        }
+        
+        .connection-indicator.slow {
+            color: var(--accent-yellow);
+            border-color: rgba(255, 165, 2, 0.3);
+            background: rgba(255, 165, 2, 0.05);
+        }
+        
+        .connection-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            animation: pulse 2s infinite;
+        }
+        
+        .connection-indicator.online .connection-dot {
+            background: var(--accent-green);
+        }
+        
+        .connection-indicator.offline .connection-dot {
+            background: var(--accent-red);
+        }
+        
+        .connection-indicator.slow .connection-dot {
+            background: var(--accent-yellow);
+        }
+        
         /* Statistics Grid */
         .stats-grid {
             display: grid;
@@ -1039,6 +1091,10 @@
                 </div>
                 <div class="header-controls">
                     <div class="phone-display" id="barista-phone">+7 (775) 455-55-70</div>
+                    <div class="connection-indicator" id="connection-indicator">
+                        <div class="connection-dot"></div>
+                        <span class="connection-text">Проверка...</span>
+                    </div>
                     <button class="sync-btn" onclick="installAdminApp()" id="install-admin-btn" style="display: none; background: var(--gradient-blue);">
                         <span>📱</span>
                         Установить ADMINCOFFEE
@@ -1327,6 +1383,12 @@
                 loadCustomers(),
                 loadBaristaPhone()
             ]);
+            
+            // Запускаем проверку соединения
+            setTimeout(() => {
+                checkServerStatus();
+                setInterval(checkServerStatus, 10000); // Каждые 10 секунд
+            }, 1000);
         }
 
         // Load statistics
@@ -1937,7 +1999,7 @@
                     console.log('Использую дефолтный номер бариста');
                 }
                 
-                const customerCardUrl = `${window.location.origin}/client-app.html?id=${customerId}`;
+                const customerCardUrl = `${window.location.origin}/card.html?id=${customerId}`;
                 const cleanPhone = customer.phone.replace(/\D/g, '');
                 
                 const message = `🎉 Спасибо, что посетили COFFEEMANIA! ☕\n\n💎 Ваша личная карта лояльности готова:\n${customerCardUrl}\n\n🎁 Каждая 7-я чашка кофе - БЕСПЛАТНО!\n📱 Установите как приложение на телефон!\n\n☕ COFFEEMANIA - лучший кофе в городе!`;
@@ -2500,6 +2562,61 @@
         document.addEventListener('DOMContentLoaded', function() {
             setTimeout(loadBaristaPhoneToInput, 1000);
         });
+
+        // Check server status
+        async function checkServerStatus() {
+            const connectionIndicator = document.getElementById('connection-indicator');
+            const connectionText = connectionIndicator.querySelector('.connection-text');
+            
+            if (!connectionIndicator || !connectionText) return;
+            
+            try {
+                connectionText.textContent = 'Проверка...';
+                connectionIndicator.className = 'connection-indicator';
+                
+                const startTime = Date.now();
+                const response = await fetch('/api/stats', { 
+                    method: 'GET',
+                    cache: 'no-cache'
+                });
+                const responseTime = Date.now() - startTime;
+                
+                if (response.ok) {
+                    if (responseTime < 500) {
+                        connectionText.textContent = `🟢 ${responseTime}мс`;
+                        connectionIndicator.classList.add('online');
+                    } else if (responseTime < 1000) {
+                        connectionText.textContent = `🟡 ${responseTime}мс`;
+                        connectionIndicator.classList.add('slow');
+                    } else {
+                        connectionText.textContent = `🟠 ${responseTime}мс`;
+                        connectionIndicator.classList.add('slow');
+                    }
+                } else {
+                    connectionText.textContent = `🟡 Ошибка ${response.status}`;
+                    connectionIndicator.classList.add('slow');
+                }
+            } catch (error) {
+                console.error('Server status check error:', error);
+                connectionText.textContent = '🔴 Офлайн';
+                connectionIndicator.classList.add('offline');
+            }
+        }
+
+        // Load initial data
+        async function loadData() {
+            await Promise.all([
+                loadStats(),
+                loadCustomers(),
+                loadBaristaPhone()
+            ]);
+            
+            // Запускаем проверку соединения
+            setTimeout(() => {
+                checkServerStatus();
+                setInterval(checkServerStatus, 10000); // Каждые 10 секунд
+            }, 1000);
+        }
     </script>
 </body>
 </html>

@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COFFEEMANIA - Панель Бариста</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#0F0C29">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="COFFEEMANIA">
+    <meta name="description" content="Панель управления бариста COFFEEMANIA">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Modern Color Palette */
+            --bg-primary: linear-gradient(135deg, #0F0C29 0%, #24243e 25%, #302b63 50%, #8B4513 75%, #DAA520 100%);
+            --bg-secondary: rgba(255, 255, 255, 0.08);
+            --bg-glass: rgba(255, 255, 255, 0.12);
+            --bg-glass-hover: rgba(255, 255, 255, 0.18);
+            --bg-card: rgba(255, 255, 255, 0.1);
+            --bg-input: rgba(255, 255, 255, 0.05);
+            
+            /* Text Colors */
+            --text-primary: #FFFFFF;
+            --text-secondary: rgba(255, 255, 255, 0.8);
+            --text-muted: rgba(255, 255, 255, 0.6);
+            
+            /* Accent Colors */
+            --accent-orange: #FF6B35;
+            --accent-green: #00D4AA;
+            --accent-red: #FF4757;
+            --accent-yellow: #FFA502;
+            --accent-blue: #3742FA;
+            --accent-gold: #DAA520;
+            
+            /* Effects */
+            --border-glass: rgba(255, 255, 255, 0.2);
+            --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.4);
+            --blur: blur(20px);
+            --border-radius: 20px;
+            --border-radius-small: 12px;
+            
+            /* Gradients */
+            --gradient-orange: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            --gradient-green: linear-gradient(135deg, #00D4AA 0%, #00B894 100%);
+            --gradient-red: linear-gradient(135deg, #FF4757 0%, #FF3742 100%);
+            --gradient-blue: linear-gradient(135deg, #3742FA 0%, #2F3A8F 100%);
+            --gradient-gold: linear-gradient(135deg, #DAA520 0%, #B8860B 100%);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(218, 165, 32, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 107, 53, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 60%, rgba(0, 212, 170, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        /* Header */
+        .header {
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 32px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border-glass);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .brand-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .brand-icon {
+            width: 56px;
+            height: 56px;
+            background: var(--gradient-coffee);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 8px 24px rgba(139, 69, 19, 0.3);
+        }
+        
+        .brand-text h1 {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        
+        .brand-text p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .phone-display {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            font-size: 14px;
+            border: 1px solid var(--border-glass);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Индикатор соединения */
+        .connection-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-glass);
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 11px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        
+        .connection-indicator.online {
+            color: var(--accent-green);
+            border-color: rgba(0, 212, 170, 0.3);
+            background: rgba(0, 212, 170, 0.05);
+        }
+        
+        .connection-indicator.offline {
+            color: var(--accent-red);
+            border-color: rgba(255, 71, 87, 0.3);
+            background: rgba(255, 71, 87, 0.05);
+        }
+        
+        .connection-indicator.slow {
+            color: var(--accent-yellow);
+            border-color: rgba(255, 165, 2, 0.3);
+            background: rgba(255, 165, 2, 0.05);
+        }
+        
+        .connection-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            animation: pulse 2s infinite;
+        }
+        
+        .connection-indicator.online .connection-dot {
+            background: var(--accent-green);
+        }
+        
+        .connection-indicator.offline .connection-dot {
+            background: var(--accent-red);
+        }
+        
+        .connection-indicator.slow .connection-dot {
+            background: var(--accent-yellow);
+        }
+        
+        .sync-btn {
+            background: var(--gradient-green);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: var(--border-radius-small);
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 16px rgba(0, 212, 170, 0.3);
+        }
+        
+        .sync-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 212, 170, 0.4);
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 16px 24px;
+            border: none;
+            border-radius: var(--border-radius-small);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        .btn-primary {
+            background: var(--gradient-orange);
+            color: white;
+            box-shadow: 0 4px 16px rgba(255, 107, 53, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(255, 107, 53, 0.4);
+        }
+        
+        .btn-success {
+            background: var(--gradient-green);
+            color: white;
+            box-shadow: 0 4px 16px rgba(0, 212, 170, 0.3);
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 212, 170, 0.4);
+        }
+        
+        .btn-danger {
+            background: var(--gradient-red);
+            color: white;
+            box-shadow: 0 4px 16px rgba(255, 71, 87, 0.3);
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(255, 71, 87, 0.4);
+        }
+        
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 14px;
+            width: auto;
+            margin: 4px;
+        }
+        
+        /* Scanner Section */
+        .scanner-preview {
+            width: 100%;
+            height: 300px;
+            background: var(--bg-input);
+            border: 2px dashed var(--border-glass);
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: 16px;
+            margin-bottom: 20px;
+            backdrop-filter: var(--blur);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .scanner-preview video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: calc(var(--border-radius) - 2px);
+        }
+        
+        .scanner-active {
+            border-color: var(--accent-green);
+            border-style: solid;
+            box-shadow: 0 0 0 4px rgba(0, 212, 170, 0.1);
+            animation: scannerGlow 2s infinite;
+        }
+        
+        @keyframes scannerGlow {
+            0%, 100% { 
+                box-shadow: 0 0 0 4px rgba(0, 212, 170, 0.1);
+            }
+            50% { 
+                box-shadow: 0 0 0 8px rgba(0, 212, 170, 0.2), 0 0 20px rgba(0, 212, 170, 0.1);
+            }
+        }
+        
+        /* Customer List */
+        .customer-list {
+            max-height: 600px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .customer-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .customer-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .customer-list::-webkit-scrollbar-track {
+            background: var(--bg-input);
+            border-radius: 4px;
+        }
+        
+        .customer-list::-webkit-scrollbar-thumb {
+            background: var(--border-glass);
+            border-radius: 4px;
+        }
+        
+        .customer-list::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+        
+        .customer-item {
+            background: var(--bg-glass);
+            backdrop-filter: var(--blur);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--border-radius);
+            padding: 24px;
+            margin-bottom: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .customer-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .customer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        
+        .customer-info h4 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        
+        .customer-info p {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+        
+        .purchases-badge {
+            background: var(--gradient-green);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 16px rgba(0, 212, 170, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .purchases-badge.ready {
+            background: var(--gradient-gold);
+            animation: pulse 2s infinite;
+            box-shadow: 0 4px 16px rgba(218, 165, 32, 0.3);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .action-buttons-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        
+        /* Messages */
+        .success-message, .error-message {
+            padding: 20px 24px;
+            border-radius: var(--border-radius);
+            margin-bottom: 24px;
+            font-weight: 600;
+            backdrop-filter: var(--blur);
+            border: 1px solid var(--border-glass);
+            animation: slideIn 0.5s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .success-message {
+            background: rgba(0, 212, 170, 0.15);
+            color: var(--accent-green);
+            border-color: rgba(0, 212, 170, 0.3);
+        }
+        
+        .error-message {
+            background: rgba(255, 71, 87, 0.15);
+            color: var(--accent-red);
+            border-color: rgba(255, 71, 87, 0.3);
+        }
+        
+        @keyframes slideIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(-20px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: var(--bg-glass);
+            backdrop-filter: var(--blur);
+            margin: 5% auto;
+            padding: 40px;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 600px;
+            border: 1px solid var(--border-glass);
+            box-shadow: var(--shadow-hover);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .modal-content::-webkit-scrollbar-track {
+            background: var(--bg-input);
+            border-radius: 4px;
+        }
+        
+        .modal-content::-webkit-scrollbar-thumb {
+            background: var(--border-glass);
+            border-radius: 4px;
+        }
+        
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 60px;
+            color: var(--text-secondary);
+        }
+        
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border-glass);
+            border-top: 3px solid var(--accent-orange);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Auth Container */
+        .auth-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+        
+        .auth-form {
+            background: var(--bg-glass);
+            backdrop-filter: var(--blur);
+            border-radius: var(--border-radius);
+            padding: 48px;
+            text-align: center;
+            box-shadow: var(--shadow-hover);
+            border: 1px solid var(--border-glass);
+            max-width: 450px;
+            width: 90%;
+        }
+        
+        .auth-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 12px;
+            background: var(--gradient-gold);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .auth-subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+            color: var(--text-secondary);
+        }
+        
+        .auth-btn {
+            width: 100%;
+            padding: 18px;
+            background: var(--gradient-orange);
+            border: none;
+            border-radius: var(--border-radius-small);
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 16px;
+            font-family: inherit;
+        }
+        
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(255, 107, 53, 0.4);
+        }
+        
+        .auth-error {
+            background: rgba(255, 71, 87, 0.15);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            border-radius: var(--border-radius-small);
+            padding: 16px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: var(--accent-red);
+            display: none;
+        }
+        
+        .main-interface {
+            display: none;
+        }
+        
+        /* Responsive Design */
+        @media (min-width: 768px) {
+            .container {
+                max-width: 900px;
+                padding: 30px;
+            }
+            
+            .header {
+                padding: 32px 40px;
+            }
+            
+            .brand-text h1 {
+                font-size: 36px;
+            }
+            
+            .brand-text p {
+                font-size: 18px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+            }
+            
+            .stat-number {
+                font-size: 52px;
+            }
+            
+            .stat-label {
+                font-size: 16px;
+            }
+            
+            .glass-card {
+                padding: 36px;
+            }
+            
+            .card-title {
+                font-size: 22px;
+            }
+            
+            .form-input {
+                padding: 18px 24px;
+                font-size: 18px;
+            }
+            
+            .btn {
+                padding: 18px 28px;
+                font-size: 18px;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            body {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 30px;
+            }
+            
+            .container {
+                max-width: 950px;
+                min-height: auto;
+                background: var(--bg-glass);
+                backdrop-filter: var(--blur);
+                border-radius: 28px;
+                border: 1px solid var(--border-glass);
+                box-shadow: var(--shadow-hover);
+                padding: 32px 28px;
+            }
+            
+            .brand-text h1 {
+                font-size: 24px;
+            }
+            
+            .brand-text p {
+                font-size: 13px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 16px;
+            }
+            
+            .stat-number {
+                font-size: 32px;
+            }
+            
+            .stat-label {
+                font-size: 11px;
+            }
+            
+            .card-title {
+                font-size: 14px;
+            }
+            
+            .form-input {
+                padding: 12px 16px;
+                font-size: 13px;
+            }
+            
+            .btn {
+                padding: 12px 18px;
+                font-size: 13px;
+            }
+            
+            .customer-info h4 {
+                font-size: 14px;
+            }
+            
+            .customer-info p {
+                font-size: 12px;
+            }
+        }
+        
+        @media (min-width: 1440px) {
+            .container {
+                max-width: 1100px;
+                padding: 40px 35px;
+            }
+            
+            .brand-text h1 {
+                font-size: 28px;
+            }
+            
+            .brand-text p {
+                font-size: 15px;
+            }
+            
+            .stat-number {
+                font-size: 36px;
+            }
+            
+            .stat-label {
+                font-size: 13px;
+            }
+            
+            .card-title {
+                font-size: 16px;
+            }
+            
+            .form-input {
+                padding: 14px 18px;
+                font-size: 15px;
+            }
+            
+            .btn {
+                padding: 14px 20px;
+                font-size: 15px;
+            }
+            
+            .customer-info h4 {
+                font-size: 16px;
+            }
+            
+            .customer-info p {
+                font-size: 14px;
+            }
+        }
+        
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+                padding: 24px;
+            }
+            
+            .header-controls {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .stat-card {
+                padding: 24px 20px;
+            }
+            
+            .glass-card {
+                padding: 24px;
+            }
+            
+            .brand-text h1 {
+                font-size: 28px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .btn-small {
+                width: 100%;
+                margin: 4px 0;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .auth-form {
+                padding: 32px 24px;
+            }
+            
+            .modal-content {
+                padding: 24px;
+                margin: 10px;
+                width: calc(100% - 20px);
+            }
+            
+            .customer-header {
+                flex-direction: column;
+                gap: 16px;
+                align-items: flex-start;
+            }
+        }
+        
+        /* Statistics Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        
+        .stat-card {
+            background: var(--bg-glass);
+            backdrop-filter: var(--blur);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--border-radius);
+            padding: 32px 24px;
+            text-align: center;
+            box-shadow: var(--shadow-glass);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.6s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .stat-card:hover::before {
+            left: 100%;
+        }
+        
+        .stat-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+        
+        .stat-card:nth-child(1) .stat-icon {
+            background: var(--gradient-orange);
+        }
+        
+        .stat-card:nth-child(2) .stat-icon {
+            background: var(--gradient-green);
+        }
+        
+        .stat-card:nth-child(3) .stat-icon {
+            background: var(--gradient-gold);
+        }
+        
+        .stat-card:nth-child(4) .stat-icon {
+            background: var(--gradient-blue);
+        }
+        
+        .stat-content .stat-number {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            line-height: 1;
+        }
+        
+        .stat-content .stat-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 32px;
+            margin-bottom: 32px;
+        }
+        
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .glass-card {
+            background: var(--bg-glass);
+            backdrop-filter: var(--blur);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--border-radius);
+            padding: 32px;
+            box-shadow: var(--shadow-glass);
+            transition: all 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .card-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--gradient-orange);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: white;
+        }
+        
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 16px 20px;
+            background: var(--bg-input);
+            border: 2px solid var(--border-glass);
+            border-radius: var(--border-radius-small);
+            font-size: 16px;
+            color: var(--text-primary);
+            backdrop-filter: var(--blur);
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+        
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-orange);
+            background: var(--bg-glass);
+            box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="brand-section">
+                <div class="brand-icon">☕</div>
+                <div class="brand-text">
+                    <h1>COFFEEMANIA</h1>
+                    <p>Панель управления бариста</p>
+                </div>
+            </div>
+            <div class="header-controls">
+                <div class="phone-display">+7 (999) 999-99-99</div>
+                <div class="connection-indicator offline">
+                    <span class="connection-dot"></span>
+                    <span>Отключено</span>
+                </div>
+                <button class="sync-btn">
+                    <span>Синхронизировать</span>
+                </button>
+            </div>
+        </header>
+
+        <main>
+            <section class="scanner-preview">
+                <video id="scanner-video"></video>
+            </section>
+
+            <section class="customer-list">
+                <h2>Список клиентов</h2>
+                <div class="customer-item">
+                    <div class="customer-header">
+                        <h3>Иванов Иван Иванович</h3>
+                        <div class="purchases-badge">
+                            <span>12 покупок</span>
+                        </div>
+                    </div>
+                    <p>Номер телефона: +7 (999) 999-99-99</p>
+                    <div class="action-buttons">
+                        <button class="btn-primary">Подробнее</button>
+                        <button class="btn-danger">Удалить</button>
+                    </div>
+                </div>
+                <div class="customer-item">
+                    <div class="customer-header">
+                        <h3>Петрова Анна Петровна</h3>
+                        <div class="purchases-badge">
+                            <span>8 покупок</span>
+                        </div>
+                    </div>
+                    <p>Номер телефона: +7 (999) 999-99-99</p>
+                    <div class="action-buttons">
+                        <button class="btn-primary">Подробнее</button>
+                        <button class="btn-danger">Удалить</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">👤</div>
+                    <div class="stat-content">
+                        <div class="stat-number">150</div>
+                        <div class="stat-label">Новых клиентов</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-content">
+                        <div class="stat-number">5000</div>
+                        <div class="stat-label">Выручка</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🍵</div>
+                    <div class="stat-content">
+                        <div class="stat-number">200</div>
+                        <div class="stat-label">Выпито чашек</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">👨‍🍳</div>
+                    <div class="stat-content">
+                        <div class="stat-number">10</div>
+                        <div class="stat-label">Выпечено кофе</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="main-grid">
+                <div class="sidebar">
+                    <div class="glass-card">
+                        <div class="card-title">
+                            <div class="card-icon">👤</div>
+                            <span>Информация о баристе</span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Имя</label>
+                            <input type="text" class="form-input" placeholder="Введите имя">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Номер телефона</label>
+                            <input type="text" class="form-input" placeholder="+7 (999) 999-99-99">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Электронная почта</label>
+                            <input type="email" class="form-input" placeholder="Введите электронную почту">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Пароль</label>
+                            <input type="password" class="form-input" placeholder="Введите пароль">
+                        </div>
+                        <button class="btn-primary">Сохранить</button>
+                    </div>
+                </div>
+                <div class="main-content">
+                    <div class="glass-card">
+                        <div class="card-title">
+                            <div class="card-icon">👤</div>
+                            <span>Информация о клиенте</span>
+                        </div>
+                        <div class="customer-info">
+                            <h4>Иванов Иван Иванович</h4>
+                            <p>Номер телефона: +7 (999) 999-99-99</p>
+                        </div>
+                        <div class="purchases-badge">
+                            <span>12 покупок</span>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn-primary">Подробнее</button>
+                            <button class="btn-danger">Удалить</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div class="modal" id="purchase-modal">
+        <div class="modal-content">
+            <h2>История покупок</h2>
+            <div class="purchases-list">
+                <!-- Покупки будут добавляться здесь динамически -->
+            </div>
+            <button class="btn-primary">Закрыть</button>
+        </div>
+    </div>
+
+    <div class="modal" id="history-modal">
+        <div class="modal-content">
+            <h2>История покупок</h2>
+            <div class="purchases-list">
+                <!-- Покупки будут добавляться здесь динамически -->
+            </div>
+            <button class="btn-primary">Закрыть</button>
+        </div>
+    </div>
+
+    <div class="auth-container">
+        <div class="auth-form">
+            <h2 class="auth-title">Вход</h2>
+            <p class="auth-subtitle">Войдите в систему</p>
+            <div class="form-group">
+                <label class="form-label">Электронная почта</label>
+                <input type="email" class="form-input" placeholder="Введите электронную почту">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Пароль</label>
+                <input type="password" class="form-input" placeholder="Введите пароль">
+            </div>
+            <button class="auth-btn">Войти</button>
+            <p class="auth-error">Неверный логин или пароль</p>
+        </div>
+    </div>
+
+    <script>
+        // Format date for admin cards
+        function formatAdminDate(dateString) {
+            const date = new Date(dateString);
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            return `${day}.${month}`;
+        }
+        
+        // Format time for admin cards
+        function formatAdminTime(dateString) {
+            const date = new Date(dateString);
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+
+        // Close history modal
+        function closeHistoryModal() {
+            document.getElementById('history-modal').style.display = 'none';
+        }
+
+        // Delete customer
+        async function deleteCustomer(customerId) {
+            if (!confirm('⚠️ Вы уверены, что хотите удалить этого клиента?\n\nЭто действие нельзя отменить.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/customer/${customerId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error);
+                }
+
+                showSuccess('✅ Клиент успешно удален');
+                await loadData();
+
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        // Show messages
+        function showSuccess(message) {
+            const el = document.getElementById('success-message');
+            el.innerHTML = `<span>✅</span> ${message}`;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 5000);
+        }
+
+        function showError(message) {
+            const el = document.getElementById('error-message');
+            el.innerHTML = `<span>❌</span> ${message}`;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 5000);
+        }
+
+        // Click outside modal to close
+        document.getElementById('purchase-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePurchaseModal();
+            }
+        });
+
+        document.getElementById('history-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeHistoryModal();
+            }
+        });
+
+        // Auto-refresh every 30 seconds
+        setInterval(loadData, 30000);
+
+        // Update barista phone
+        async function updateBaristaPhone() {
+            const phone = document.getElementById('barista-phone-input').value.trim();
+            
+            if (!phone) {
+                showError('Введите номер телефона');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/barista-phone', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone })
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error);
+                }
+                
+                showSuccess(`✅ Номер бариста обновлен: ${phone}`);
+                document.getElementById('barista-phone').textContent = phone;
+                document.getElementById('barista-phone-input').value = '';
+                
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        // Phone number formatting for customer phone - ИСПРАВЛЕНО ФИНАЛЬНО
+        document.getElementById('customer-phone').addEventListener('input', function(e) {
+            // Получаем только цифры из введенного текста
+            let input = e.target.value;
+            let numbers = input.replace(/\D/g, '');
+            
+            // Если пользователь начал печатать с +7, обрабатываем отдельно
+            if (input.startsWith('+7')) {
+                numbers = input.substring(2).replace(/\D/g, '');
+            } else if (numbers.startsWith('8')) {
+                // Заменяем 8 на 7 только если это первая цифра
+                numbers = '7' + numbers.substring(1);
+                numbers = numbers.substring(1); // Убираем 7, так как она будет в +7
+            } else if (numbers.startsWith('7') && numbers.length > 1) {
+                // Если начинается с 7 и есть еще цифры, убираем первую 7
+                numbers = numbers.substring(1);
+            }
+            
+            // Ограничиваем до 10 цифр
+            numbers = numbers.substring(0, 10);
+            
+            // Форматируем
+            if (numbers.length === 0) {
+                e.target.value = '';
+            } else if (numbers.length <= 3) {
+                e.target.value = `+7 (${numbers}`;
+            } else if (numbers.length <= 6) {
+                e.target.value = `+7 (${numbers.substring(0, 3)}) ${numbers.substring(3)}`;
+            } else if (numbers.length <= 8) {
+                e.target.value = `+7 (${numbers.substring(0, 3)}) ${numbers.substring(3, 6)} ${numbers.substring(6)}`;
+            } else {
+                e.target.value = `+7 (${numbers.substring(0, 3)}) ${numbers.substring(3, 6)} ${numbers.substring(6, 8)} ${numbers.substring(8)}`;
+            }
+        });
+
+        // Phone number formatting for barista phone - ИСПРАВЛЕНО ФИНАЛЬНО
+        document.getElementById('barista-phone-input').addEventListener('input', function(e) {
+            // Получаем только цифры из введенного текста
+            let input = e.target.value;
+            let numbers = input.replace(/\D/g, '');
+            
+            // Если пользователь начал печатать с +7, обрабатываем отдельно
+            if (input.startsWith('+7')) {
+                numbers = input.substring(2).replace(/\D/g, '');
+            } else if (numbers.startsWith('8')) {
+                // Заменяем 8 на 7 только если это первая цифра
+                numbers = '7' + numbers.substring(1);
+                numbers = numbers.substring(1); // Убираем 7, так как она будет в +7
+            } else if (numbers.startsWith('7') && numbers.length > 1) {
+                // Если начинается с 7 и есть еще цифры, убираем первую 7
+                numbers = numbers.substring(1);
+            }
+            
+            // Ограничиваем до 10 цифр
+            numbers = numbers.substring(0, 10);
+            
+            // Форматируем
+            if (numbers.length === 0) {
+                e.target.value = '';
+            } else if (numbers.length <= 3) {
+                e.target.value = `+7 (${numbers}`;
+            } else if (numbers.length <= 6) {
+                e.target.value = `+7 (${numbers.substring(0, 3)}) ${numbers.substring(3)}`;
+            } else if (numbers.length <= 8) {
+                e.target.value = `+7 (${numbers.substring(0, 3)}) ${numbers.substring(3, 6)} ${numbers.substring(6)}`;
+            } else {
+                e.target.value = `+7 (${numbers.substring(0, 3)}) ${numbers.substring(3, 6)} ${numbers.substring(6, 8)} ${numbers.substring(8)}`;
+            }
+        });
+
+        // Load current barista phone into input when page loads
+        async function loadBaristaPhoneToInput() {
+            try {
+                const response = await fetch('/api/barista-phone');
+                const data = await response.json();
+                document.getElementById('barista-phone-input').value = data.phone;
+            } catch (error) {
+                console.error('Error loading barista phone to input:', error);
+            }
+        }
+
+        // PWA Install for Admin App
+        let adminDeferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            adminDeferredPrompt = e;
+            
+            // Show admin install button
+            document.getElementById('install-admin-btn').style.display = 'flex';
+        });
+        
+        function installAdminApp() {
+            if (adminDeferredPrompt) {
+                adminDeferredPrompt.prompt();
+                adminDeferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('ADMINCOFFEE: Приложение установлено');
+                        document.getElementById('install-admin-btn').style.display = 'none';
+                        showSuccess('🎉 ADMINCOFFEE успешно установлено!');
+                    }
+                    adminDeferredPrompt = null;
+                });
+            }
+        }
+
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                .then((registration) => {
+                    console.log('ADMINCOFFEE SW registered: ', registration);
+                })
+                .catch((registrationError) => {
+                    console.log('ADMINCOFFEE SW registration failed: ', registrationError);
+                });
+            });
+        }
+
+        // Call this when the interface loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(loadBaristaPhoneToInput, 1000);
+        });
+    </script>
+</body>
+</html>
