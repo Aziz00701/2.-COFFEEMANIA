@@ -875,11 +875,21 @@
         }
         
         @media (min-width: 1024px) {
-            body {
+            /* ИСПРАВЛЕНО: Применяем стили body только когда НЕ показана авторизация */
+            body:not(.auth-active) {
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 padding: 2vh 2vw;
+                min-height: 100vh;
+            }
+            
+            /* Для режима авторизации body должен быть обычным */
+            body.auth-active {
+                display: block;
+                align-items: unset;
+                justify-content: unset;
+                padding: 0;
                 min-height: 100vh;
             }
             
@@ -1407,8 +1417,7 @@
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 
     <script>
-        // ИСПРАВЛЕНИЕ PWA: Принудительная очистка состояния при запуске
-        // Проверяем, запущено ли как PWA и очищаем кэшированное состояние
+        // ИСПРАВЛЕНИЕ PWA: Управление состоянием авторизации
         (function() {
             console.log('🔧 COFFEEMANIA Admin: Инициализация PWA...');
             
@@ -1417,31 +1426,50 @@
             const isIosStandalone = window.navigator.standalone === true;
             const isPWA = isStandalone || isIosStandalone;
             
+            // Функция управления классом body для исправления позиционирования
+            function setAuthMode(isAuthMode) {
+                if (isAuthMode) {
+                    document.body.classList.add('auth-active');
+                } else {
+                    document.body.classList.remove('auth-active');
+                }
+            }
+            
+            // Проверяем сохраненное состояние авторизации
+            const isLoggedIn = localStorage.getItem('admin_logged_in') === 'true';
+            
             if (isPWA) {
-                console.log('📱 Запущено как PWA - принудительная очистка состояния');
+                console.log('📱 Запущено как PWA Admin');
                 
-                // Очищаем любое сохраненное состояние авторизации
-                localStorage.removeItem('admin_logged_in');
-                sessionStorage.removeItem('admin_session');
-                
-                // Принудительно показываем форму авторизации
-                setTimeout(() => {
-                    const authContainer = document.getElementById('auth-container');
-                    const mainInterface = document.getElementById('main-interface');
-                    
-                    if (authContainer && mainInterface) {
-                        authContainer.style.display = 'block';
-                        mainInterface.style.display = 'none';
+                if (isLoggedIn) {
+                    console.log('✅ Восстанавливаем авторизованную сессию PWA');
+                    // Пользователь уже авторизован - показываем основной интерфейс
+                    setTimeout(() => {
+                        const authContainer = document.getElementById('auth-container');
+                        const mainInterface = document.getElementById('main-interface');
                         
-                        // Очищаем поля
-                        const usernameInput = document.getElementById('username');
-                        const passwordInput = document.getElementById('password');
-                        if (usernameInput) usernameInput.value = '';
-                        if (passwordInput) passwordInput.value = '';
+                        if (authContainer && mainInterface) {
+                            authContainer.style.display = 'none';
+                            mainInterface.style.display = 'block';
+                            setAuthMode(false);
+                            console.log('🎉 Основной интерфейс восстановлен');
+                        }
+                    }, 100);
+                } else {
+                    console.log('🔐 Требуется авторизация для PWA');
+                    // Показываем форму авторизации
+                    setTimeout(() => {
+                        const authContainer = document.getElementById('auth-container');
+                        const mainInterface = document.getElementById('main-interface');
                         
-                        console.log('✅ Форма авторизации восстановлена для PWA');
-                    }
-                }, 100);
+                        if (authContainer && mainInterface) {
+                            authContainer.style.display = 'flex';
+                            mainInterface.style.display = 'none';
+                            setAuthMode(true);
+                            console.log('🔐 Форма авторизации показана');
+                        }
+                    }, 100);
+                }
                 
                 // Обновляем Service Worker для исправления кэша
                 if ('serviceWorker' in navigator) {
@@ -1451,22 +1479,38 @@
                         console.log('🔄 Service Worker обновлен');
                     });
                 }
+            } else {
+                // Для не-PWA режима проверяем авторизацию
+                console.log('🌐 Запущено в браузере');
+                
+                if (isLoggedIn) {
+                    // Показываем основной интерфейс
+                    setTimeout(() => {
+                        const authContainer = document.getElementById('auth-container');
+                        const mainInterface = document.getElementById('main-interface');
+                        
+                        if (authContainer && mainInterface) {
+                            authContainer.style.display = 'none';
+                            mainInterface.style.display = 'block';
+                            setAuthMode(false);
+                            console.log('✅ Авторизованная сессия восстановлена');
+                        }
+                    }, 50);
+                } else {
+                    // Показываем форму авторизации
+                    setTimeout(() => {
+                        const authContainer = document.getElementById('auth-container');
+                        const mainInterface = document.getElementById('main-interface');
+                        
+                        if (authContainer && mainInterface) {
+                            authContainer.style.display = 'flex';
+                            mainInterface.style.display = 'none';
+                            setAuthMode(true);
+                            console.log('🔐 Форма авторизации отображена');
+                        }
+                    }, 50);
+                }
             }
-            
-            // Для не-PWA режима тоже принудительно показываем авторизацию
-            window.addEventListener('load', () => {
-                setTimeout(() => {
-                    const authContainer = document.getElementById('auth-container');
-                    const mainInterface = document.getElementById('main-interface');
-                    
-                    if (authContainer && mainInterface) {
-                        // По умолчанию всегда показываем форму авторизации
-                        authContainer.style.display = 'block';
-                        mainInterface.style.display = 'none';
-                        console.log('🔐 Форма авторизации отображена');
-                    }
-                }, 50);
-            });
         })();
         
         let currentCustomers = [];
@@ -1484,41 +1528,62 @@
             
             if (username === 'coffemania' && password === '787898') {
                 // Successful login
+                console.log('✅ Успешная авторизация');
+                
+                // Сохраняем состояние авторизации в localStorage для PWA
+                localStorage.setItem('admin_logged_in', 'true');
+                sessionStorage.setItem('admin_session', Date.now().toString());
+                
+                // Переключаем интерфейс
                 document.getElementById('auth-container').style.display = 'none';
                 document.getElementById('main-interface').style.display = 'block';
+                
+                // ИСПРАВЛЕНИЕ: Убираем класс auth-active для правильного позиционирования
+                document.body.classList.remove('auth-active');
                 
                 // Initialize main interface
                 loadData();
                 showSuccess('🎉 Добро пожаловать в COFFEEMANIA!');
+                
+                console.log('🎉 Переход к основному интерфейсу');
             } else {
                 // Failed login
-                errorEl.textContent = 'Неверный логин или пароль';
+                console.log('❌ Неверные данные авторизации');
                 errorEl.style.display = 'block';
+                errorEl.textContent = 'Неверный логин или пароль';
                 
+                // Очищаем поля
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+                
+                // Скрываем ошибку через 3 секунды
                 setTimeout(() => {
                     errorEl.style.display = 'none';
                 }, 3000);
             }
         });
         
-        // Logout function
+        // Функция выхода из системы
         function logout() {
-            // Останавливаем сканер если активен
-            if (isScanning) {
-                stopScanner();
-            }
+            console.log('🚪 Выход из системы');
             
-            // Закрываем модальные окна
-            document.getElementById('purchase-modal').style.display = 'none';
-            document.getElementById('history-modal').style.display = 'none';
+            // Очищаем состояние авторизации
+            localStorage.removeItem('admin_logged_in');
+            sessionStorage.removeItem('admin_session');
             
-            // Показываем форму входа
+            // Переключаем на форму авторизации
+            document.getElementById('auth-container').style.display = 'flex';
             document.getElementById('main-interface').style.display = 'none';
-            document.getElementById('auth-container').style.display = 'block';
+            
+            // ИСПРАВЛЕНИЕ: Добавляем класс auth-active для правильного позиционирования
+            document.body.classList.add('auth-active');
+            
+            // Очищаем поля ввода
             document.getElementById('username').value = '';
             document.getElementById('password').value = '';
+            document.getElementById('login-error').style.display = 'none';
             
-            showSuccess('👋 Вы успешно вышли из системы');
+            console.log('🔐 Форма авторизации отображена');
         }
 
         // Load initial data
