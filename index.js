@@ -14,13 +14,28 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// Database configuration
+// Database configuration - ОБНОВЛЕНО ДЛЯ SUPABASE
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    max: 10,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000,
+    max: 5, // Уменьшено для Supabase free tier
+    min: 1,
+    idleTimeoutMillis: 20000, // Уменьшено для transaction mode
+    connectionTimeoutMillis: 10000, // Увеличено для стабильности
+    acquireTimeoutMillis: 60000,
+    createTimeoutMillis: 30000,
+    destroyTimeoutMillis: 5000,
+    reapIntervalMillis: 1000,
+    createRetryIntervalMillis: 200,
+    // Дополнительные настройки для Supabase
+    statement_timeout: 30000,
+    query_timeout: 30000,
+    application_name: 'COFFEEMANIA',
+    // Для transaction mode pooler
+    ...(process.env.DATABASE_URL && process.env.DATABASE_URL.includes(':6543') && {
+        max: 3, // Меньше соединений для transaction mode
+        idleTimeoutMillis: 1000,
+    })
 });
 
 // Database type
@@ -29,16 +44,42 @@ let db = null; // SQLite database instance
 
 // Initialize database
 async function initializeDatabase() {
-    // Try PostgreSQL first
+    // Try PostgreSQL/Supabase first
     try {
-        // Test connection
+        console.log('🔌 Подключение к базе данных...');
+        
+        // Detect database type from connection string
+        const dbUrl = process.env.DATABASE_URL;
+        let dbType = 'PostgreSQL';
+        let poolMode = 'Direct';
+        
+        if (dbUrl) {
+            if (dbUrl.includes('supabase.com')) {
+                dbType = 'Supabase PostgreSQL';
+                if (dbUrl.includes(':6543')) {
+                    poolMode = 'Transaction Mode Pooler';
+                } else if (dbUrl.includes(':5432') && dbUrl.includes('pooler')) {
+                    poolMode = 'Session Mode Pooler';
+                } else {
+                    poolMode = 'Direct Connection';
+                }
+            } else if (dbUrl.includes('neon.tech')) {
+                dbType = 'Neon PostgreSQL';
+            }
+        }
+        
+        // Test connection with detailed info
         const client = await pool.connect();
-        await client.query('SELECT NOW()');
+        const result = await client.query('SELECT version(), current_database(), current_user');
+        const dbInfo = result.rows[0];
         client.release();
         
-        console.log('✅ PostgreSQL connected successfully');
+        console.log(`✅ ${dbType} подключен успешно`);
+        console.log(`📊 Режим: ${poolMode}`);
+        console.log(`🗄️ База: ${dbInfo.current_database}`);
+        console.log(`👤 Пользователь: ${dbInfo.current_user}`);
         
-        // Create tables if they don't exist
+        // Create tables if they don't exist (with better indexes for Supabase)
         await pool.query(`
             CREATE TABLE IF NOT EXISTS customers (
                 id VARCHAR(50) PRIMARY KEY,
@@ -50,18 +91,33 @@ async function initializeDatabase() {
             )
         `);
         
+        // Add index for faster phone searches
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_customers_phone ON customers(phone)
+        `);
+        
         await pool.query(`
             CREATE TABLE IF NOT EXISTS purchase_history (
                 purchase_id SERIAL PRIMARY KEY,
-                customer_id VARCHAR(50) REFERENCES customers(id),
-                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                customer_id VARCHAR(50) REFERENCES customers(id) ON DELETE CASCADE,
+                purchase_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                action VARCHAR(20) DEFAULT 'purchase'
             )
+        `);
+        
+        // Add index for faster customer history lookups
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_purchase_history_customer_id ON purchase_history(customer_id)
+        `);
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_purchase_history_date ON purchase_history(purchase_date)
         `);
         
         await pool.query(`
             CREATE TABLE IF NOT EXISTS settings (
                 key VARCHAR(50) PRIMARY KEY,
-                value TEXT
+                value TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
         
@@ -70,17 +126,30 @@ async function initializeDatabase() {
             INSERT INTO settings (key, value) 
             VALUES ('barista_phone', $1) 
             ON CONFLICT (key) DO NOTHING
-        `, [process.env.BARISTA_PHONE || '+7 (999) 123-45-67']);
+        `, [process.env.BARISTA_PHONE || '+7 (775) 455-55-70']);
         
-        console.log('✅ PostgreSQL tables ready');
+        console.log('✅ Таблицы и индексы готовы');
         usePostgreSQL = true;
+        
+        // Check existing customers
+        const customerCount = await pool.query('SELECT COUNT(*) as count FROM customers');
+        const count = parseInt(customerCount.rows[0].count);
+        
+        if (count > 0) {
+            console.log(`📊 Найдено ${count} клиентов в базе данных`);
+        } else {
+            console.log('📝 База данных пуста, готова к работе');
+        }
+        
         return;
     } catch (error) {
         if (process.env.NODE_ENV === 'production') {
-            console.error('❌ PostgreSQL connection failed in production:', error.message);
+            console.error('❌ PostgreSQL/Supabase подключение не удалось в продакшене:', error.message);
+            console.error('🔧 Проверьте DATABASE_URL и убедитесь что используете правильный pooler mode');
             throw error; // В продакшене не должно быть fallback к SQLite
         }
-        console.log('❌ PostgreSQL connection error:', error.message);
+        console.log('❌ PostgreSQL connection error:');
+        console.log(`   ${error.message}`);
         console.log('🔄 Switching to SQLite database...');
     }
     
@@ -297,6 +366,14 @@ function levenshteinDistance(str1, str2) {
 // Get statistics
 app.get('/api/stats', async (req, res) => {
     try {
+        // Check if database is ready
+        if (!usePostgreSQL && !db) {
+            return res.status(503).json({ 
+                error: 'Database not ready yet',
+                retry: true 
+            });
+        }
+        
         let totalCustomers, totalPurchases, readyForFreeCoffee;
         
         if (usePostgreSQL) {
@@ -310,7 +387,14 @@ app.get('/api/stats', async (req, res) => {
             const readyResult = await pool.query('SELECT COUNT(*) FROM customers WHERE purchases >= 6');
             readyForFreeCoffee = parseInt(readyResult.rows[0].count);
         } else {
-            // SQLite queries
+            // SQLite queries with null check
+            if (!db) {
+                return res.status(503).json({ 
+                    error: 'SQLite database not initialized',
+                    retry: true 
+                });
+            }
+            
             const totalCustomersResult = await new Promise((resolve, reject) => {
                 db.get('SELECT COUNT(*) as count FROM customers', (err, row) => {
                     if (err) reject(err);
@@ -552,8 +636,8 @@ app.post('/api/purchase/:id', async (req, res) => {
             // Записываем в историю ТОЛЬКО реальные покупки (НЕ бесплатный кофе)
             if (!isFreeDelivery) {
                 await pool.query(
-                    'INSERT INTO purchase_history (customer_id) VALUES ($1)',
-                    [id]
+                    'INSERT INTO purchase_history (customer_id, action) VALUES ($1, $2)',
+                    [id, 'purchase']
                 );
             }
             
@@ -693,13 +777,13 @@ app.get('/api/history/:id', async (req, res) => {
         if (usePostgreSQL) {
             // PostgreSQL
             const result = await pool.query(
-                'SELECT * FROM purchase_history WHERE customer_id = $1 ORDER BY timestamp ASC',
+                'SELECT *, purchase_date, action FROM purchase_history WHERE customer_id = $1 ORDER BY purchase_date ASC',
                 [id]
             );
             history = result.rows.map(row => ({
                 ...row,
-                purchase_date: row.timestamp || row.purchase_date,
-                action: 'purchase'
+                purchase_date: row.purchase_date,
+                action: row.action || 'purchase'
             }));
         } else {
             // SQLite
