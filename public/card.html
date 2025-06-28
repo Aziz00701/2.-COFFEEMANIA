@@ -3632,20 +3632,78 @@
                     alert('❌ Ошибка установки. Попробуйте позже.');
                 }
             } else {
-                // Показываем информацию о том что PWA установка недоступна
+                // УЛУЧШЕНО: Показываем красивые инструкции в модальном окне вместо alert
+                console.log('💡 Стандартная PWA установка недоступна, показываем улучшенные инструкции');
+                
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
                 const isAndroid = /Android/i.test(navigator.userAgent);
                 
-                let message = '';
+                let title = '📱 Установить COFFEEMANIA';
+                let instructions = '';
+                
                 if (isIOS) {
-                    message = '📱 На iOS Safari:\n\n🔸 Откройте это приложение в Safari\n🔸 Нажмите кнопку "Поделиться" внизу\n🔸 Выберите "Добавить в Dock"\n🔸 Или используйте браузер Chrome для полной PWA поддержки';
+                    title = '🍎 Установить на iPhone/iPad';
+                    instructions = `
+                        <div style="text-align: left; margin-bottom: 16px;">
+                            <div style="background: var(--bg-input); padding: 12px; border-radius: 8px; margin: 8px 0; border: 1px solid var(--border-glass);">
+                                <strong>1.</strong> Нажмите кнопку "Поделиться" <span style="font-size: 1.2rem;">⤴️</span> (внизу экрана)
+                            </div>
+                            <div style="background: var(--bg-input); padding: 12px; border-radius: 8px; margin: 8px 0; border: 1px solid var(--border-glass);">
+                                <strong>2.</strong> Выберите "На экран 'Домой'" <span style="font-size: 1.2rem;">🏠</span>
+                            </div>
+                            <div style="background: var(--bg-input); padding: 12px; border-radius: 8px; margin: 8px 0; border: 1px solid var(--border-glass);">
+                                <strong>3.</strong> Нажмите "Добавить" <span style="font-size: 1.2rem;">➕</span>
+                            </div>
+                        </div>
+                        <div style="background: rgba(0,122,255,0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(0,122,255,0.3);">
+                            <span style="font-size: 1.2rem;">💡</span> Приложение появится на главном экране с красивой иконкой!
+                        </div>
+                    `;
                 } else if (isAndroid) {
-                    message = '📱 На Android:\n\n🔸 Используйте Chrome браузер для установки PWA\n🔸 Или найдите "Добавить на главный экран" в меню браузера';
+                    title = '🤖 Установить на Android';
+                    instructions = `
+                        <div style="text-align: left; margin-bottom: 16px;">
+                            <div style="background: var(--bg-input); padding: 12px; border-radius: 8px; margin: 8px 0; border: 1px solid var(--border-glass);">
+                                <strong>Chrome:</strong> Ищите уведомление "Установить приложение" или иконку в адресной строке
+                            </div>
+                            <div style="background: var(--bg-input); padding: 12px; border-radius: 8px; margin: 8px 0; border: 1px solid var(--border-glass);">
+                                <strong>Другие браузеры:</strong> Меню → "Добавить на главный экран"
+                            </div>
+                        </div>
+                        <div style="background: rgba(76,175,80,0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(76,175,80,0.3);">
+                            <span style="font-size: 1.2rem;">🚀</span> Полноценное приложение с красивой иконкой!
+                        </div>
+                    `;
                 } else {
-                    message = '📱 Для установки PWA:\n\n🔸 Используйте Chrome, Edge или Firefox\n🔸 Найдите иконку установки в адресной строке\n🔸 Или используйте меню браузера';
+                    title = '💻 Установить PWA приложение';
+                    instructions = `
+                        <div style="text-align: left; margin-bottom: 16px;">
+                            <div style="background: var(--bg-input); padding: 12px; border-radius: 8px; margin: 8px 0; border: 1px solid var(--border-glass);">
+                                <strong>Chrome/Edge:</strong> Ищите иконку установки в адресной строке
+                            </div>
+                            <div style="background: var(--bg-input); padding: 12px; border-radius: 8px; margin: 8px 0; border: 1px solid var(--border-glass);">
+                                <strong>Firefox:</strong> Меню → "Установить эту страницу как приложение"
+                            </div>
+                        </div>
+                        <div style="background: rgba(255,107,53,0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,107,53,0.3);">
+                            <span style="font-size: 1.2rem;">☕</span> Быстрый доступ к вашей карте лояльности!
+                        </div>
+                    `;
                 }
                 
-                alert(message);
+                // Показываем инструкции в красивом модальном окне
+                const modal = document.getElementById('qr-modal');
+                const content = modal.querySelector('.modal-content');
+                
+                content.innerHTML = `
+                    <div class="modal-title">${title}</div>
+                    <div style="color: var(--text-primary); margin-bottom: 24px;">
+                        ${instructions}
+                    </div>
+                    <button class="modal-btn secondary" onclick="hideQR()" style="width: 100%;">Понятно</button>
+                `;
+                
+                modal.style.display = 'flex';
             }
         }
     </script>
