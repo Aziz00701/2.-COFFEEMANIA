@@ -32,22 +32,6 @@ app.use('/admin.html', (req, res, next) => {
         `);
     }
     
-    // Дополнительная проверка - блокируем мобильные браузеры
-    const userAgent = req.get('User-Agent') || '';
-    const isMobile = /Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
-    
-    if (isMobile) {
-        return res.status(403).send(`
-            <!DOCTYPE html>
-            <html><head><meta charset="UTF-8"><title>Недоступно на мобильных</title></head>
-            <body style="font-family:Arial;text-align:center;padding:50px;background:#0F0C29;color:white;">
-                <h1>📱 Недоступно на мобильных устройствах</h1>
-                <p>Административная панель доступна только с компьютера</p>
-                <a href="/" style="color:#DAA520;">← Вернуться на главную</a>
-            </body></html>
-        `);
-    }
-    
     next();
 });
 
