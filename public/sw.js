@@ -1,4 +1,4 @@
-const CACHE_NAME = 'coffeemania-v2.2.0';
+const CACHE_NAME = 'coffeemania-v2.3.0';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -9,6 +9,7 @@ const urlsToCache = [
   '/icon-192.png',
   '/icon-512.png',
   '/icon.svg',
+  '/connection-check.js',
   // Google Fonts
   'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap',
   // jsQR Library
@@ -17,7 +18,7 @@ const urlsToCache = [
 
 // Install event - cache resources
 self.addEventListener('install', event => {
-  console.log('COFFEEMANIA SW v2.2.0: Installing...');
+  console.log('COFFEEMANIA SW v2.3.0: Installing...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
@@ -34,7 +35,7 @@ self.addEventListener('install', event => {
 
 // Activate event - cleanup old caches and take control
 self.addEventListener('activate', event => {
-  console.log('COFFEEMANIA SW v2.2.0: Активация...');
+  console.log('COFFEEMANIA SW v2.3.0: Активация...');
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
@@ -55,110 +56,95 @@ self.addEventListener('activate', event => {
 
 // Fetch event - serve from cache when offline, update cache when online
 self.addEventListener('fetch', event => {
-  // УЛУЧШЕНА логика для API запросов
-  if (event.request.url.includes('/api/')) {
-    // Для API запросов используем network-first стратегию с быстрым таймаутом
+  const url = new URL(event.request.url);
+  
+  // СТРАТЕГИЯ 1: API запросы - быстрый Network First с коротким таймаутом
+  if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       Promise.race([
-        fetch(event.request, { timeout: 10000 }), // 10 сек таймаут
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('API timeout')), 10000)
-        )
-      ])
-        .then(response => {
-          // Если запрос успешен, возвращаем ответ
-          return response;
-        })
-        .catch(error => {
-          console.log('COFFEEMANIA SW: API запрос не удался:', error.message);
-          // Возвращаем 503 для индикации проблем с сервером
-          return new Response(JSON.stringify({
-            error: 'Server temporarily unavailable',
-            status: 'offline'
-          }), { 
+        // Быстрый сетевой запрос с таймаутом 2 секунды
+        fetch(event.request, { 
+          signal: AbortSignal.timeout(2000),
+          cache: 'no-cache' 
+        }).catch(error => {
+          console.log('SW: API недоступен, используем заглушку:', url.pathname);
+          
+          // Возвращаем заглушки для критических API
+          if (url.pathname === '/api/stats') {
+            return new Response(JSON.stringify({
+              totalCustomers: 0,
+              totalPurchases: 0,
+              readyForFreeCoffee: 0
+            }), {
+              status: 503,
+              headers: { 'Content-Type': 'application/json' }
+            });
+          }
+          
+          // Для остальных API - просто ошибка
+          return new Response(JSON.stringify({ error: 'Сервер недоступен' }), {
             status: 503,
-            statusText: 'Service Unavailable',
-            headers: new Headers({
-              'Content-Type': 'application/json'
-            })
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }),
+        
+        // Таймаут через 2 секунды
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('API timeout')), 2000)
+        )
+      ]).catch(() => {
+        // Fallback при полном провале
+        return new Response(JSON.stringify({ error: 'Соединение недоступно' }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      })
+    );
+    return;
+  }
+  
+  // СТРАТЕГИЯ 2: Статические файлы - МГНОВЕННЫЙ Cache First
+  if (urlsToCache.some(cachedUrl => url.pathname === cachedUrl || event.request.url === cachedUrl)) {
+    event.respondWith(
+      caches.match(event.request)
+        .then(response => {
+          if (response) {
+            console.log('SW: Мгновенная загрузка из кэша:', url.pathname);
+            
+            // ПАРАЛЛЕЛЬНО обновляем кэш в фоне (stale-while-revalidate)
+            fetch(event.request).then(fetchResponse => {
+              if (fetchResponse && fetchResponse.status === 200) {
+                caches.open(CACHE_NAME).then(cache => {
+                  cache.put(event.request, fetchResponse.clone());
+                });
+              }
+            }).catch(() => {
+              // Игнорируем ошибки фонового обновления
+            });
+            
+            return response;
+          }
+          
+          // Если нет в кэше - запрашиваем из сети
+          return fetch(event.request).then(fetchResponse => {
+            if (fetchResponse && fetchResponse.status === 200) {
+              caches.open(CACHE_NAME).then(cache => {
+                cache.put(event.request, fetchResponse.clone());
+              });
+            }
+            return fetchResponse;
           });
         })
     );
     return;
   }
-
-  // Для статических ресурсов используем cache-first стратегию
+  
+  // СТРАТЕГИЯ 3: Все остальное - быстрый Network First
   event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Если есть в кэше, возвращаем кэшированную версию
-        if (response) {
-          // Параллельно обновляем кэш в фоне
-          fetch(event.request)
-            .then(fetchResponse => {
-              if (fetchResponse && fetchResponse.status === 200) {
-                const responseClone = fetchResponse.clone();
-                caches.open(CACHE_NAME)
-                  .then(cache => {
-                    cache.put(event.request, responseClone);
-                  });
-              }
-            })
-            .catch(() => {
-              // Игнорируем ошибки фонового обновления
-            });
-          
-          return response;
-        }
-
-        // Если нет в кэше, загружаем из сети
-        return fetch(event.request)
-          .then(fetchResponse => {
-            // Проверяем валидность ответа
-            if (!fetchResponse || fetchResponse.status !== 200 || fetchResponse.type !== 'basic') {
-              return fetchResponse;
-            }
-
-            // Клонируем ответ для кэширования
-            const responseToCache = fetchResponse.clone();
-
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(event.request, responseToCache);
-              });
-
-            return fetchResponse;
-          })
-          .catch(() => {
-            // ИСПРАВЛЕНО: НЕ РЕДИРЕКТИМ на index.html для персональных PWA
-            // Если это запрос к card.html с параметрами, пытаемся вернуть базовую версию card.html
-            if (event.request.destination === 'document' && event.request.url.includes('card.html')) {
-              console.log('COFFEEMANIA SW: Возвращаем кэшированную card.html для персонального PWA');
-              return caches.match('/card.html');
-            }
-            
-            // Для admin.html возвращаем кэшированную версию
-            if (event.request.destination === 'document' && event.request.url.includes('admin.html')) {
-              console.log('COFFEEMANIA SW: Возвращаем кэшированную admin.html');
-              return caches.match('/admin.html');
-            }
-            
-            // Только для основных запросов без параметров редиректим на главную
-            if (event.request.destination === 'document' && !event.request.url.includes('?')) {
-              console.log('COFFEEMANIA SW: Возвращаем главную страницу для базовых запросов');
-              return caches.match('/index.html');
-            }
-            
-            // Для всех остальных случаев не делаем ничего (позволяем запросу провалиться)
-            console.log('COFFEEMANIA SW: Не можем обработать запрос:', event.request.url);
-            return new Response('Offline', { 
-              status: 503, 
-              statusText: 'Service Unavailable',
-              headers: new Headers({
-                'Content-Type': 'text/plain'
-              })
-            });
-          });
+    fetch(event.request, { signal: AbortSignal.timeout(3000) })
+      .catch(() => {
+        // При ошибке - пытаемся найти в кэше
+        return caches.match(event.request);
       })
   );
 });

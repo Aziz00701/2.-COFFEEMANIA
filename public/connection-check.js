@@ -1,4 +1,4 @@
-// Проверка соединения с сервером - ИСПРАВЛЕНО: лучшая обработка ошибок
+// МГНОВЕННАЯ ЗАГРУЗКА: Проверка соединения без блокировки интерфейса
 async function checkConnection() {
     const connectionEl = document.getElementById('connection-status');
     if (!connectionEl) return;
@@ -6,10 +6,11 @@ async function checkConnection() {
     const startTime = Date.now();
     
     try {
+        // УСКОРЕНО: Таймаут всего 3 секунды вместо 8
         const response = await fetch('/api/stats', {
             method: 'GET',
             cache: 'no-cache',
-            signal: AbortSignal.timeout(8000) // Увеличенный таймаут
+            signal: AbortSignal.timeout(3000)
         });
         
         const endTime = Date.now();
@@ -24,23 +25,25 @@ async function checkConnection() {
                 updateConnectionStatus('slow', responseTime);
             }
         } else if (response.status === 503) {
-            // База данных еще не готова
+            // База данных еще не готова - но НЕ блокируем интерфейс
             updateConnectionStatus('slow', null);
         } else {
             updateConnectionStatus('slow', responseTime);
         }
         
     } catch (error) {
-        console.log('Соединение недоступно:', error.message);
+        console.log('Соединение проверяется:', error.message);
         if (error.name === 'TimeoutError') {
             updateConnectionStatus('slow', null);
         } else {
             updateConnectionStatus('offline', null);
         }
+        
+        // НЕ блокируем интерфейс при ошибках
     }
 }
 
-// Обновление статуса соединения - ИСПРАВЛЕНО: упрощенные сообщения
+// Обновление статуса соединения - БЕЗ БЛОКИРОВКИ
 function updateConnectionStatus(status, responseTime) {
     const connectionEl = document.getElementById('connection-status');
     if (!connectionEl) return;
@@ -58,7 +61,7 @@ function updateConnectionStatus(status, responseTime) {
             textEl.textContent = '🟢 Онлайн';
             break;
         case 'slow':
-            textEl.textContent = '🟡 Медленно';
+            textEl.textContent = '🟡 Подключение...';
             break;
         case 'offline':
             textEl.textContent = '🔴 Офлайн';
@@ -66,10 +69,16 @@ function updateConnectionStatus(status, responseTime) {
     }
 }
 
-// Запуск проверки соединения - ИСПРАВЛЕНО: увеличена задержка
+// МГНОВЕННЫЙ ЗАПУСК: Показываем интерфейс сразу, проверка в фоне
 document.addEventListener('DOMContentLoaded', () => {
+    // СРАЗУ показываем что идет подключение
+    updateConnectionStatus('slow', null);
+    
+    // МГНОВЕННАЯ первая проверка (без задержки)
     setTimeout(() => {
         checkConnection();
-        setInterval(checkConnection, 15000); // Каждые 15 секунд
-    }, 3000); // Увеличена задержка до 3 секунд
+    }, 500); // Всего 0.5 секунды задержки
+    
+    // Регулярные проверки каждые 10 секунд (вместо 15)
+    setInterval(checkConnection, 10000);
 }); 
