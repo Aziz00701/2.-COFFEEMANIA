@@ -386,6 +386,31 @@
 
         // Запрещаем доступ к админским функциям
         Object.freeze(window);
+        
+        // Блокируем попытки навигации к админке
+        window.addEventListener('hashchange', function() {
+            if (window.location.hash.includes('admin')) {
+                window.location.href = '/';
+            }
+        });
+        
+        // Блокируем admin URLs
+        const originalPushState = history.pushState;
+        const originalReplaceState = history.replaceState;
+        
+        history.pushState = function(state, title, url) {
+            if (url && url.includes('admin')) {
+                return;
+            }
+            return originalPushState.apply(history, arguments);
+        };
+        
+        history.replaceState = function(state, title, url) {
+            if (url && url.includes('admin')) {
+                return;
+            }
+            return originalReplaceState.apply(history, arguments);
+        };
 
         // Загружаем карту при старте
         window.addEventListener('load', loadClientCard);

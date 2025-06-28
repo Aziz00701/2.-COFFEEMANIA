@@ -32,18 +32,6 @@
   ],
   "shortcuts": [
     {
-      "name": "Панель бариста",
-      "short_name": "ADMINCOFFEE",
-      "description": "Панель управления для бариста - ADMINCOFFEE",
-      "url": "/admin.html",
-      "icons": [
-        {
-          "src": "/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
       "name": "Карта клиента",
       "short_name": "COFFEEMANIA",
       "description": "Карта лояльности клиента - COFFEEMANIA",
